@@ -33,6 +33,8 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
 ## Directives (usable inside block params and triggers)
 - `{$helper: escalating, ...}`, `{$helper: earn, var: earned, amount: 10}`, `{$helper: var_to_resource, var: x}`,
   `{$helper: resource_to_var, var: x}`: replaced by the helper's result.
+- `{$helper: spawn, unit: KNIGHT, count: 5, at: player1_base, min_dist: 4}`: N `create_object` effects on
+  distinct tiles. Use it whenever you create more than one unit, because effects aimed at the same tile place only one.
 - `{$secs: 2700}`: game seconds, scaled in test mode like every block timer. Use it for every
   raw `timer` condition, or test builds will be out of sync.
 - `area: <name>` and `location: <name>` resolve to named areas and points (a point name falls back to

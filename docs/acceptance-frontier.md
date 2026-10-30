@@ -156,11 +156,26 @@ doc was corrected in this commit.
 
 26. **Several units spawned on one tile become one unit.** A Crucible playtest on the same day
     showed that `create_object` effects aimed at the same tile place only one unit. My first M3
-    "bridge rebuilt" bonus created 4 villagers and a cart at `location: fort`, so it would have given
-    one villager. Nothing at compile time warns about this. *Did:* explicit, distinct tiles (the
-    `spawn` helper, `{$helper: spawn, unit, count, at}`, landed in 015f8ec while this test ran). *Fix:*
-    a compile-time warning when two or more `create_object` effects in one trigger share a location.
-    Raw-trigger users should be pointed at the helper from the triggers skill's "Spawn and attack" pattern.
+    "bridge rebuilt" bonus created 4 villagers at `location: fort`, so it would have given one.
+    Nothing at compile time warns about this. *Did:* the `spawn` helper (015f8ec, landed during this
+    test) in its own trigger, see 27. *Findability:* easy if you read `guide("campaign-spec")`
+    (Directives) or `blocks_list()`, which lists it as a helper. But the triggers skill's
+    "Spawn and attack" pattern still says `create_object` × N and doesn't mention it, and that is where
+    a raw-trigger author looks. *Fix:* point that pattern at `spawn`, and warn at compile time when two or
+    more `create_object` effects in one trigger share a location.
+
+27. **A helper that returns a list can't be spliced into a longer list.** `effects: [{modify_resource...},
+    {$helper: spawn, ...}, {display_instructions...}]` crashes with
+    `TypeError: list indices must be integers or slices, not str`, with no mission or trigger named.
+    `spawn` only works as the entire `effects:` value. *Did:* moved the villagers into a separate
+    trigger, `Bridge Rebuilt Settlers`, with the same condition. *Fix:* flatten list-valued helper
+    results inside lists in `_expand`, or support `{$splice: ...}`. Until then, say "use it as the
+    whole `effects:` value" in the guide.
+
+28. **`scenario_open` with a relative path that doesn't exist** reports a `FileNotFoundError` for
+    `<profile>/resources/_common/scenario/out/frontier/...`, so it looks as if the tool looked in the
+    game profile instead of the working directory. The real cause was that the file hadn't been built.
+    *Fix:* say both places it tried.
 
 ## Unverified engine behaviour this campaign relies on
 
