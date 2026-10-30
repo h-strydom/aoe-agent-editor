@@ -25,6 +25,7 @@ Inside block params and triggers:
 """
 from __future__ import annotations
 
+import inspect
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -77,7 +78,10 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
             name = value["$helper"]
             if name not in B.HELPERS:
                 raise ValueError(f"Unknown helper '{name}'. Helpers: {sorted(B.HELPERS)}")
-            return B.HELPERS[name](**args)
+            fn = B.HELPERS[name]
+            if next(iter(inspect.signature(fn).parameters), None) == "ctx":
+                return fn(ctx, **args)
+            return fn(**args)
         out = {}
         for k, v in value.items():
             v = _expand(v, ctx)

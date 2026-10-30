@@ -75,3 +75,18 @@ def waves(ctx: Ctx, *, enemy: int = 2, spawns: list, target, waves: list[dict],
                     [{"type": "attack_move", "source_player": enemy, "location": [tx, ty],
                       "object_type": "MILITARY"}], looping=True)
     return {"triggers": names, "count": len(waves)}
+
+
+def spawn(ctx: Ctx, *, unit: str | int, count: int, player: int = 1, at, min_dist: float = 0) -> list[dict]:
+    """Effect dicts that create `count` units on distinct tiles near `at` (point or area name/rect),
+    nearest first, at least `min_dist` tiles from its centre (e.g. 4 to clear a Town Center).
+    Verified in game: several create_object effects on the same tile place only one unit."""
+    cx, cy = ctx.point(at)
+    tiles, r = [], 0
+    while len(tiles) < count and r < 40:
+        r += 1
+        tiles = sorted(((x, y) for x in range(cx - r, cx + r + 1) for y in range(cy - r, cy + r + 1)
+                        if ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5 >= min_dist),
+                       key=lambda t: ((t[0] - cx) ** 2 + (t[1] - cy) ** 2, t))
+    return [{"type": "create_object", "object_list_unit_id": unit, "source_player": player,
+             "location": [x, y]} for x, y in tiles[:count]]

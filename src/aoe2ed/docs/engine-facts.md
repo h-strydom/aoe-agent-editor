@@ -35,6 +35,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
   of fire, work rate...). `MULTIPLY HIT_POINTS by 1.5` became "multiply by 1" — no effect. The
   trigger layer now rejects fractional quantities on integer attributes. *Smoke test.*
 - Modify Attribute HIT_POINTS ADD 15 on ARCHER took effect in game. *Smoke replay, user-confirmed.*
+- Several `create_object` effects at the same tile place only **one** unit ("+4 Men-at-Arms" gave 1).
+  Give each unit its own tile with the `spawn` helper. *Crucible playtest, 2026-10-30.*
 
 ## Campaign bank (Store / Load / Delete Key Value)
 *Verified with the kv_* test campaigns, 2026-10-19.*
@@ -44,5 +46,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Load Key Value returns the effect's quantity when the key is missing.
 - Replaying an earlier mission asks "save your choices?"; answering No discards that visit's stores.
 - Works in Return of Rome too.
+- Full hub/run loop works in a generated campaign: currency earned in a run is stored, loaded as
+  Gold in the replayed hub, perks bought there are stored, and the next run applies them (starting
+  resources, Town Center HP). Winning and losing a run both end correctly. *Crucible playtest, 2026-10-30.*
 - Open: whether stores survive a mission that ends in defeat or is quit mid-way. `run_end`
   always ends in victory to sidestep this.

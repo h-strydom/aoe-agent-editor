@@ -10,7 +10,7 @@ from .instrument import telemetry_harness
 from .players import anchor
 from .objectives import lose_if_destroyed, objective, survive
 from .shop import pad_shop, perk_effects
-from .waves import escalating, waves
+from .waves import escalating, spawn, waves
 
 BLOCKS = {
     "anchor": anchor,
@@ -28,7 +28,7 @@ BLOCKS = {
 }
 
 # Helpers that return data (effect dicts / wave lists) rather than editing the scenario.
-HELPERS = {"escalating": escalating, "earn": earn, "var_to_resource": var_to_resource,
+HELPERS = {"escalating": escalating, "spawn": spawn, "earn": earn, "var_to_resource": var_to_resource,
            "resource_to_var": resource_to_var}
 
 __all__ = ["BLOCKS", "HELPERS", "Ctx", *BLOCKS, *HELPERS]

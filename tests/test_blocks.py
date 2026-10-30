@@ -96,3 +96,12 @@ def test_anchor(tmp_path):
     assert {e["type"] for e in effects} == {"disable_unit_attackable", "disable_unit_targeting",
                                             "disable_object_selection"}
     assert all(e["selected_object_ids"] == [r["unit_ref"]] for e in effects)
+
+
+def test_spawn_distinct_tiles():
+    o = SESSIONS.new(60)
+    ctx = B.Ctx(o.scenario, points={"tc": (30, 30)})
+    effs = B.spawn(ctx, unit="MAN_AT_ARMS", count=8, at="tc", min_dist=4)
+    locs = [tuple(e["location"]) for e in effs]
+    assert len(locs) == 8 and len(set(locs)) == 8
+    assert all(((x - 30) ** 2 + (y - 30) ** 2) ** 0.5 >= 4 for x, y in locs)

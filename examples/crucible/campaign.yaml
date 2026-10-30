@@ -153,11 +153,8 @@ missions:
       - use: perk_effects
         var: perk_guard
         levels:
-          1: &guard [{type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
-                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
-                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
-                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base}]
-          2: *guard
+          1: {$helper: spawn, unit: MAN_AT_ARMS, count: 4, at: player1_base, min_dist: 4}
+          2: {$helper: spawn, unit: MAN_AT_ARMS, count: 4, at: player1_base, min_dist: 6}
       - use: perk_effects
         var: perk_walls
         levels:
@@ -198,12 +195,8 @@ missions:
         boons:
           plunder: {label: "Plunder: +400 gold", effects: [
             {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 400, operation: ADD, source_player: 1}]}
-          reinforce: {label: "Reinforcements: 5 Crossbowmen", effects: [
-            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
-            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
-            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
-            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
-            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base}]}
+          reinforce: {label: "Reinforcements: 5 Crossbowmen",
+                      effects: {$helper: spawn, unit: CROSSBOWMAN, count: 5, at: player1_base, min_dist: 4}}
           fortify: {label: "Fortify: +1000 Town Center HP", effects: [
             {type: modify_attribute, object_list_unit_id: TOWN_CENTER, source_player: 1,
              object_attributes: HIT_POINTS, operation: ADD, quantity: 1000}]}

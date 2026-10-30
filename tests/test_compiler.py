@@ -34,3 +34,12 @@ def test_unknown_block_message(tmp_path):
     spec = {"name": "x", "missions": [{"id": "m", "blocks": [{"use": "nope"}]}]}
     with pytest.raises(ValueError, match="unknown block 'nope'"):
         compile_campaign(spec, out_dir=tmp_path, render=False)
+
+
+def test_crucible_spawns_on_distinct_tiles(tmp_path):
+    rep = compile_campaign(SPEC, out_dir=tmp_path, render=False)
+    s = SESSIONS.open(rep["missions"][1]["scenario"]).scenario
+    for name in ("Perk perk_guard L1", "Boon 1 offer 0 pick reinforce"):
+        effs = T.trigger_to_dict(T.find_trigger(s, name))["effects"]
+        locs = [(e["location_x"], e["location_y"]) for e in effs if e["type"] == "create_object"]
+        assert len(locs) >= 4 and len(set(locs)) == len(locs), name
