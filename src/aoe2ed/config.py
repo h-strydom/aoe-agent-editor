@@ -95,7 +95,12 @@ def find_profile_dirs() -> list[Path]:
             for child in base.iterdir():
                 if child.is_dir() and child.name.isdigit() and (child / "resources").is_dir():
                     found.append(child)
-    found.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    def last_used(p: Path) -> float:
+        # Player.nfp is rewritten whenever the game saves the profile; folder mtimes are unreliable.
+        nfp = p / "profile" / "Player.nfp"
+        return nfp.stat().st_mtime if nfp.exists() else 0.0
+
+    found.sort(key=last_used, reverse=True)
     return found
 
 

@@ -131,3 +131,20 @@ def test_schema(blank):
     sch = call("effect_schema", handle=blank, effect_type="store_key_value")
     assert [p["name"] for p in sch["params"]] == ["variable", "message"]
     assert any(e["type"] == "script_call" for e in call("effect_types", handle=blank))
+
+
+def test_campaign_build_roundtrip(tmp_path):
+    from aoe2ed.campaign import Campaign
+    hs = []
+    for i in range(2):
+        h = call("scenario_new")["handle"]
+        call("scenario_save", handle=h, path=str(tmp_path / f"m{i}.aoe2scenario"))
+        hs.append(h)
+    r = call("campaign_build", name="test_camp", scenarios=hs, out=str(tmp_path / "c.aoe2campaign"), install=False)
+    assert [s["filename"] for s in r["scenarios"]] == ["m0.aoe2scenario", "m1.aoe2scenario"]
+    camp = Campaign.read(tmp_path / "c.aoe2campaign")
+    assert camp.name == "test_camp"
+    assert camp.scenarios[1].data == (tmp_path / "m1.aoe2scenario").read_bytes()
+    out = call("campaign_extract", path=str(tmp_path / "c.aoe2campaign"), out_dir=str(tmp_path / "x"))
+    h = call("scenario_open", path=out["files"][0])["handle"]
+    assert call("scenario_summary", handle=h)["scenario_version"] == "1.59"
