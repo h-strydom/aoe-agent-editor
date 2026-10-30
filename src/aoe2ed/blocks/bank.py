@@ -1,6 +1,6 @@
 """Campaign bank: values that persist between missions of one campaign (and across game restarts).
 
-Engine facts (verified in game, see docs/engine-facts.md):
+Engine facts (verified in game, see guide("engine-facts")):
   - Store/Load Key Value effects read/write int64 per campaign name; standalone scenarios get defaults.
   - Not directional: any mission reads any key. A store overwrites; no history.
   - Replaying an earlier mission asks "save your choices?"; No discards that visit's stores.

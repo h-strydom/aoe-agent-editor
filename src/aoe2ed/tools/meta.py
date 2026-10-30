@@ -51,3 +51,18 @@ def run_python(code: str, handle: str | None = None) -> dict:
     except TypeError:
         res = repr(res)
     return {"result": res, "stdout": buf.getvalue()[-20000:], "error": error}
+
+
+@tool
+def guide(topic: str = "index") -> str:
+    """Reference docs shipped with aoe2ed. Topics: campaign-spec (spec format for
+    compile_campaign), engine-facts (game behaviour verified in playtests, read before relying on
+    any mechanic), index (this list)."""
+    from importlib.resources import files
+    docs = files("aoe2ed") / "docs"
+    names = sorted(p.name[:-3] for p in docs.iterdir() if p.name.endswith(".md"))
+    if topic == "index":
+        return "Topics: " + ", ".join(names)
+    if topic not in names:
+        raise ValueError(f"Unknown topic '{topic}'. Topics: {names}")
+    return (docs / f"{topic}.md").read_text(encoding="utf-8")

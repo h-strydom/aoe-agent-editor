@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.aoe2scenario binary
+*.aoe2campaign binary
+*.png binary

@@ -1,0 +1,14 @@
+{
+  "name": "aoe2-editor",
+  "owner": {
+    "name": "Hannes Strydom"
+  },
+  "description": "Claude Code plugin for building Age of Empires II DE scenarios and campaigns.",
+  "plugins": [
+    {
+      "name": "aoe2-editor",
+      "source": "./",
+      "description": "Agents build Age of Empires II DE scenarios and campaigns end to end."
+    }
+  ]
+}
