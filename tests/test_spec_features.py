@@ -146,3 +146,21 @@ def test_cli_one_line_errors(capsys):
     assert main(["call", "enum_values", '{"name": "NoSuchEnum"}']) == 1
     err = capsys.readouterr().err
     assert err.startswith("error: ValueError: Unknown dataset 'NoSuchEnum'") and "Traceback" not in err
+
+
+def test_computer_players_get_no_ai_unless_asked(tmp_path):
+    rep = compile_campaign({"name": "t", "missions": [
+        {"id": "a", "map_size": 40},
+        {"id": "b", "map_size": 40, "players": {2: {"ai": "default"}}}]}, out_dir=tmp_path, render=False)
+    p2a = _built(rep, 0).player_manager.players[2]
+    p2b = _built(rep, 1).player_manager.players[2]
+    assert p2a.personality == "NoneAi"
+    assert p2b.personality != "NoneAi"
+
+
+def test_escort_uncontrollable_by_default():
+    o = SESSIONS.new(60)
+    ctx = B.Ctx(o.scenario, areas={"start": (1, 1, 4, 4), "home": (50, 50, 55, 55)})
+    r = B.escort(ctx, unit="TRADE_CART_FULL", count=2, start="start", destination="home")
+    first = _effects(o.scenario, "Escort Start")[0]
+    assert first["type"] == "disable_object_selection" and first["selected_object_ids"] == r["unit_refs"]

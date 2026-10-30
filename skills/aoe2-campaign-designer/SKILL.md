@@ -33,6 +33,8 @@ Known engine constraints that shape designs:
 - **Decisions** are popups with 2 options (`choice`). **Shops** use pads (walk a unit onto a flag) through `pad_shop`.
 - **Several units from one trigger** need distinct tiles (`spawn` helper, or `count:` on spec units).
 - A player with no counting objects is defeated at once. Enemies that only send waves need `anchor`.
+- The game's default AI resigns when losing, so computer players get no AI script by default (they
+  only do what triggers tell them). Ask for `ai: default` only for a real skirmish opponent.
 - Missions whose stores must count should end in victory.
 
 ## 3. Write the design (in chat, short)

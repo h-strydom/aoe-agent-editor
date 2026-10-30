@@ -165,6 +165,18 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
 
     for pid, fields in (m.get("players") or {}).items():
         step(f"players.{pid}", lambda: TOOLS["player_set"](handle=h, player=int(pid), fields=fields))
+    # Verified in game: the default AI resigns once it thinks it has lost (frontier M3 resigned after
+    # one building fell), ending trigger-driven missions early. Computer players get no AI script
+    # unless the spec asks for one with players.<n>.ai.
+    # Every active player except 1 counts as a computer player (blank scenarios mark them human, and
+    # the game then fills the slot with the default AI) unless the spec sets `human` or `ai`.
+    specified = {int(k) for k, v in (m.get("players") or {}).items()
+                 if isinstance(v, dict) and ("ai" in v or "human" in v)}
+    from .tools.world import set_ai
+    for p in s.player_manager.players[2:]:
+        if p.active and p.player_id not in specified:
+            p.human = False
+            set_ai(p, "none")
     for d in m.get("diplomacy") or []:
         step("diplomacy", lambda: TOOLS["diplomacy_set"](handle=h, **d))
     if m.get("options"):

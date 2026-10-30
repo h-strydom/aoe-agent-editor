@@ -23,6 +23,8 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
     points: {name: [x, y]}
     # --- setup
     players: {1: {civilization: BRITONS, starting_age: FEUDAL, food: 200, population_cap: 200}, 2: {...}}
+             # players 2+ become computer players with no AI script ("None AI": they never resign
+             # or act on their own). Opt in with ai: default | immobile | {name, script|per_file}.
     diplomacy: [{player: 1, others: [2], state: ENEMY}]     # ALLY | NEUTRAL | ENEMY, mutual by default
     options: {victory_condition: CUSTOM}                    # always CUSTOM when triggers decide the ending
     messages: {instructions: "...", hints: "...", victory: "...", loss: "...", history: "..."}

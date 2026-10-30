@@ -45,14 +45,31 @@ def _age(v):
     return v
 
 
+def set_ai(p, ai) -> None:
+    if isinstance(ai, dict):
+        p.set_custom_ai(ai["name"], ai_script=ai.get("script"), per_file_path=ai.get("per_file"))
+    elif ai == "none":
+        p.set_none_ai()
+    elif ai == "immobile":
+        p.set_immobile_ai()
+    elif ai != "default":
+        raise ValueError("ai must be 'none', 'immobile', 'default' or {name, script|per_file}")
+
+
 @tool
 def player_set(handle: str, player: int, fields: dict) -> dict:
     """Set player fields. Names allowed: civilization 'BRITONS', starting_age 'FEUDAL',
     disabled_units/disabled_techs/disabled_buildings as lists of names or ids.
+    ai: 'none' (no AI script: never resigns or acts on its own, the right choice for trigger-driven
+    enemies), 'immobile', 'default' (the game's standard AI, which resigns when it judges the game
+    lost), or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}.
     Fields: see players_get output."""
     s = SESSIONS.get(handle).scenario
     p = s.player_manager.players[player]
     for k, v in fields.items():
+        if k == "ai":
+            set_ai(p, v)
+            continue
         if k not in PLAYER_FIELDS:
             raise ValueError(f"Unknown player field '{k}'. Fields: {PLAYER_FIELDS}")
         if k in ("civilization", "architecture_set"):

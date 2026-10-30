@@ -8,12 +8,14 @@ from .base import Ctx
 def escort(ctx: Ctx, *, unit: str | int, count: int, start, destination, waypoints: list | None = None,
            player: int = 1, speed: float | None = None, count_var: str = "arrived",
            store_key: str | None = None, min_arrived: int = 1, done_effects: list[dict] | None = None,
-           lost_effects: list[dict] | None = None, name: str = "Escort") -> dict:
+           lost_effects: list[dict] | None = None, controllable: bool = False, name: str = "Escort") -> dict:
     """A convoy of `count` `unit`s placed at `start` that moves on its own through `waypoints` to
     `destination` (area). Each unit that reaches the destination is removed and counted in
     `count_var`. When none are left on the map: if count_var >= min_arrived, "<name> Done" runs
     `done_effects` (and stores count_var under `store_key`), otherwise "<name> Lost" runs
     `lost_effects` (e.g. declare defeat). `speed` sets the unit type's movement speed.
+    controllable=False (default) makes the convoy unselectable so the player can't stop or
+    redirect it (verified in game: owned carts otherwise take orders).
 
     Triggers created: "<name> Start", "<name> Arrive" (looping), "<name> Done", "<name> Lost".
     Unverified in game: queued task_object moves and remove_object with max_units_affected: 1."""
@@ -26,7 +28,8 @@ def escort(ctx: Ctx, *, unit: str | int, count: int, start, destination, waypoin
         u = ctx.scenario.unit_manager.add_unit(player=player, unit_const=uid, x=x + 0.5, y=y + 0.5)
         refs.append(u.reference_id)
     route = [ctx.point(w) for w in (waypoints or [])] + [ctx.point(destination)]
-    start_effects = []
+    start_effects = [] if controllable else [
+        {"type": "disable_object_selection", "source_player": player, "selected_object_ids": refs}]
     if speed is not None:
         start_effects.append({"type": "modify_attribute", "object_list_unit_id": uid, "source_player": player,
                               "object_attributes": "MOVEMENT_SPEED", "operation": "SET", "quantity": float(speed)})

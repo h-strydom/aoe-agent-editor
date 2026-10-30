@@ -40,6 +40,8 @@ The spec was rewritten with the new features and compiles with no warnings.
 | 27 | Helpers can't be spliced | **Fixed:** list results splice into lists |
 | 28 | Misleading `scenario_open` error | **Fixed:** lists both paths it tried |
 | new | Blocks can't reference raw triggers | **Fixed:** raw triggers are created as shells before the blocks |
+| play | Carts could be stopped by the player | **Fixed:** `escort` disables selection unless `controllable: true` |
+| play | M3 enemy AI resigned after one building | **Fixed:** players 2+ default to None AI |
 
 ## The design as built (first version)
 

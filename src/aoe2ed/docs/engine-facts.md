@@ -23,6 +23,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 ## Players and victory
 - A player who owns only Houses is defeated immediately; if that is the only enemy, the other
   side wins at t=0 even with victory condition Custom. Use the `anchor` block. *Smoke test.*
+- A computer player with the game's default AI **resigns** once it judges the game lost (frontier
+  M3: it resigned after one camp building fell), which ends trigger-driven missions early. The
+  compiler now gives players 2+ "None AI" unless the spec sets `players.<n>.ai`. *Frontier playtest, 2026-10-30.*
 
 ## Triggers
 - Timer conditions on triggers enabled at start fire at that game time (waves at 20 s and 50 s
@@ -35,6 +38,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
   of fire, work rate...). `MULTIPLY HIT_POINTS by 1.5` became "multiply by 1" — no effect. The
   trigger layer now rejects fractional quantities on integer attributes. *Smoke test.*
 - Modify Attribute HIT_POINTS ADD 15 on ARCHER took effect in game. *Smoke replay, user-confirmed.*
+- `task_object` MOVE with `selected_object_ids` and queued (`queue_action`) waypoints drives player-owned
+  carts along a route on their own, but the player can still select and stop them, so the `escort` block
+  now disables selection by default. *Frontier playtest.*
+- A looping `objects_in_area` + `remove_object` (`max_units_affected: 1`) + `change_variable` counts arrivals
+  one by one correctly. *Frontier playtest: the count carried to mission 2 exactly.*
+- Create Decision followed by a stored answer carries into the next mission. *Frontier playtest.*
 - Several `create_object` effects at the same tile place only **one** unit ("+4 Men-at-Arms" gave 1).
   Give each unit its own tile with the `spawn` helper. *Crucible playtest, 2026-10-30.*
 
