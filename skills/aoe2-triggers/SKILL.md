@@ -25,6 +25,7 @@ description: Reference for Age of Empires II DE scenario triggers, covering all 
 - **Resource threshold:** `accumulate_attribute` (attribute e.g. `GOLD_STORAGE`). Add `inverted: true` for "less than".
 - **Spawn and attack:** `create_object` × N at spawn tiles, then `attack_move` with the spawn `area` and the target `location`.
 - **Two-way choice:** `create_decision` with `decision_id` plus `decision_triggered` for each option.
+  Pass `decision_option: 1` or `2`; the names `Option1`/`Option2` are currently rejected.
 - **Random:** the `chance` condition, or set a variable from XS with `xsGetRandomNumberLH` (see `boon_offers`).
 - **Persistence (campaign only):** `load_key_value` / `store_key_value` / `delete_key`, with the key in `message`.
 - **Selecting specific placed units:** `selected_object_ids: [ref, ...]` (refs come from `units_list`).

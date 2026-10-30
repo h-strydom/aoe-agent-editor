@@ -41,18 +41,24 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
 
 ## Map spec (`map:`)
 Every field is optional. The same seed always gives the same map.
+
+**Compass:** names follow the in-game diamond view, not the square preview. Tile (0, 0) is the
+**w** corner, (max, 0) **n**, (max, max) **e**, (0, max) **s**. The edges between them are
+**nw** (y = 0), **ne** (x = max), **se** (y = max) and **sw** (x = 0). So `edge:e` is a corner and
+a river from `sw` to `ne` runs left to right across the preview. The preview labels the corners.
 ```yaml
 size: 144                 # 36..480
 seed: 45
 biome: temperate          # temperate | autumn | pine | desert | snow | jungle | mediterranean | steppe
-players: 2                # or [{position: center|[x,y]|<compass>, base_radius: 13, villagers: 6,
-                          #      town_center: true, scout: true}]
+players: 2                # or [{position: center|[x,y]|edge:<dir>[:inset]|player<N>|<zone name>,
+                          #      base_radius: 13, villagers: 6, town_center: true, scout: true}]
 player_layout: ring       # ring | center | line
 extra_players: 1          # active players without a base (wave enemies). Anchor them!
 forests:   {coverage: 0.2, clumps: 14, border: 4, player_woodlines: 3, stragglers: 4}
 resources: {gold: [8, 6], stone: [6], berries: 6, sheep: 4, deer: 4, neutral_gold: [6], neutral_stone: [5]}
 water:     [{kind: lake, name: lake_w, radius: 7, center: [x, y], fish: 4},
-            {kind: river, start: nw, end: se, width: 4, fords: 2}]
+            {kind: river, start: nw, end: se, width: 4, fords: 2}]   # start/end: compass names only;
+                          # the river always runs start -> map centre -> end. Fords become river_<n>_ford_<k>
 elevation: {hills: 6, height: [2, 4], radius: [6, 11]}
 cliffs:    [{points: [[20, 20], [40, 30]]}]   # experimental
 roads:     [{points: [spawn_north, player1], width: 3, wobble: 1.0}]

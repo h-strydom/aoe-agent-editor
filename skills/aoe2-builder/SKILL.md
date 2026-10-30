@@ -12,7 +12,10 @@ Two ways to build, which you can mix:
 ## Compile loop
 1. Write or adjust the spec (see `aoe2-campaign-designer`, `guide("campaign-spec")`).
 2. `compile_campaign(spec="path/campaign.yaml", out_dir="out/<name>", test_mode=true)`
-   - Errors name the mission and block. Fix the spec, not the output.
+   - Block errors name the mission and block. Errors in raw `triggers:` (bad enum names, unknown
+     params) don't name the mission or trigger yet, so bisect by trigger. Fix the spec, not the output.
+   - Unknown mission-level keys (e.g. a typo like `trigers:`) are ignored silently. If a section seems
+     to have no effect, check its spelling.
    - Check `xs_ok` and `xs_errors` in the report; they must be clean.
 3. **Look at every preview PNG** (`missions[].preview`). Check that spawns, pads, gates and bases sit where the design says, that no building sits on a road or in water, and that areas don't overlap by accident.
 4. Spot-check the logic: `scenario_open(<scenario>)`, then `triggers_list` and `trigger_get(name)` for the key triggers.
@@ -20,7 +23,8 @@ Two ways to build, which you can mix:
 6. For release, compile without test_mode.
 
 ## Direct editing essentials
-- Handles: every tool takes `handle` ("s1"). `scenario_save(handle, path, overwrite)` keeps a `.bak`. `install=true` writes into the game's scenario folder.
+- Handles: every tool takes `handle` ("s1"). With the CLI, handles die with the process, so chain
+  handle-based calls with `aoe2ed script steps.json` (`[{"tool": ..., "args": {...}}, ...]`), not separate `aoe2ed call`s. `scenario_save(handle, path, overwrite)` keeps a `.bak`. `install=true` writes into the game's scenario folder.
 - Names work wherever ids do: units `"KNIGHT"`, players `"ONE"`/`1`, terrain `"GRASS_1"`, enums `"ADD"`. Use `lookup("pike")` to find a name and `enum_values("ObjectAttribute")` to list an enum.
 - Triggers: `triggers_add(handle, [ {name, conditions:[{type,...}], effects:[{type,...}]} ])`.
   - Shorthands: `area: [x1,y1,x2,y2]`, `location: [x,y]`, variables by name (created automatically), `trigger_id` by trigger name.

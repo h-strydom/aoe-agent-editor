@@ -43,7 +43,7 @@ def block_apply(handle: str, block: str, params: dict, areas: dict | None = None
 @tool
 def map_generate(spec: dict, out: str | None = None, preview: str | None = None) -> dict:
     """Generate terrain, elevation, forests, resources, player starts and named areas from a map
-    spec (see aoe2ed.mapgen.MapSpec: size, seed, biome, players, zones, water, elevation, cliffs,
+    spec (see guide('campaign-spec'), "Map spec": size, seed, biome, players, zones, water, elevation, cliffs,
     roads, forests, resources, units). Opens the result as a new handle; optionally saves it and
     writes a PNG preview. Returns the handle and named areas for use by blocks."""
     from ..mapgen import generate
@@ -75,7 +75,7 @@ def compile_campaign(spec: str | dict, out_dir: str = "out/build", test_mode: bo
     """Build a whole campaign from a spec (YAML/JSON path or dict): maps, players, blocks,
     triggers, XS, telemetry. Then lint the XS and write scenarios, PNG previews, the .aoe2campaign
     and build_report.json. test_mode scales all timers (default x0.1) for quick playtests.
-    install copies everything into the game's profile folders. See specs/campaign-spec.md."""
+    install copies everything into the game's profile folders. See guide('campaign-spec')."""
     from ..compiler import compile_campaign as _compile
     return _compile(spec, out_dir=out_dir, test_mode=test_mode, time_scale=time_scale, install=install)
 
