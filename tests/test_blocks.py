@@ -84,3 +84,15 @@ def test_telemetry_decode():
     d = telemetry.decode(struct.pack(f"<{len(vals)}i", *vals), var_names={7: "meta"}, event_names={9: "end"})
     assert d["last"]["players"][1]["gold"] == 300 and d["last"]["vars"]["meta"] == 42
     assert d["events"] == [{"t": 12, "event": "end"}]
+
+
+def test_anchor(tmp_path):
+    o = SESSIONS.new(40)
+    ctx = B.Ctx(o.scenario)
+    r = B.anchor(ctx, player=2, at=(1, 1))
+    s = _reload(o, tmp_path, "anchor.aoe2scenario")
+    assert [u.reference_id for u in s.unit_manager.get_player_units(2)] == [r["unit_ref"]]
+    effects = T.trigger_to_dict(T.find_trigger(s, "Anchor P2"))["effects"]
+    assert {e["type"] for e in effects} == {"disable_unit_attackable", "disable_unit_targeting",
+                                            "disable_object_selection"}
+    assert all(e["selected_object_ids"] == [r["unit_ref"]] for e in effects)

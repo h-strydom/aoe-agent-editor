@@ -35,13 +35,13 @@ def build() -> str:
         *[{"player": 1, "type": "VILLAGER_MALE", "x": 26 + i, "y": 34} for i in range(4)],
         *[{"player": 1, "type": "ARCHER", "x": 27 + i, "y": 26} for i in range(5)],
         {"player": 1, "type": "MAN_AT_ARMS", "x": 33, "y": 26},
-        {"player": 2, "type": "HOUSE", "x": 2, "y": 2},  # keeps player 2 alive between waves
     ])
     tools["messages_set"](handle=h, fields={"instructions": "aoe2ed smoke test: survive 2 minutes."})
     tools["options_set"](handle=h, fields={"victory_condition": "CUSTOM"})
 
     ctx = B.Ctx(s, areas={"north": (26, 1, 34, 3), "south": (26, 56, 34, 58)}, points={"core": (30, 30)})
     ctx.xs('rule aoe2edSmokeHello active highFrequency { xsChatData("aoe2ed smoke: XS running"); xsDisableSelf(); }')
+    B.anchor(ctx, player=2, at=(1, 1))  # player 2 has no army until wave 1
     B.bank_load(ctx, {"meta_points": 0, "heat": 0})
     sv = B.survive(ctx, 2, on_complete=[])
     B.waves(ctx, spawns=["north", "south"], target="core", on_wave=[B.earn("earned", 5)],

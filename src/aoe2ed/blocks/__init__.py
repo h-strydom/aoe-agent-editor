@@ -7,11 +7,13 @@ from .base import Ctx
 from .boons import boon_offers
 from .endings import earn, run_end
 from .instrument import telemetry_harness
+from .players import anchor
 from .objectives import lose_if_destroyed, objective, survive
 from .shop import pad_shop, perk_effects
 from .waves import escalating, waves
 
 BLOCKS = {
+    "anchor": anchor,
     "survive": survive,
     "objective": objective,
     "lose_if_destroyed": lose_if_destroyed,
