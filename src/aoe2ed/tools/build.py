@@ -27,15 +27,20 @@ def blocks_list() -> list[dict]:
 
 @tool
 def block_apply(handle: str, block: str, params: dict, areas: dict | None = None,
-                points: dict | None = None, time_scale: float = 1.0) -> dict:
+                points: dict | None = None, time_scale: float = 1.0, when: list[dict] | None = None) -> dict:
     """Apply one block to an open scenario (outside the compiler). areas/points name the
-    rectangles and points the block's params refer to. XS the block needs is embedded at once."""
+    rectangles and points the block's params refer to. XS the block needs is embedded at once.
+    when: conditions added to every trigger the block creates (switch the block on a variable)."""
     from ..compiler import _expand
     ctx = B.Ctx(SESSIONS.get(handle).scenario, areas={k: tuple(v) for k, v in (areas or {}).items()},
                 points={k: tuple(v) for k, v in (points or {}).items()}, time_scale=time_scale)
     if block not in B.BLOCKS:
         raise ValueError(f"Unknown block '{block}'. Blocks: {sorted(B.BLOCKS)}")
+    tm = ctx.scenario.trigger_manager
+    before = len(tm.triggers)
     res = B.BLOCKS[block](ctx, **_expand(params, ctx))
+    if when:  # gate every trigger the block created
+        ctx.gate([t.name for t in tm.triggers[before:]], _expand(when, ctx))
     ctx.flush_xs()
     return res
 

@@ -23,9 +23,11 @@ description: Reference for Age of Empires II DE scenario triggers, covering all 
 - **Area entry:** `objects_in_area` with `source_player`, `area` and `quantity: 1`. Add `object_list` for a specific unit.
 - **Unit death / building lost:** `own_fewer_objects` with `object_list` and `quantity: 0`, or `destroy_object` with `unit_object` (a ref).
 - **Resource threshold:** `accumulate_attribute` (attribute e.g. `GOLD_STORAGE`). Add `inverted: true` for "less than".
-- **Spawn and attack:** `create_object` × N at spawn tiles, then `attack_move` with the spawn `area` and the target `location`.
+- **Spawn and attack:** one `create_object` per unit **on distinct tiles** (effects aimed at one tile place
+  only one unit: use `{$helper: spawn, unit, count, at}`), then `attack_move` with the spawn `area` and the
+  target `location`. The `waves` block does all of this.
 - **Two-way choice:** `create_decision` with `decision_id` plus `decision_triggered` for each option.
-  Pass `decision_option: 1` or `2`; the names `Option1`/`Option2` are currently rejected.
+  `decision_option` takes 1/2 or `Option1`/`Option2`. The `choice` block wraps the whole pattern.
 - **Random:** the `chance` condition, or set a variable from XS with `xsGetRandomNumberLH` (see `boon_offers`).
 - **Persistence (campaign only):** `load_key_value` / `store_key_value` / `delete_key`, with the key in `message`.
 - **Selecting specific placed units:** `selected_object_ids: [ref, ...]` (refs come from `units_list`).

@@ -165,10 +165,15 @@ def map_resize(handle: str, map_size: int) -> dict:
 
 
 @tool
-def map_get(handle: str, x1: int, y1: int, x2: int, y2: int, layer: str = "terrain") -> dict:
-    """Read a rectangle of the map as rows (y) of values (x). layer: terrain | elevation | layer.
-    Max 6400 tiles per call."""
+def map_get(handle: str, area: list[int] | None = None, layer: str = "terrain", x1: int | None = None,
+            y1: int | None = None, x2: int | None = None, y2: int | None = None) -> dict:
+    """Read area [x1,y1,x2,y2] of the map as rows (y) of values (x). layer: terrain | elevation |
+    layer. Max 6400 tiles per call. (x1..y2 as separate params also work.)"""
     mm = SESSIONS.get(handle).scenario.map_manager
+    if area is not None:
+        x1, y1, x2, y2 = area
+    if None in (x1, y1, x2, y2):
+        raise ValueError("Pass area=[x1, y1, x2, y2]")
     x1, y1, x2, y2 = _clip_rect(mm.map_size, x1, y1, x2, y2)
     if (x2 - x1 + 1) * (y2 - y1 + 1) > MAX_GRID:
         raise ValueError("Area too large; read it in chunks of <= 80x80")

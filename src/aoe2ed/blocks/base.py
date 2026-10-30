@@ -22,6 +22,14 @@ class Ctx:
     test_mode: bool = False
     xs_chunks: list[str] = field(default_factory=list)
     log: list[str] = field(default_factory=list)
+    _counter: int = 500  # decision ids / XS function suffixes; boon_offers uses 10..499
+
+    def next_id(self) -> int:
+        self._counter += 1
+        return self._counter
+
+    def next_decision_id(self) -> int:
+        return self.next_id()
 
     # ---------------------------------------------------------- naming & time
     def secs(self, seconds: float) -> int:
@@ -56,6 +64,18 @@ class Ctx:
 
     def trigger(self, name: str, conditions=(), effects=(), **flags) -> str:
         return self.triggers({"name": name, "conditions": list(conditions), "effects": list(effects), **flags})[0]
+
+    def trigger_names(self) -> list[str]:
+        return [t.name for t in self.scenario.trigger_manager.triggers]
+
+    def gate(self, names: list[str], conditions: list[dict]) -> None:
+        """Add `conditions` to the named triggers, e.g. to switch a whole block on a variable
+        (the `when:` param every block accepts in a spec)."""
+        r = T.Resolver(self.scenario)
+        for n in names:
+            t = T.find_trigger(self.scenario, n)
+            for c in conditions:
+                T.add_condition(t, c, r)
 
     def xs(self, code: str) -> None:
         """Queue XS; the compiler embeds all chunks once at the end."""

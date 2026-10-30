@@ -213,21 +213,62 @@ def _apply_fields(trigger, spec: dict) -> None:
             setattr(trigger, f, int(v) if f in BOOL_FIELDS else v)
 
 
+def _describe_error(e: Exception) -> str:
+    return str(e.args[0]) if isinstance(e, KeyError) and e.args else str(e)
+
+
 def add_triggers(scenario, specs: list[dict], create_variables: bool = True) -> list[int]:
-    """Create triggers from dicts. Two passes so triggers can reference each other by name."""
+    """Create triggers from dicts. Two passes so triggers can reference each other by name.
+    Errors name the trigger and the condition/effect: "trigger 'Wave 1' effect 2 (create_object): ..."."""
+    created = create_shells(scenario, specs)
+    return fill_triggers(scenario, created, specs, create_variables)
+
+
+def create_shells(scenario, specs: list[dict]) -> list:
+    """Create empty triggers (name and fields only) so others can reference them before they are
+    filled. Pair with fill_triggers."""
     tm = scenario.trigger_manager
     created = []
-    for spec in specs:
+    for i, spec in enumerate(specs):
+        if "name" not in spec:
+            raise ValueError(f"trigger {i}: missing 'name'")
         t = tm.add_trigger(spec["name"])
         _apply_fields(t, spec)
         created.append(t)
+    return created
+
+
+def fill_triggers(scenario, created: list, specs: list[dict], create_variables: bool = True) -> list[int]:
     resolver = Resolver(scenario, create_variables, {t.name: t.trigger_id for t in created})
     for t, spec in zip(created, specs):
-        for c in spec.get("conditions", []):
-            add_condition(t, c, resolver)
-        for e in spec.get("effects", []):
-            add_effect(t, e, resolver)
+        for kind, adder in (("conditions", add_condition), ("effects", add_effect)):
+            items = spec.get(kind) or []
+            if not isinstance(items, list):
+                raise ValueError(f"trigger '{t.name}': {kind} must be a list, got {type(items).__name__}")
+            for j, item in enumerate(items):
+                try:
+                    adder(t, item, resolver)
+                except Exception as e:
+                    what = item.get("type", "?") if isinstance(item, dict) else repr(item)
+                    raise ValueError(f"trigger '{t.name}' {kind[:-1]} {j} ({what}): {_describe_error(e)}") from None
     return [t.trigger_id for t in created]
+
+
+def stacked_spawns(specs: list[dict]) -> list[str]:
+    """Warnings for triggers with several create_object effects on one tile (the game places only
+    one unit there; use the spawn helper)."""
+    out = []
+    for spec in specs:
+        seen: dict[tuple, int] = {}
+        for e in spec.get("effects") or []:
+            if isinstance(e, dict) and e.get("type") == "create_object":
+                loc = tuple(e.get("location") or (e.get("location_x"), e.get("location_y")))
+                seen[loc] = seen.get(loc, 0) + 1
+        for loc, n in seen.items():
+            if n > 1:
+                out.append(f"trigger '{spec.get('name')}': {n} create_object effects at {list(loc)} will place only "
+                           f"one unit; use {{$helper: spawn, ...}}")
+    return out
 
 
 def update_trigger(scenario, index: int, spec: dict, create_variables: bool = True) -> dict:

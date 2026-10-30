@@ -32,9 +32,13 @@ def scenario_new(map_size: int = 120) -> dict:
 def scenario_open(path: str) -> dict:
     """Open a .aoe2scenario file. A bare name is looked up in the profile's scenario folder."""
     p = Path(path)
+    tried = [p.resolve()]
     if not p.is_absolute() and not p.exists():
         cand = paths().user_dir("scenario") / p
         p = cand if cand.suffix else cand.with_suffix(".aoe2scenario")
+        tried.append(p)
+    if not p.exists():
+        raise FileNotFoundError(f"No scenario at {' or '.join(str(t) for t in tried)}")
     return SESSIONS.open(p).info()
 
 

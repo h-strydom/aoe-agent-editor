@@ -85,7 +85,7 @@ def test_units_players_map(blank, tmp_path):
     p1 = call("players_get", handle=h2)[1]
     assert p1["civilization"] == "BRITONS" and p1["gold"] == 777 and p1["disabled_units"] == [4]
     assert p1["starting_age"] == "FEUDAL_AGE"
-    grid = call("map_get", handle=h2, x1=0, y1=0, x2=2, y2=2)["rows"]
+    grid = call("map_get", handle=h2, area=[0, 0, 2, 2])["rows"]
     assert all(v == grid[0][0] for row in grid for v in row) and grid[0][0] != 0
     assert call("map_get", handle=h2, x1=55, y1=55, x2=55, y2=55, layer="elevation")["rows"] == [[3]]
 

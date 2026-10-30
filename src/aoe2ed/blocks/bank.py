@@ -13,7 +13,9 @@ from .base import Ctx
 
 def load(ctx: Ctx, keys: dict[str, dict | int], *, name: str = "Bank Load") -> dict:
     """At mission start, load keys into variables. keys: {"meta_points": {"var": "meta", "default": 0}}
-    or {"meta_points": 0} (variable named like the key)."""
+    or {"meta_points": 0} (variable named like the key).
+
+    Triggers created: "<name>" (default "Bank Load")."""
     effects = []
     for key, spec in keys.items():
         spec = {"default": spec} if isinstance(spec, int) else spec
@@ -27,7 +29,9 @@ def load(ctx: Ctx, keys: dict[str, dict | int], *, name: str = "Bank Load") -> d
 def store(ctx: Ctx, keys: dict[str, str] | list[str], *, name: str = "Bank Store",
           enabled: bool = False, conditions: list[dict] | None = None) -> dict:
     """Store variables under keys. keys: {"meta_points": "meta"} or ["meta_points"] (same-named var).
-    Disabled by default: activate it from your mission-end trigger."""
+    Disabled by default: activate it from your mission-end trigger.
+
+    Triggers created: "<name>" (default "Bank Store")."""
     if isinstance(keys, list):
         keys = {k: k for k in keys}
     effects = [{"type": "store_key_value", "variable": ctx.var(v), "message": k} for k, v in keys.items()]

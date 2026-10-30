@@ -15,7 +15,9 @@ def run_end(ctx: Ctx, *, player: int = 1, earned_var: str = "earned", meta_var: 
     """success_trigger: an existing (disabled) trigger to hook, e.g. survive()'s '<x> Complete'; this
     block appends 'activate Run Success' to it. fail_conditions: when met the run ends early.
     On end: meta += earned (+ bonus on success), store meta (and extra_store {key: var}), show the
-    result, then victory after delay_sec."""
+    result, then victory after delay_sec.
+
+    Triggers created: "<name> Success", "<name> Failed", "<name> End", "<name> Victory"."""
     earned, meta = ctx.var(earned_var), ctx.var(meta_var)
     end, win = f"{name} End", f"{name} Victory"
     specs = [

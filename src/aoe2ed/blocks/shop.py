@@ -18,7 +18,9 @@ def pad_shop(ctx: Ctx, *, perks: list[dict], buyer: int = 1, buyer_unit: str | i
     Buying level L needs level == L-1 and resource >= costs[L-1]; it deducts the cost, raises the
     level, stores the key (if store_on_buy) and teleports the buyer to `exit_point`.
     on_buy: extra effects after every purchase, e.g. store the remaining currency right away so
-    quitting the mission cannot keep perks without paying for them."""
+    quitting the mission cannot keep perks without paying for them.
+
+    Triggers created per perk: "<name> <key> L<n>" (buy), "<name> <key> L<n> poor", "<name> <key> maxed"."""
     ex, ey = ctx.point(exit_point) if exit_point is not None else (None, None)
     created = []
     for perk in perks:
@@ -73,7 +75,11 @@ def pad_shop(ctx: Ctx, *, perks: list[dict], buyer: int = 1, buyer_unit: str | i
 def perk_effects(ctx: Ctx, *, var: str, levels: dict[int, list[dict]], name: str | None = None) -> dict:
     """At mission start, apply the effects of every level the player owns:
     levels: {1: [effects...], 2: [effects...]} — level L's effects apply if var >= L (cumulative).
-    Give each level only its increment (e.g. +10% per level)."""
+    Give each level only its increment (e.g. +10% per level).
+    Also the general tool for "apply N times for var = N", e.g. +100 food per cart delivered:
+    levels 1..5 with the same effects.
+
+    Triggers created: "<name or 'Perk <var>'> L<n>"."""
     var = ctx.var(var)
     created = []
     for lvl, effects in sorted(levels.items()):

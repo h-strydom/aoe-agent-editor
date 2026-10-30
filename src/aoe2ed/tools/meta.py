@@ -18,9 +18,16 @@ def lookup(query: str, kinds: list[str] | None = None, limit: int = 25) -> list[
 
 
 @tool
-def enum_values(dataset: str) -> list[dict]:
-    """All members of a dataset/enum, e.g. 'ObjectAttribute', 'Operation', 'TechInfo', 'TerrainId'."""
-    return datasets.enum_members(dataset)
+def enum_values(dataset: str | None = None, name: str | None = None) -> list[dict]:
+    """All members of a dataset/enum, e.g. 'ObjectAttribute', 'Operation', 'TechInfo', 'TerrainId'.
+    (`name` is accepted as an alias of `dataset`.)"""
+    ds = dataset or name
+    if not ds:
+        raise ValueError("Pass dataset, e.g. enum_values('Operation')")
+    if ds not in datasets.ENUM_DATASETS and ds not in datasets.INFO_DATASETS:
+        raise ValueError(f"Unknown dataset '{ds}'. Datasets: "
+                         f"{sorted(set(datasets.ENUM_DATASETS) | set(datasets.INFO_DATASETS))}")
+    return datasets.enum_members(ds)
 
 
 @tool

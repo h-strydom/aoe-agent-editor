@@ -21,15 +21,17 @@ Restate the idea in 3–5 lines before designing.
 
 ## 2. Map the design onto what exists
 Call `blocks_list()` and `guide("engine-facts")`. Express each mechanic as:
-1. **a block**: survive, objective, lose_if_destroyed, waves (+ escalating), anchor, bank_load,
-   bank_store, pad_shop, perk_effects, boon_offers, run_end, telemetry;
+1. **a block**: survive, objective, lose_if_destroyed, waves (+ escalating, `chase`), anchor,
+   escort, choice, bank_load, bank_store, pad_shop, perk_effects, boon_offers, run_end, telemetry.
+   Any block can be switched on a variable with `when:`;
 2. **raw triggers** (`skills/aoe2-triggers`) when no block fits;
 3. **XS** (`skills/aoe2-xs`) for loops, math, randomness or state that triggers can't express.
 
 Known engine constraints that shape designs:
 - **Persistence** happens only inside one campaign, through the bank (int values per key). Missions unlock in order; after that, any can be replayed. Replays ask "save your choices?". So hub-and-run loops work, and players must answer YES.
 - **Civ** can't be changed by triggers. Recreate a faction with enable/disable units and techs, attribute modifiers and `add_train_location`. You can rename the civ.
-- **Decisions** are popups with 2 options. **Shops** use pads (walk a unit onto a flag) through `pad_shop`.
+- **Decisions** are popups with 2 options (`choice`). **Shops** use pads (walk a unit onto a flag) through `pad_shop`.
+- **Several units from one trigger** need distinct tiles (`spawn` helper, or `count:` on spec units).
 - A player with no counting objects is defeated at once. Enemies that only send waves need `anchor`.
 - Missions whose stores must count should end in victory.
 
@@ -37,10 +39,12 @@ Known engine constraints that shape designs:
 For each mission give: goal, map (size, biome, layout, named zones), players, the blocks with their key numbers, persistent keys read and written, and the end conditions. Add a key table, for example `meta_points: currency, written by hub on buy/exit and by runs at end`. Get a yes before building, or note the assumptions if the person said to just go ahead.
 
 ## 4. Write the spec
-Read `guide("campaign-spec")` and start from `examples/crucible/campaign.yaml` (Crucible-style
-roguelite: hub shop plus 45-minute survival run). Conventions:
+Read `guide("campaign-spec")` and start from the closest example: `examples/crucible/campaign.yaml`
+(roguelite: hub shop plus 45-minute survival run) or `examples/frontier/campaign.yaml` (story
+campaign: escort, siege with a choice, counter-attack shaped by it). Conventions:
 - `name:` is short snake_case and stays stable forever, because the bank is scoped by it. Name files `<name>_<n>_<slug>`.
 - Use a generated `map:` with named zones for everything that blocks refer to (spawns, pads, gates, objectives).
+  Missions that share a map put it in `defaults: {map: ...}`.
 - Give every raw timer `{$secs: N}` so test mode scales it.
 - Turn on telemetry for every mission and track the key variables.
 - Write numbers for the real game. Test mode scales the time.

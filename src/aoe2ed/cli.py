@@ -7,6 +7,7 @@
                                        "$prev.handle"-style refs read the previous result
 
 Handles only live within one process, so multi-step edits use `script`.
+Errors print as one line ("error: ..."); add --debug for the full traceback.
 """
 from __future__ import annotations
 
@@ -32,7 +33,21 @@ def _resolve_refs(obj, results: list):
 
 
 def main(argv: list[str] | None = None) -> int:
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    debug = "--debug" in argv
+    if debug:
+        argv.remove("--debug")
+    try:
+        return _main(argv)
+    except Exception as e:
+        if debug:
+            raise
+        msg = e.args[0] if isinstance(e, KeyError) and e.args else e
+        print(f"error: {type(e).__name__}: {msg}", file=sys.stderr)
+        return 1
+
+
+def _main(argv: list[str]) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     tools = load_all()

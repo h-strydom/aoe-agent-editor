@@ -1,25 +1,27 @@
 """Compile a campaign spec (YAML/JSON) into scenarios, previews and a .aoe2campaign.
 
-Spec shape (see specs/campaign.schema.md and examples/):
+Spec shape (full guide: guide("campaign-spec"); examples/):
 
   name: crucible                 # internal campaign name; the campaign bank is scoped by it
   title: The Crucible            # optional display text
+  defaults: {...}                # mission keys every mission inherits (dict values merge one level)
   missions:
     - id: hub
       file: crucible_1_hub       # scenario file name (no extension)
-      map: {...}                 # aoe2ed.mapgen.MapSpec as a dict   (or)  base: <scenario path/name>
+      map: {...}                 # generated map (map spec)   (or)  base: <scenario path/name>
       areas: {name: [x1,y1,x2,y2]}   points: {name: [x,y]}   # added to the map's named areas
       players: {1: {civilization: BRITONS, ...}}             # player_set fields
       diplomacy: [{player: 1, others: [2], state: ENEMY}]
       options: {...}  messages: {...}
-      units: [{player, type, x, y} | {player, type, at: <area/point name>}]
-      blocks: [{use: <block name>, ...params}]               # aoe2ed.blocks.BLOCKS
+      units: [{player, type, x, y} | {player, type, at: <area/point name>, count: N, min_dist: 0}]
+      blocks: [{use: <block name>, when: [conditions]?, ...params}]   # aoe2ed.blocks.BLOCKS
       triggers: [<trigger dict>]                             # raw triggers, after blocks
       xs: "<extra XS>"
       telemetry: true | {players, track_vars, interval_sec, events}
 
 Inside block params and triggers:
-  {"$helper": "escalating", ...kwargs}  is replaced by the helper's result
+  {"$helper": "escalating", ...kwargs}  is replaced by the helper's result (a list result inside a
+                                         list is spliced in)
   {"$secs": 2700}                        game seconds, scaled in test mode like block timers
   "area": "<name>" / "location": "<name>"  resolve to the named area / point
 """
@@ -27,18 +29,46 @@ from __future__ import annotations
 
 import inspect
 import json
+import os
+import shutil
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from . import blocks as B
 from . import triggers as T
+from .blocks.waves import near_tiles
 from .campaign import Campaign
 from .config import paths
 from .session import SESSIONS, backup_file
 from .tools import load_all
 
 TOOLS = load_all()
+
+TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description"}
+MISSION_KEYS = {"id", "file", "title", "description", "map", "base", "map_size", "areas", "points", "players",
+                "diplomacy", "options", "messages", "units", "blocks", "triggers", "xs", "telemetry"}
+
+
+class CompileError(ValueError):
+    """A spec problem, with the mission and block/trigger it came from in the message."""
+
+
+def _err(e: Exception) -> str:
+    return str(e.args[0]) if isinstance(e, KeyError) and e.args else str(e)
+
+
+def _unknown(keys, allowed: set[str], where: str) -> list[str]:
+    return [f"{where}: unknown key '{k}' (ignored). Known keys: {sorted(allowed)}"
+            for k in keys if k not in allowed and not str(k).startswith("x-")]
+
+
+def _with_defaults(mission: dict, defaults: dict) -> dict:
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in defaults.items()}
+    for k, v in mission.items():
+        out[k] = {**out[k], **v} if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
 
 
 @dataclass
@@ -54,6 +84,7 @@ class MissionResult:
     xs_diagnostics: list[dict] = field(default_factory=list)
     telemetry: dict | None = None
     handle: str | None = None
+    warnings: list[str] = field(default_factory=list)
 
 
 def load_spec(spec: str | Path | dict) -> dict:
@@ -92,7 +123,14 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
             out[k] = v
         return out
     if isinstance(value, list):
-        return [_expand(v, ctx) for v in value]
+        out_list = []
+        for v in value:
+            x = _expand(v, ctx)
+            if isinstance(v, dict) and "$helper" in v and isinstance(x, list):
+                out_list.extend(x)  # e.g. spawn inside a longer effects list
+            else:
+                out_list.append(x)
+        return out_list
     return value
 
 
@@ -117,36 +155,63 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
     points = {k: tuple(v) for k, v in (m.get("points") or {}).items()}
     ctx = B.Ctx(s, areas=areas, points=points, time_scale=time_scale, test_mode=time_scale != 1.0)
 
-    for pid, fields in (m.get("players") or {}).items():
-        TOOLS["player_set"](handle=h, player=int(pid), fields=fields)
-    for d in m.get("diplomacy") or []:
-        TOOLS["diplomacy_set"](handle=h, **d)
-    if m.get("options"):
-        TOOLS["options_set"](handle=h, fields=m["options"])
-    if m.get("messages"):
-        TOOLS["messages_set"](handle=h, fields=m["messages"])
-    units = []
-    for u in m.get("units") or []:
-        u = dict(u)
-        if "at" in u:
-            x, y = ctx.point(u.pop("at"))
-            u.setdefault("x", x + 0.5)
-            u.setdefault("y", y + 0.5)
-        units.append(u)
-    if units:
-        TOOLS["units_add"](handle=h, units=units)
+    def step(where: str, fn):
+        try:
+            return fn()
+        except CompileError:
+            raise
+        except Exception as e:
+            raise CompileError(f"[{mid}] {where}: {_err(e)}") from None
 
+    for pid, fields in (m.get("players") or {}).items():
+        step(f"players.{pid}", lambda: TOOLS["player_set"](handle=h, player=int(pid), fields=fields))
+    for d in m.get("diplomacy") or []:
+        step("diplomacy", lambda: TOOLS["diplomacy_set"](handle=h, **d))
+    if m.get("options"):
+        step("options", lambda: TOOLS["options_set"](handle=h, fields=m["options"]))
+    if m.get("messages"):
+        step("messages", lambda: TOOLS["messages_set"](handle=h, fields=m["messages"]))
+    units = []
+    taken: set[tuple[int, int]] = set()  # tiles used by `at:` placements, so entries never stack
+    for i, u in enumerate(m.get("units") or []):
+        u = dict(u)
+        count, min_dist = int(u.pop("count", 1)), float(u.pop("min_dist", 0))
+        if "at" in u:
+            at = u.pop("at")
+            tiles = step(f"units {i}", lambda: near_tiles(ctx, at, count, min_dist, taken))
+            for x, y in tiles:
+                units.append({**u, "x": x + 0.5, "y": y + 0.5})
+        elif count > 1:
+            raise CompileError(f"[{mid}] units {i}: 'count' needs 'at' (a point or area name)")
+        else:
+            units.append(u)
+    if units:
+        step("units", lambda: TOOLS["units_add"](handle=h, units=units))
+
+    tm = s.trigger_manager
+    # Raw triggers exist as empty shells first so blocks can reference them by name (e.g.
+    # done_effects: activate "Caravan Victory"); they are filled after the blocks and moved last.
+    raw_specs = m.get("triggers") or []
+    shells = step("triggers", lambda: T.create_shells(s, [
+        {k: v for k, v in t.items() if k not in ("conditions", "effects")} for t in raw_specs]))
     for i, blk in enumerate(m.get("blocks") or []):
         blk = dict(blk)
-        name = blk.pop("use")
+        name = blk.pop("use", None)
+        when = blk.pop("when", None)
         if name not in B.BLOCKS:
-            raise ValueError(f"[{mid}] block {i}: unknown block '{name}'. Blocks: {sorted(B.BLOCKS)}")
-        try:
-            B.BLOCKS[name](ctx, **_expand(blk, ctx))
-        except TypeError as e:
-            raise ValueError(f"[{mid}] block {i} ({name}): {e}") from None
-    if m.get("triggers"):
-        T.add_triggers(s, _expand(m["triggers"], ctx))
+            raise CompileError(f"[{mid}] block {i}: unknown block '{name}'. Blocks: {sorted(B.BLOCKS)}")
+        before = len(tm.triggers)
+        step(f"block {i} ({name})", lambda: B.BLOCKS[name](ctx, **_expand(blk, ctx)))
+        if when:
+            new_names = [t.name for t in tm.triggers[before:]]
+            step(f"block {i} ({name}) when", lambda: ctx.gate(new_names, _expand(when, ctx)))
+    raw = []
+    for i, t in enumerate(raw_specs):
+        raw.append(step(f"trigger {i} ('{t.get('name', '?')}')", lambda: _expand(t, ctx)))
+    if raw:
+        step("triggers", lambda: T.fill_triggers(s, shells, raw))
+        tm.move_triggers([t.trigger_id for t in shells], len(tm.triggers))
+    warnings = T.stacked_spawns(raw)
     if m.get("xs"):
         ctx.xs(m["xs"])
 
@@ -179,7 +244,8 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         render_scenario(s, preview, show_areas=dict(areas), title=f"{file}")
     variables = {v.name: v.variable_id for v in s.trigger_manager.variables}
     return MissionResult(mid, file, str(scen_path), preview, len(s.trigger_manager.triggers), variables,
-                         {k: list(v) for k, v in areas.items()}, xs["ok"], xs["diagnostics"], telem, h)
+                         {k: list(v) for k, v in areas.items()}, xs["ok"], xs["diagnostics"], telem, h,
+                         [f"[{mid}] {w}" for w in warnings])
 
 
 # ---------------------------------------------------------------- campaign
@@ -189,10 +255,39 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
     """Build every mission, lint XS, write the campaign file and a build report."""
     spec = load_spec(spec)
     out = Path(out_dir)
+    if not isinstance(spec, dict) or not spec.get("missions"):
+        raise CompileError("spec needs a 'missions' list")
+    warnings = _unknown(spec, TOP_KEYS, "spec")
+    defaults = spec.get("defaults") or {}
+    warnings += _unknown(defaults, MISSION_KEYS - {"id", "file"}, "defaults")
+    missions = []
+    for i, m in enumerate(spec["missions"]):
+        if "id" not in m:
+            raise CompileError(f"mission {i}: missing 'id'")
+        warnings += _unknown(m, MISSION_KEYS, f"[{m['id']}]")
+        missions.append(_with_defaults(m, defaults))
     scale = time_scale if time_scale is not None else (
         (spec.get("test_mode") or {}).get("time_scale", 0.1) if test_mode else 1.0)
-    results = [build_mission(m, out_dir=out, time_scale=scale, render=render) for m in spec["missions"]]
-    report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "missions": []}
+    # Build into a staging folder so a failed compile leaves out_dir untouched.
+    out.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=out))
+    results: list[MissionResult] = []
+    try:
+        for m in missions:
+            results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render))
+        for f in staging.iterdir():
+            os.replace(f, out / f.name)
+        for r in results:
+            r.scenario_path = str(out / Path(r.scenario_path).name)
+            if r.preview:
+                r.preview = str(out / Path(r.preview).name)
+    finally:
+        for r in results:
+            if r.handle:
+                SESSIONS.close(r.handle)
+        shutil.rmtree(staging, ignore_errors=True)
+    report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "missions": [],
+                              "warnings": warnings + [w for r in results for w in r.warnings]}
     for r in results:
         report["missions"].append({
             "id": r.id, "file": r.file, "scenario": r.scenario_path, "preview": r.preview, "triggers": r.triggers,
@@ -222,6 +317,4 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
             installed.append(install_file(camp_path)["installed"])
         report["installed"] = installed
     (out / "build_report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-    for r in results:
-        SESSIONS.close(r.handle)
     return report

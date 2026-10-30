@@ -12,7 +12,36 @@ and the CLI. The spec is `examples/frontier/campaign.yaml`.
 **Result:** compiles with `test_mode`, `xs_ok: true` for all 3 missions, previews checked, 59 tests
 still pass. Not playtested in game, so everything in "Unverified engine behaviour" below is still open.
 
-## The design as built
+## Status after the follow-up fixes (2026-10-30)
+
+The spec was rewritten with the new features and compiles with no warnings.
+
+| # | Gap | Status |
+|---|---|---|
+| 1 | Escort / convoy | **Fixed:** `escort` block (route, speed, arrival count, Done/Lost hooks, bank store) |
+| 2 | Waves that hunt moving units | **Fixed:** `waves` `chase: {player, unit}` (XS rule); unverified in game |
+| 3 | Decision block | **Fixed:** `choice` block (stored answer, timeout default) |
+| 4 | Gating blocks; generated trigger names | **Fixed:** `when:` on every block; each block doc lists its trigger names |
+| 5 | Per-unit bonuses, showing a variable | **Fixed:** `perk_effects` doc covers it; `say_var` helper |
+| 6 | Bridges | Open |
+| 7 | Steerable rivers / fixed fords | Open (current behaviour documented) |
+| 8 | Sharing a map across missions | **Fixed:** top-level `defaults:` (dicts merge one level) |
+| 9 | `units` with `at:` stacking | **Fixed:** `count:` and `min_dist:`; entries never share a tile |
+| 10 | Test mode and travel speed | Documented, not automated |
+| 11 | `Option1` rejected | **Fixed:** enum names match case-insensitively |
+| 12 | Raw-trigger errors without location | **Fixed:** errors name mission, trigger, condition/effect index and type |
+| 13 | Unknown keys ignored | **Fixed:** reported in `warnings` (`x-*` keys allowed) |
+| 14 | CLI tracebacks | **Fixed:** one-line `error: ...`; `--debug` for the traceback |
+| 15 | Partial output on failure | **Fixed:** builds in a staging folder |
+| 16 | `map_get` / `enum_values` shapes | **Fixed:** `map_get(area=...)`; `enum_values(name=...)` alias |
+| 17 | `lookup` ranks enums first | **Fixed:** units and buildings rank above enums |
+| 23–25 | river bbox area, per-player resources, preview glyphs | Open |
+| 26 | Stacked spawns not warned | **Fixed:** compile warning; triggers skill points at `spawn` |
+| 27 | Helpers can't be spliced | **Fixed:** list results splice into lists |
+| 28 | Misleading `scenario_open` error | **Fixed:** lists both paths it tried |
+| new | Blocks can't reference raw triggers | **Fixed:** raw triggers are created as shells before the blocks |
+
+## The design as built (first version)
 
 All three missions share one 144×144 river valley (`<<: *valley`: same seed, size and river). The
 river runs across the middle with fords at x≈48 and x≈98, the fort sits on the south-east bank and

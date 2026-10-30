@@ -106,7 +106,7 @@ def resolve_dataset_value(dataset_name: str, value):
         ds = ENUM_DATASETS[dataset_name]
         key = _norm(s)
         for m in ds:
-            if m.name == key:
+            if m.name.upper() == key:  # some enums use mixed-case names (DecisionOption.Option1)
                 return m.value
         raise KeyError(f"'{value}' is not a {dataset_name}. Options: {[m.name for m in ds][:40]}")
     return value  # str attributes (message, sound_name) or unknown datasets
@@ -139,9 +139,11 @@ def search(query: str, kinds: list[str] | None = None, limit: int = 25) -> list[
     kinds = kinds or ["unit", "building", "hero", "other", "tech", "terrain", "enum"]
     hits: list[dict] = []
 
+    kind_rank = {"unit": 0, "building": 0, "hero": 1, "other": 1, "tech": 1, "terrain": 2, "enum": 3}
+
     def consider(kind, name, id_, extra=None):
         if q in name:
-            score = (0 if name == q else 1 if name.startswith(q) else 2, len(name))
+            score = (0 if name == q else 1 if name.startswith(q) else 2, kind_rank[kind], len(name))
             hits.append({"kind": kind, "name": name, "id": id_, **(extra or {}), "_s": score})
 
     for kind, ds in OBJECT_DATASETS.items():

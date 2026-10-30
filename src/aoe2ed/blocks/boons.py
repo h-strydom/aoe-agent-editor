@@ -9,7 +9,9 @@ def boon_offers(ctx: Ctx, *, boons: dict[str, dict], offers: list[dict], player:
     """boons: {"swift": {"label": "Swift Feet: +15% speed", "effects": [...]}, ...}
     offers: [{"at": 600, "pairs": [["swift", "tough"], ["greed", "swift"]]}, ...]
     At each offer time one pair is picked at random (XS) and shown as a decision; the chosen
-    boon's effects run. Each offer uses its own decision id."""
+    boon's effects run. Each offer uses its own decision id.
+
+    Triggers created per offer k: "<name> k roll", "<name> k offer i", "<name> k offer i pick <boon>"."""
     created = []
     for k, offer in enumerate(offers, 1):
         pairs = offer["pairs"]

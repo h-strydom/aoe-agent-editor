@@ -6,11 +6,15 @@
 #    player chose in mission 2 (via a decision popup) between rebuilding the bridge (+economy) or
 #    burning it (fewer waves). Mission 3 is a counter-attack to destroy the enemy camp."
 #
-# All three missions share one river valley (same seed, size and river), so the fords the caravan
-# passes in mission 1 are the fords the waves cross in mission 2 and the ones you cross in mission 3.
+# Built cold by an agent as the toolkit's acceptance test (docs/acceptance-frontier.md), then
+# rewritten with the blocks that test asked for: escort, choice, waves `chase`, `when:` and `defaults:`.
+#
+# All three missions share one river valley (same seed, size and river, via `defaults.map`), so the
+# fords the caravan passes in mission 1 are the fords the waves cross in mission 2 and the ones you
+# cross in mission 3.
 #
 # Bank keys (scoped to `frontier`):
-#   carts_arrived  0..5   written by M1 on victory, read by M2 (bonus resources per cart)
+#   carts_arrived  0..5   written by M1 when the convoy is done, read by M2 (bonus resources per cart)
 #   bridge_choice  1 = rebuilt, 2 = burned; written by M2 when the decision is answered, read by M3
 #
 # Build:  aoe2ed call compile_campaign '{"spec": "examples/frontier/campaign.yaml", "out_dir": "out/frontier", "test_mode": true}'
@@ -19,21 +23,26 @@ name: frontier
 title: The Frontier Fort
 test_mode: {time_scale: 0.1}
 
-# Shared valley: river across the middle (y ~ 63..74), fords at x ~ 48 and x ~ 98, fort on the
-# south-east bank, raider country to the north.
-valley: &valley
-  size: 144
-  seed: 11
-  biome: temperate
-  water: [{kind: river, start: sw, end: ne, width: 6, fords: 2}]
-  elevation: {hills: 3, height: [1, 2], radius: [5, 8]}
+# Every mission inherits these; dict values (map, players) merge with the mission's own.
+# River across the middle (y ~ 63..74), fords at x ~ 48 and x ~ 98, fort on the south-east bank,
+# raider country to the north.
+defaults:
+  map:
+    size: 144
+    seed: 11
+    biome: temperate
+    water: [{kind: river, start: sw, end: ne, width: 6, fords: 2}]
+    elevation: {hills: 3, height: [1, 2], radius: [5, 8]}
+  players:
+    2: {civilization: MAGYARS}
+  diplomacy: [{player: 1, others: [2], state: ENEMY}]
+  options: {victory_condition: CUSTOM}
 
 missions:
   # ------------------------------------------------------------------ 1: the caravan
   - id: caravan
     file: frontier_1_the_river_road
     map:
-      <<: *valley
       players: [{position: [122, 104], base_radius: 11, villagers: 0, town_center: false, scout: false}]
       extra_players: 1
       forests: {coverage: 0.16, clumps: 14, border: 3, player_woodlines: 0, stragglers: 3}
@@ -53,36 +62,44 @@ missions:
         - {unit: HOUSE, position: fort, player: 1, offset: [5, -6]}
     players:
       1: {civilization: BYZANTINES, starting_age: FEUDAL, food: 0, wood: 0, gold: 0, stone: 0, population_cap: 50}
-      2: {civilization: MAGYARS}
-    diplomacy: [{player: 1, others: [2], state: ENEMY}]
-    options: {victory_condition: CUSTOM}
     messages:
       instructions: "The River Road. Escort the five supply carts east along the river road to the fort. Raiders will cross the fords to hit the caravan. Every cart that arrives means more supplies for the siege to come. Lose every cart and the mission fails."
       victory: "The caravan is in. The fort will eat this winter."
       loss: "The caravan is lost. Without supplies the fort cannot hold."
     units:
-      - {player: 1, type: TRADE_CART_FULL, x: 4, y: 94, caption: "Supply Cart"}
-      - {player: 1, type: TRADE_CART_FULL, x: 6, y: 94, caption: "Supply Cart"}
-      - {player: 1, type: TRADE_CART_FULL, x: 8, y: 94, caption: "Supply Cart"}
-      - {player: 1, type: TRADE_CART_FULL, x: 5, y: 97, caption: "Supply Cart"}
-      - {player: 1, type: TRADE_CART_FULL, x: 7, y: 97, caption: "Supply Cart"}
-      - {player: 1, type: KNIGHT, x: 10, y: 93}
-      - {player: 1, type: KNIGHT, x: 10, y: 95}
-      - {player: 1, type: KNIGHT, x: 10, y: 97}
-      - {player: 1, type: SPEARMAN, x: 3, y: 99}
-      - {player: 1, type: SPEARMAN, x: 5, y: 99}
-      - {player: 1, type: SPEARMAN, x: 7, y: 99}
-      - {player: 1, type: CROSSBOWMAN, x: 9, y: 99}
-      - {player: 1, type: CROSSBOWMAN, x: 9, y: 100}
-      - {player: 1, type: CROSSBOWMAN, x: 3, y: 92}
-      - {player: 1, type: CROSSBOWMAN, x: 4, y: 92}
+      - {player: 1, type: KNIGHT, at: caravan_start, count: 3}
+      - {player: 1, type: SPEARMAN, at: caravan_start, count: 3, min_dist: 2}
+      - {player: 1, type: CROSSBOWMAN, at: caravan_start, count: 4, min_dist: 3}
     blocks:
       - {use: anchor, player: 2, at: [141, 2]}
+      - use: escort
+        name: Caravan
+        unit: TRADE_CART_FULL
+        count: 5
+        start: caravan_start
+        waypoints: [way_west, way_east]
+        destination: fort
+        speed: 0.55              # slower than default so the trip takes ~5 minutes
+        count_var: carts_arrived
+        store_key: carts_arrived
+        done_effects:
+          - {$helper: say_var, text: "Carts delivered: %d", var: carts_arrived}
+          - {type: activate_trigger, trigger_id: Caravan Victory}
+        lost_effects:
+          - {type: declare_victory, source_player: 2, enabled: true}
+      - use: objective
+        name: Caravan Objective
+        text: "Bring the supply carts to the fort. At least one must arrive."
+        conditions:
+          - {type: own_fewer_objects, source_player: 1, object_list: TRADE_CART_FULL, quantity: 0}
+          - {type: variable_value, variable: carts_arrived, comparison: LARGER_OR_EQUAL, quantity: 1}
+      # Raiders hunt the carts (chase) instead of waiting at a fixed point.
       - use: waves
         name: Raid West
         enemy: 2
         spawns: [raid_west]
         target: way_west
+        chase: {player: 1, unit: TRADE_CART_FULL, interval_sec: 5}
         announce: "Raiders at the western ford!"
         waves:
           - {at: 40, units: {SCOUT_CAVALRY: 3}}
@@ -93,67 +110,31 @@ missions:
         enemy: 2
         spawns: [raid_east, raid_south]
         target: way_east
+        chase: {player: 1, unit: TRADE_CART_FULL, interval_sec: 5}
         announce: "Raiders closing on the eastern road!"
         waves:
           - {at: 200, units: {SCOUT_CAVALRY: 4, ARCHER: 2}, spawn: 0}
           - {at: 250, units: {SCOUT_CAVALRY: 3, SPEARMAN: 3}, spawn: 1}
           - {at: 300, units: {KNIGHT: 2, ARCHER: 4}, spawn: 0}
     triggers:
-      - name: Caravan Sets Out
+      - name: Caravan Briefing
         conditions: [{type: timer, timer: {$secs: 5}}]
         effects:
-          # Slow the carts so the trip takes ~5 minutes instead of ~2.
-          - {type: modify_attribute, object_list_unit_id: TRADE_CART_FULL, source_player: 1,
-             object_attributes: MOVEMENT_SPEED, operation: SET, quantity: 0.55}
-          - {type: task_object, object_list_unit_id: TRADE_CART_FULL, source_player: 1,
-             area: caravan_start, location: fort, action_type: MOVE}
           - {type: display_instructions, source_player: 1, display_time: 10, instruction_panel_position: 0,
              message: "The carts roll out. They follow the road to the fort on their own; keep the raiders off them."}
-      # One cart unloads per second while any cart stands in the fort.
-      - name: Cart Unloads
-        looping: true
-        conditions:
-          - {type: objects_in_area, source_player: 1, object_list: TRADE_CART_FULL, area: fort, quantity: 1}
-        effects:
-          - {type: remove_object, object_list_unit_id: TRADE_CART_FULL, source_player: 1, area: fort, max_units_affected: 1}
-          - {type: change_variable, variable: carts_arrived, operation: ADD, quantity: 1}
-          - {type: send_chat, source_player: 1, message: "A supply cart reaches the fort."}
-      - name: Caravan Lost
-        conditions:
-          - {type: own_fewer_objects, source_player: 1, object_list: TRADE_CART_FULL, quantity: 0}
-          - {type: variable_value, variable: carts_arrived, comparison: EQUAL, quantity: 0}
-        effects:
-          - {type: declare_victory, source_player: 2, enabled: true}
-      - name: Caravan Done
-        conditions:
-          - {type: own_fewer_objects, source_player: 1, object_list: TRADE_CART_FULL, quantity: 0}
-          - {type: variable_value, variable: carts_arrived, comparison: LARGER_OR_EQUAL, quantity: 1}
-        effects:
-          - {type: store_key_value, variable: carts_arrived, message: carts_arrived}
-          - {type: display_instructions, source_player: 1, display_time: 8, instruction_panel_position: 0,
-             message: "The surviving carts are inside the walls."}
-          - {type: activate_trigger, trigger_id: Caravan Victory}
       - name: Caravan Victory
         enabled: false
         conditions: [{type: timer, timer: 5}]
         effects: [{type: declare_victory, source_player: 1, enabled: true}]
-      - name: Caravan Objective
-        display_as_objective: true
-        description: "Bring the supply carts to the fort. At least one must arrive."
-        short_description: "Escort the carts"
-        conditions:
-          - {type: own_fewer_objects, source_player: 1, object_list: TRADE_CART_FULL, quantity: 0}
-          - {type: variable_value, variable: carts_arrived, comparison: LARGER_OR_EQUAL, quantity: 1}
     telemetry:
       players: [1, 2]
       track_vars: [carts_arrived]
-      events: {"Cart Unloads": 1, "Caravan Lost": 2, "Caravan Done": 3}
+      events: {"Caravan Arrive": 1, "Caravan Lost": 2, "Caravan Done": 3}
 
   # ------------------------------------------------------------------ 2: hold the fords
   - id: siege
     file: frontier_2_the_two_fords
     map:
-      <<: *valley
       players: [{position: [122, 104], base_radius: 13, villagers: 8, town_center: true, scout: false}]
       extra_players: 1
       forests: {coverage: 0.16, clumps: 14, border: 3, player_woodlines: 3, stragglers: 3}
@@ -169,9 +150,6 @@ missions:
         - {unit: HOUSE, position: fort, player: 1, offset: [9, 4]}
     players:
       1: {civilization: BYZANTINES, starting_age: FEUDAL, food: 200, wood: 200, gold: 100, stone: 100, population_cap: 125}
-      2: {civilization: MAGYARS}
-    diplomacy: [{player: 1, others: [2], state: ENEMY}]
-    options: {victory_condition: CUSTOM}
     messages:
       instructions: "The Two Fords. The raiders are coming in force across the two fords north of the fort. Hold for 20 minutes. Every cart you brought in mission 1 adds 100 food, 100 wood and 50 gold. Partway through, decide what to do with the old bridge."
       victory: "The fords ran red, but the fort stands."
@@ -180,14 +158,14 @@ missions:
       - {use: anchor, player: 2, at: [141, 2]}
       - use: bank_load
         keys: {carts_arrived: 0}
+      # perk_effects doubles as "apply once per unit of a variable": +supplies per cart.
       - use: perk_effects
         name: Supply Bonus
         var: carts_arrived
         levels:
           1: &cart [{type: modify_resource, tribute_list: FOOD_STORAGE, quantity: 100, operation: ADD, source_player: 1},
                     {type: modify_resource, tribute_list: WOOD_STORAGE, quantity: 100, operation: ADD, source_player: 1},
-                    {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 50, operation: ADD, source_player: 1},
-                    {type: send_chat, source_player: 1, message: "Supplies unpacked from a cart: +100 food, +100 wood, +50 gold."}]
+                    {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 50, operation: ADD, source_player: 1}]
           2: *cart
           3: *cart
           4: *cart
@@ -215,36 +193,30 @@ missions:
             - {from_min: 0, units: [SCOUT_CAVALRY, ARCHER, MAN_AT_ARMS]}
             - {from_min: 7, units: [LIGHT_CAVALRY, CROSSBOWMAN, LONG_SWORDSMAN]}
             - {from_min: 14, units: [KNIGHT, CROSSBOWMAN, LONG_SWORDSMAN, SPEARMAN]}
-    triggers:
-      - name: Bridge Question
-        conditions: [{type: timer, timer: {$secs: 480}}]
-        effects:
-          - {type: create_decision, decision_id: 1,
-             message: "Scouts report the old bridge west of the fords can be saved. Rebuild it to bring traders (more resources when we strike back), or burn it so the enemy has fewer ways to reinforce?",
-             message_option1: "Rebuild the bridge", message_option2: "Burn the bridge"}
-      # decision_option takes 1/2: the names Option1/Option2 are rejected (see docs/acceptance-frontier.md).
-      - name: Bridge Rebuilt
-        conditions: [{type: decision_triggered, decision_id: 1, decision_option: 1}]
-        effects:
-          - {type: change_variable, variable: bridge_choice, operation: SET, quantity: 1}
-          - {type: store_key_value, variable: bridge_choice, message: bridge_choice}
-          - {type: send_chat, source_player: 1, message: "Carpenters set to work on the bridge. Traders will follow."}
-      - name: Bridge Burned
-        conditions: [{type: decision_triggered, decision_id: 1, decision_option: 2}]
-        effects:
-          - {type: change_variable, variable: bridge_choice, operation: SET, quantity: 2}
-          - {type: store_key_value, variable: bridge_choice, message: bridge_choice}
-          - {type: send_chat, source_player: 1, message: "The old bridge burns. The enemy will have to come the long way."}
-    telemetry:
-      players: [1, 2]
-      track_vars: [carts_arrived, bridge_choice]
-      events: {"Bridge Rebuilt": 1, "Bridge Burned": 2, "Survive Complete": 3}
+      - use: choice
+        name: Bridge
+        at: 480
+        prompt: "Scouts report the old bridge west of the fords can be saved. Rebuild it to bring traders (more resources when we strike back), or burn it so the enemy has fewer ways to reinforce?"
+        var: bridge_choice
+        store_key: bridge_choice
+        default_option: 1
+        timeout_sec: 60
+        options:
+          - label: "Rebuild the bridge"
+            value: 1
+            effects: [{type: send_chat, source_player: 1, message: "Carpenters set to work on the bridge. Traders will follow."}]
+          - label: "Burn the bridge"
+            value: 2
+            effects: [{type: send_chat, source_player: 1, message: "The old bridge burns. The enemy will have to come the long way."}]
+      - use: telemetry
+        players: [1, 2]
+        track_vars: [carts_arrived, bridge_choice]
+        events: {"Bridge 1": 1, "Bridge 2": 2, "Survive Complete": 3}
 
   # ------------------------------------------------------------------ 3: the counter-attack
   - id: strike
     file: frontier_3_across_the_river
     map:
-      <<: *valley
       players:
         - {position: [122, 104], base_radius: 13, villagers: 10, town_center: true, scout: true}
         - {position: [72, 22], base_radius: 14, villagers: 0, town_center: false, scout: false}
@@ -267,20 +239,14 @@ missions:
         - {unit: YURT_A, position: enemy_camp, player: 2, offset: [4, -10]}
     players:
       1: {civilization: BYZANTINES, starting_age: CASTLE, food: 400, wood: 400, gold: 300, stone: 200, population_cap: 150}
-      2: {civilization: MAGYARS, starting_age: CASTLE}
-    diplomacy: [{player: 1, others: [2], state: ENEMY}]
-    options: {victory_condition: CUSTOM}
+      2: {starting_age: CASTLE}
     messages:
       instructions: "Across the River. Take the fight to them: destroy every building in the raider camp north of the river. What you did with the old bridge decides how strong you start and how hard they hit back."
       victory: "The raider camp is ash. The frontier is quiet, for now."
       loss: "The castle has fallen."
     units:
-      # Explicit tiles: `at: enemy_camp` would stack every unit on the camp's centre tile.
-      - {player: 2, type: KNIGHT, x: 69, y: 31}
-      - {player: 2, type: KNIGHT, x: 75, y: 31}
-      - {player: 2, type: CROSSBOWMAN, x: 70, y: 33}
-      - {player: 2, type: CROSSBOWMAN, x: 72, y: 33}
-      - {player: 2, type: CROSSBOWMAN, x: 74, y: 33}
+      - {player: 2, type: KNIGHT, at: camp_yard, count: 2}
+      - {player: 2, type: CROSSBOWMAN, at: camp_yard, count: 3, min_dist: 2}
     blocks:
       - use: bank_load
         keys: {bridge_choice: 1}
@@ -305,12 +271,14 @@ missions:
           - {at: 480, units: {KNIGHT: 3, PIKEMAN: 3, CROSSBOWMAN: 3}}
           - {at: 720, units: {KNIGHT: 4, CROSSBOWMAN: 4, MANGONEL: 1}}
           - {at: 960, units: {KNIGHT: 5, PIKEMAN: 4, CROSSBOWMAN: 4}}
-      # Extra raids over the rebuilt bridge; switched off below when the bridge was burned.
+      # Extra raids over the rebuilt bridge: only when it was rebuilt.
       - use: waves
         name: Bridge Raid
+        when: [{type: variable_value, variable: bridge_choice, comparison: EQUAL, quantity: 1}]
         enemy: 2
         spawns: [camp_yard]
         target: fort
+        keepalive_sec: 0
         announce: "Raiders pour over the rebuilt bridge!"
         waves:
           - {at: 360, units: {LIGHT_CAVALRY: 5}}
@@ -322,20 +290,13 @@ missions:
         effects:
           - {type: modify_resource, tribute_list: WOOD_STORAGE, quantity: 400, operation: ADD, source_player: 1}
           - {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 400, operation: ADD, source_player: 1}
-          - {type: create_object, object_list_unit_id: TRADE_CART_EMPTY, source_player: 1, location: [114, 110]}
+          - {$helper: spawn, unit: VILLAGER_MALE, count: 4, player: 1, at: fort, min_dist: 4}
+          - {$helper: spawn, unit: TRADE_CART_EMPTY, count: 1, player: 1, at: fort, min_dist: 7}
           - {type: display_instructions, source_player: 1, display_time: 12, instruction_panel_position: 0,
              message: "The rebuilt bridge brought traders: +400 wood, +400 gold, 4 villagers. But the enemy can use it too."}
-      # Own trigger because a helper can't be spliced into a longer effects list (see acceptance notes).
-      # spawn puts each unit on its own tile: create_object effects aimed at one tile place only one.
-      - name: Bridge Rebuilt Settlers
-        conditions: [{type: variable_value, variable: bridge_choice, comparison: EQUAL, quantity: 1}]
-        effects: {$helper: spawn, unit: VILLAGER_MALE, count: 4, player: 1, at: fort, min_dist: 4}
       - name: Bridge Burned Calm
         conditions: [{type: variable_value, variable: bridge_choice, comparison: EQUAL, quantity: 2}]
         effects:
-          - {type: deactivate_trigger, trigger_id: Bridge Raid 1}
-          - {type: deactivate_trigger, trigger_id: Bridge Raid 2}
-          - {type: deactivate_trigger, trigger_id: Bridge Raid 3}
           - {type: display_instructions, source_player: 1, display_time: 12, instruction_panel_position: 0,
              message: "With the bridge burned, the raiders can only reinforce through the fords. Expect fewer counter-raids."}
     telemetry:

@@ -11,7 +11,9 @@ def anchor(ctx: Ctx, *, player: int, at=(1, 1), unit: str | int = "BARRACKS", na
     Verified in game: a player whose only objects are Houses is defeated at once, which hands
     the other side an instant victory even with the victory condition set to Custom. This
     places a building that counts for survival, then makes it unattackable, untargetable and
-    unselectable at game start. Put it in a corner nobody visits."""
+    unselectable at game start. Put it in a corner nobody visits.
+
+    Triggers created: "<name>" (default "Anchor P<player>")."""
     x, y = ctx.point(at)
     um = ctx.scenario.unit_manager
     for other in um.get_units_in_area(x1=x - 2, y1=y - 2, x2=x + 3, y2=y + 3):  # trees, resources

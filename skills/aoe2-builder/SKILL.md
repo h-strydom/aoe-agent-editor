@@ -12,10 +12,11 @@ Two ways to build, which you can mix:
 ## Compile loop
 1. Write or adjust the spec (see `aoe2-campaign-designer`, `guide("campaign-spec")`).
 2. `compile_campaign(spec="path/campaign.yaml", out_dir="out/<name>", test_mode=true)`
-   - Block errors name the mission and block. Errors in raw `triggers:` (bad enum names, unknown
-     params) don't name the mission or trigger yet, so bisect by trigger. Fix the spec, not the output.
-   - Unknown mission-level keys (e.g. a typo like `trigers:`) are ignored silently. If a section seems
-     to have no effect, check its spelling.
+   - Errors name the mission and the block or trigger/effect, e.g.
+     `[m1] triggers: trigger 'Bridge' effect 2 (create_object): Unknown object 'X'`. Fix the spec, not
+     the output. A failed compile leaves `out_dir` untouched.
+   - Read `warnings` in the report: unknown keys (typos like `trigers:`) and several units created on
+     one tile (use `spawn`) show up there.
    - Check `xs_ok` and `xs_errors` in the report; they must be clean.
 3. **Look at every preview PNG** (`missions[].preview`). Check that spawns, pads, gates and bases sit where the design says, that no building sits on a road or in water, and that areas don't overlap by accident.
 4. Spot-check the logic: `scenario_open(<scenario>)`, then `triggers_list` and `trigger_get(name)` for the key triggers.

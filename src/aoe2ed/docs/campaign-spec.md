@@ -1,13 +1,17 @@
 # Campaign spec
 
 A campaign spec is a YAML (or JSON) file that `compile_campaign` turns into scenarios, PNG
-previews, a `.aoe2campaign` and `build_report.json`. A full working example is
-`examples/crucible/campaign.yaml`.
+previews, a `.aoe2campaign` and `build_report.json`. Two full working examples:
+`examples/crucible/campaign.yaml` (roguelite: hub shop plus survival runs) and
+`examples/frontier/campaign.yaml` (story campaign: escort, siege with a choice, counter-attack).
 
 ```yaml
 name: my_campaign        # internal name. The campaign bank is scoped by it, so never rename a released campaign
 title: My Campaign       # optional
 test_mode: {time_scale: 0.1}   # used when compiling with test_mode=true
+defaults:                # optional: keys every mission inherits. Dict values (map, players, options...)
+  map: {size: 144, seed: 11, water: [...]}   # merge one level with the mission's own, so missions can
+  options: {victory_condition: CUSTOM}       # share one map and override single fields
 missions:                # play order. Mission N+1 unlocks after mission N is won
   - id: m1               # your reference
     file: my_campaign_1_intro    # scenario file name, no extension. Prefix with the campaign name
@@ -22,17 +26,42 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
     diplomacy: [{player: 1, others: [2], state: ENEMY}]     # ALLY | NEUTRAL | ENEMY, mutual by default
     options: {victory_condition: CUSTOM}                    # always CUSTOM when triggers decide the ending
     messages: {instructions: "...", hints: "...", victory: "...", loss: "...", history: "..."}
-    units: [{player: 1, type: KNIGHT, x: 10, y: 12}, {player: 1, type: CHAMPION, at: plaza, caption: Hero}]
+    units: [{player: 1, type: KNIGHT, x: 10, y: 12}, {player: 1, type: CHAMPION, at: plaza, caption: Hero},
+            {player: 2, type: CROSSBOWMAN, at: camp, count: 5, min_dist: 2}]   # count: spread over free tiles
     # --- logic, applied in this order
-    blocks:   [{use: <block>, ...params}]   # see blocks_list()
+    blocks:   [{use: <block>, when: [<conditions>]?, ...params}]   # see blocks_list()
     triggers: [<trigger dict>]              # raw triggers (triggers_add format)
     xs: "..."                               # extra XS (lint with xs_check first)
     telemetry: true | {players: [1, 2], track_vars: [...], interval_sec: 10, events: {"Trigger name": 1}}
 ```
 
+Keys starting with `x-` are ignored (use them for YAML anchors). Any other unknown key is reported
+in `build_report.json` → `warnings`, so a typo like `trigers:` doesn't silently do nothing.
+
+## Blocks
+`blocks_list()` documents every block, including the trigger names it creates (hook into them with
+`activate_trigger` or `deactivate_trigger`). The ones you'll use most:
+- **Structure:** `survive`, `objective`, `lose_if_destroyed`, `anchor`, `run_end`
+- **Enemies:** `waves` (+ `{$helper: escalating}`), with `chase: {player, unit}` to hunt moving units
+- **Story:** `escort` (a convoy that drives itself, with arrival count and Done/Lost hooks) and `choice`
+  (a two-option decision whose answer is stored, with a timeout default)
+- **Progression:** `bank_load`, `bank_store`, `pad_shop`, `perk_effects` (also handy for "apply once per
+  unit of a variable"), `boon_offers`
+- **Testing:** `telemetry` (or the mission-level `telemetry:` key)
+
+`when: [conditions]` on any block adds those conditions to every trigger the block creates, which
+switches the whole block on a variable, e.g. extra raids only if `bridge_choice == 1`. One-shot
+triggers then fire when the condition becomes true, even if their timer passed earlier.
+
+Raw `triggers:` exist before the blocks run, so blocks can reference them by name (for example
+`done_effects: [{type: activate_trigger, trigger_id: My Victory}]`). They are still placed after the
+block triggers in the final list.
+
 ## Directives (usable inside block params and triggers)
 - `{$helper: escalating, ...}`, `{$helper: earn, var: earned, amount: 10}`, `{$helper: var_to_resource, var: x}`,
-  `{$helper: resource_to_var, var: x}`: replaced by the helper's result.
+  `{$helper: resource_to_var, var: x}`: replaced by the helper's result. A helper that returns a list
+  (`spawn`, `escalating`) inside a list is spliced in, so it can sit among other effects.
+- `{$helper: say_var, text: "Carts delivered: %d", var: carts_arrived}`: a chat line showing a variable.
 - `{$helper: spawn, unit: KNIGHT, count: 5, at: player1_base, min_dist: 4}`: N `create_object` effects on
   distinct tiles. Use it whenever you create more than one unit, because effects aimed at the same tile place only one.
 - `{$secs: 2700}`: game seconds, scaled in test mode like every block timer. Use it for every
@@ -81,3 +110,7 @@ PNG preview before going further.
 - Missions that must keep their stores should end in victory. `run_end` does this for roguelite runs.
 - Don't use fractional quantities on integer stats such as HP or attack; the compiler rejects them.
 - Check `guide("engine-facts")` before relying on any engine behaviour, and add to it after playtests.
+- Errors name the mission and block or trigger: `[siege] block 3 (waves): ...`,
+  `[m1] triggers: trigger 'Bridge' effect 2 (create_object): ...`. A failed compile writes nothing.
+- Test mode scales time, not movement. A mission paced by unit travel (escorts) needs a real-speed
+  playtest, or a spec-level speed tweak while testing.
