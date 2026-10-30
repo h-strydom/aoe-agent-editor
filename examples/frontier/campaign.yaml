@@ -322,11 +322,12 @@ missions:
         effects:
           - {type: modify_resource, tribute_list: WOOD_STORAGE, quantity: 400, operation: ADD, source_player: 1}
           - {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 400, operation: ADD, source_player: 1}
-          - {type: create_object, object_list_unit_id: VILLAGER_MALE, source_player: 1, location: fort}
-          - {type: create_object, object_list_unit_id: VILLAGER_MALE, source_player: 1, location: fort}
-          - {type: create_object, object_list_unit_id: VILLAGER_FEMALE, source_player: 1, location: fort}
-          - {type: create_object, object_list_unit_id: VILLAGER_FEMALE, source_player: 1, location: fort}
-          - {type: create_object, object_list_unit_id: TRADE_CART_EMPTY, source_player: 1, location: fort}
+          # One tile per unit: create_object effects aimed at the same tile place only one (engine-facts).
+          - {type: create_object, object_list_unit_id: VILLAGER_MALE, source_player: 1, location: [116, 110]}
+          - {type: create_object, object_list_unit_id: VILLAGER_MALE, source_player: 1, location: [118, 110]}
+          - {type: create_object, object_list_unit_id: VILLAGER_FEMALE, source_player: 1, location: [120, 110]}
+          - {type: create_object, object_list_unit_id: VILLAGER_FEMALE, source_player: 1, location: [116, 112]}
+          - {type: create_object, object_list_unit_id: TRADE_CART_EMPTY, source_player: 1, location: [114, 110]}
           - {type: display_instructions, source_player: 1, display_time: 12, instruction_panel_position: 0,
              message: "The rebuilt bridge brought traders: +400 wood, +400 gold, 4 villagers. But the enemy can use it too."}
       - name: Bridge Burned Calm

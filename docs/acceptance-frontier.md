@@ -154,6 +154,14 @@ doc was corrected in this commit.
     when checking an escort start. *Fix:* a shape per class (cart, cavalry, infantry, ranged), or
     label `caption`ed units.
 
+26. **Several units spawned on one tile become one unit.** A Crucible playtest on the same day
+    showed that `create_object` effects aimed at the same tile place only one unit. My first M3
+    "bridge rebuilt" bonus created 4 villagers and a cart at `location: fort`, so it would have given
+    one villager. Nothing at compile time warns about this. *Did:* explicit, distinct tiles (the
+    `spawn` helper, `{$helper: spawn, unit, count, at}`, landed in 015f8ec while this test ran). *Fix:*
+    a compile-time warning when two or more `create_object` effects in one trigger share a location.
+    Raw-trigger users should be pointed at the helper from the triggers skill's "Spawn and attack" pattern.
+
 ## Unverified engine behaviour this campaign relies on
 
 None of these are in `guide("engine-facts")`. Check them in the first playtest and record the results.
