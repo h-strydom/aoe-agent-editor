@@ -69,3 +69,52 @@ def check(code: str | None = None, path: Path | None = None, include_dirs: list[
         for d in diags:
             d["file"] = "<code>"
     return {"ok": not any(d["severity"] == "error" for d in diags), "diagnostics": diags}
+
+
+# ---------------------------------------------------------------- API reference
+
+_PRELUDE_CACHE: str | None = None
+
+
+def prelude() -> str:
+    """The documented XS API (every function and constant) embedded in the xs-check binary by
+    its authors. Extracted at runtime, never redistributed."""
+    global _PRELUDE_CACHE
+    if _PRELUDE_CACHE is None:
+        b = binary().read_bytes()
+        start = b.find(b"prelude.xs// +")
+        if start < 0:
+            raise RuntimeError("Could not find the XS prelude inside xs-check")
+        start += len(b"prelude.xs")
+        end = b.find(b"Prelude can't produce parse errors", start)
+        _PRELUDE_CACHE = b[start:end].decode("utf-8", errors="replace").replace("\r", "")
+    return _PRELUDE_CACHE
+
+
+_DECL = re.compile(r"/\*\*(?P<doc>.*?)\*/\s*(?P<sig>(?:extern\s+)?(?:const\s+)?\w+\s+(?P<name>\w+)\s*(?:\([^)]*\))?)",
+                   re.S)
+
+
+def api_entries() -> list[dict]:
+    out = []
+    for m in _DECL.finditer(prelude()):
+        doc = re.sub(r"^\s*\*\s?", "", m.group("doc"), flags=re.M).strip()
+        out.append({"name": m.group("name"), "signature": m.group("sig").replace("extern ", "").strip(),
+                    "doc": doc})
+    return out
+
+
+def api_search(query: str, limit: int = 20, with_docs: bool = True) -> list[dict]:
+    q = query.lower()
+    hits = []
+    for e in api_entries():
+        name = e["name"].lower()
+        if q in name:
+            score = 0 if name == q else 1 if name.startswith(q) else 2
+        elif q in e["doc"].lower():
+            score = 3
+        else:
+            continue
+        hits.append((score, len(name), e))
+    hits.sort(key=lambda h: (h[0], h[1]))
+    return [e if with_docs else {k: e[k] for k in ("name", "signature")} for *_, e in hits[:limit]]

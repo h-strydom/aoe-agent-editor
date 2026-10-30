@@ -167,6 +167,8 @@ class Resolver:
                 out[k] = self.variable(v)
             elif ds == "TriggerId" or k == "trigger_id":
                 out[k] = self.trigger(v)
+            elif k.startswith("message") or k in ("sound_name", "xs_function"):
+                out[k] = str(v)
             else:
                 out[k] = resolve_dataset_value(ds, v)
         return out

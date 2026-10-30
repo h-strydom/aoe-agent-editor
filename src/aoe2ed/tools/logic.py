@@ -176,3 +176,11 @@ def xs_check(code: str | None = None, path: str | None = None) -> dict:
     if code is None and path is None:
         raise ValueError("Pass code or path")
     return check(code=code, path=Path(path) if path else None)
+
+
+@tool
+def xs_api(query: str, limit: int = 15, with_docs: bool = True) -> list[dict]:
+    """Search the documented XS API (functions + constants) by name or doc text, e.g.
+    'xsCreateFile', 'random', 'cAttributeGold', 'Trigger'. Returns signature + doc."""
+    from ..xs import api_search
+    return api_search(query, limit, with_docs)
