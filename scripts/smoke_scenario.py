@@ -50,9 +50,9 @@ def build() -> str:
         "gold": {"label": "Plunder: +300 gold", "effects": [
             {"type": "modify_resource", "tribute_list": "GOLD_STORAGE", "quantity": 300, "operation": "ADD",
              "source_player": 1}]},
-        "hp": {"label": "Fortify: +50% archer HP", "effects": [
+        "hp": {"label": "Fortify: +15 archer HP", "effects": [
             {"type": "modify_attribute", "object_list_unit_id": "ARCHER", "source_player": 1,
-             "object_attributes": "HIT_POINTS", "operation": "MULTIPLY", "quantity": 1.5}]}})
+             "object_attributes": "HIT_POINTS", "operation": "ADD", "quantity": 15}]}})
     B.run_end(ctx, success_trigger=sv["complete_trigger"], success_bonus=10,
               fail_conditions=[{"type": "own_fewer_objects", "source_player": 1, "object_list": "TOWN_CENTER",
                                 "quantity": 0}])

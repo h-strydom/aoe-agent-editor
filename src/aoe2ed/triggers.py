@@ -83,9 +83,9 @@ def _ce_to_dict(obj, dataset, type_attr: str, enum_cls, verbose: bool) -> dict:
     out: dict[str, Any] = {"type": enum_cls(type_id).name.lower()}
     names: dict[str, str] = {}
     for a in dataset.attributes.get(type_id, []):
-        if a == type_attr:
+        if a == type_attr or a == "quantity_float":  # quantity_float is surfaced through `quantity`
             continue
-        v = getattr(obj, a)
+        v = getattr(obj, a, None)
         if v is None or v == -1 or v == [] or v == "":
             continue
         out[a] = v
@@ -156,6 +156,8 @@ class Resolver:
         if "location" in p:
             x, y = p.pop("location")
             p.update(location_x=x, location_y=y)
+        if "quantity_float" in p:
+            p["quantity"] = p.pop("quantity_float")
         allowed = set(dataset.attributes[type_id])
         unknown = set(p) - allowed
         if unknown:
@@ -171,7 +173,25 @@ class Resolver:
                 out[k] = str(v)
             else:
                 out[k] = resolve_dataset_value(ds, v)
+        _check_fractional_quantity(dataset, type_id, out)
         return out
+
+
+def _check_fractional_quantity(dataset, type_id: int, params: dict) -> None:
+    """Verified in game: a fractional quantity on an integer attribute is truncated, so
+    'MULTIPLY HIT_POINTS by 1.5' silently becomes 'multiply by 1'. Only attributes the engine
+    stores as floats (speed, rate of fire, work rate...) accept fractions."""
+    q = params.get("quantity")
+    if not isinstance(q, float) or q.is_integer():
+        return
+    from AoE2ScenarioParser.datasets.trigger_lists import ObjectAttribute
+    attr = params.get("object_attributes")
+    if attr is not None and "quantity_float" in dataset.attributes[type_id] \
+            and ObjectAttribute._storage_type(attr) == "float":
+        return
+    name = ObjectAttribute(attr).name if attr is not None else "this parameter"
+    raise ValueError(f"quantity {q} would be truncated: {name} is an integer value. Use a whole "
+                     f"number, e.g. operation ADD with the computed amount instead of MULTIPLY by {q}.")
 
 
 def add_condition(trigger, spec: dict, resolver: Resolver):

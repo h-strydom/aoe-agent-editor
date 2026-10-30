@@ -148,3 +148,14 @@ def test_campaign_build_roundtrip(tmp_path):
     out = call("campaign_extract", path=str(tmp_path / "c.aoe2campaign"), out_dir=str(tmp_path / "x"))
     h = call("scenario_open", path=out["files"][0])["handle"]
     assert call("scenario_summary", handle=h)["scenario_version"] == "1.59"
+
+
+def test_fractional_quantity(blank, tmp_path):
+    hp = {"type": "modify_attribute", "object_list_unit_id": "ARCHER", "source_player": 1,
+          "object_attributes": "HIT_POINTS", "operation": "MULTIPLY", "quantity": 1.5}
+    with pytest.raises(ValueError, match="truncated"):
+        call("triggers_add", handle=blank, triggers=[{"name": "bad", "effects": [hp]}])
+    speed = {**hp, "object_attributes": "MOVEMENT_SPEED", "quantity": 1.15}
+    call("triggers_add", handle=blank, triggers=[{"name": "ok", "effects": [speed]}])
+    h2 = reload(blank, tmp_path)
+    assert call("trigger_get", handle=h2, trigger="ok")["effects"][0]["quantity"] == pytest.approx(1.15)
