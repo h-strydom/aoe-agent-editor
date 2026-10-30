@@ -1,0 +1,234 @@
+# The Crucible: a roguelite campaign inspired by AoE4's Crucible mode.
+#
+#   "The player survives a map for 45 minutes, then reaches a hub map where they spend
+#    metaprogression currency to upgrade their faction."
+#
+# Mission 1 (hub): walk your champion onto a pad to buy a perk level with Gold. Gold is loaded
+#   from the campaign bank ("meta_points") and leftovers are stored back. Step onto the exit flag to start a run.
+# Mission 2 (run): survive 45 minutes of escalating waves. Owned perks apply at the start, boons are
+#   offered every 10 minutes, and every wave survived pays currency. The run always ends in
+#   victory and banks what you earned. Replay the hub (answer YES to "save your choices"),
+#   spend, and replay the run.
+#
+# Build:  aoe2ed call compile_campaign '{"spec": "examples/crucible/campaign.yaml", "install": true}'
+# Test:   add "test_mode": true  -> every timer x0.1 (45 min run = 4.5 min)
+
+name: crucible
+title: The Crucible
+test_mode: {time_scale: 0.1}
+
+missions:
+  # ------------------------------------------------------------------ hub
+  - id: hub
+    file: crucible_1_encampment
+    map:
+      size: 72
+      seed: 3
+      biome: autumn
+      players: [{position: center, base_radius: 16, town_center: false, villagers: 0, scout: false}]
+      extra_players: 1
+      forests: {coverage: 0.22, clumps: 6, border: 6, player_woodlines: 0, stragglers: 0}
+      resources: {gold: [], stone: [], berries: 0, sheep: 0, deer: 0}
+      elevation: {hills: 2, height: [1, 2], radius: [4, 6]}
+      zones:
+        - {name: hub_plaza, kind: circle, center: center, radius: 7, terrain: ROAD, flat: true}
+        - {name: exit_gate, kind: edge, side: ne, width: 8, depth: 5}
+      roads: [{points: [hub_plaza, exit_gate], width: 3, wobble: 0.6}]
+      units:
+        - {unit: BLACKSMITH, position: hub_plaza, player: 1, offset: [0, 12]}
+        - {unit: UNIVERSITY, position: hub_plaza, player: 1, offset: [0, -12]}
+        - {unit: MONASTERY, position: hub_plaza, player: 1, offset: [-12, 0]}
+        - {unit: HOUSE, position: hub_plaza, player: 1, offset: [9, 9]}
+        - {unit: HOUSE, position: hub_plaza, player: 1, offset: [-9, 9]}
+    areas:
+      pad_eco:   [31, 31, 33, 33]
+      pad_guard: [39, 31, 41, 33]
+      pad_walls: [31, 39, 33, 41]
+      pad_drill: [39, 39, 41, 41]
+      pad_heat:  [35, 41, 37, 43]
+    points: {plaza: [36, 36]}
+    players:
+      1: {civilization: BRITONS, food: 0, wood: 0, stone: 0, gold: 0}
+      2: {civilization: GOTHS}
+    diplomacy: [{player: 1, others: [2], state: ENEMY}]
+    options: {victory_condition: CUSTOM}
+    messages:
+      instructions: "The Encampment. Walk your Champion onto a flag to buy a perk with Gold, then step onto the north-east gate to begin a run."
+    units:
+      - {player: 1, type: CHAMPION, at: plaza, caption: "Commander"}
+    blocks:
+      - {use: anchor, player: 2, at: [2, 69]}
+      - use: bank_load
+        keys: {meta_points: 0, perk_eco: 0, perk_guard: 0, perk_walls: 0, perk_drill: 0, heat: 0}
+      - use: pad_shop
+        exit_point: plaza
+        buyer_unit: CHAMPION
+        on_buy:
+          - {$helper: resource_to_var, var: meta_points}
+          - {type: store_key_value, variable: meta_points, message: meta_points}
+        perks:
+          - {key: perk_eco, label: Eager Hands, pad: pad_eco, costs: [100, 250, 500],
+             description: "+200 food and wood at the start of each run per level."}
+          - {key: perk_guard, label: Veteran Guard, pad: pad_guard, costs: [150, 400],
+             description: "+4 Men-at-Arms at the start of each run per level."}
+          - {key: perk_walls, label: Stone Bones, pad: pad_walls, costs: [120, 300],
+             description: "+800 Town Center HP per level."}
+          - {key: perk_drill, label: Drilled Infantry, pad: pad_drill, costs: [200, 450, 800],
+             description: "+10 HP for all infantry per level."}
+          - {key: heat, label: "Heat (harder, pays more)", pad: pad_heat, costs: [0, 0, 0],
+             description: "Bigger waves; +40 currency per level for a survived run."}
+    triggers:
+      - name: Hub Welcome
+        effects:
+          - {type: display_instructions, source_player: 1, display_time: 20, instruction_panel_position: 0,
+             message: "Welcome back, Commander. Tip: when replaying a mission, answer YES to 'save your choices' or your progress is lost."}
+      - name: Hub Gold
+        conditions: [{type: timer, timer: 2}]
+        effects: [{$helper: var_to_resource, var: meta_points}]
+      - name: Begin Run
+        conditions:
+          - {type: timer, timer: 3}
+          - {type: objects_in_area, source_player: 1, area: exit_gate, quantity: 1, object_list: CHAMPION}
+        effects:
+          - {$helper: resource_to_var, var: meta_points}
+          - {type: store_key_value, variable: meta_points, message: meta_points}
+          - {type: display_instructions, source_player: 1, display_time: 5, instruction_panel_position: 0,
+             message: "Marching to the Crucible..."}
+          - {type: activate_trigger, trigger_id: Hub Leave}
+      - name: Hub Leave
+        enabled: false
+        conditions: [{type: timer, timer: 3}]
+        effects: [{type: declare_victory, source_player: 1, enabled: true}]
+    telemetry: {players: [1], track_vars: [meta_points, perk_eco, perk_guard, perk_walls, perk_drill, heat]}
+
+  # ------------------------------------------------------------------ run
+  - id: run
+    file: crucible_2_the_long_night
+    map:
+      size: 144
+      seed: 45
+      biome: pine
+      players: [{base_radius: 13, villagers: 6}]
+      player_layout: center
+      extra_players: 1
+      forests: {coverage: 0.26, clumps: 22, border: 4, player_woodlines: 3, stragglers: 4}
+      resources: {gold: [8, 6, 5], stone: [6, 5], berries: 8, sheep: 6, deer: 4,
+                  neutral_gold: [6, 6, 5], neutral_stone: [5, 5]}
+      water:
+        - {kind: lake, name: lake_west, radius: 7, fish: 5}
+        - {kind: lake, name: lake_east, radius: 6, fish: 4}
+      elevation: {hills: 6, height: [2, 4], radius: [6, 11]}
+      zones:
+        - {name: spawn_north, kind: edge, side: n, depth: 12}
+        - {name: spawn_east, kind: edge, side: e, depth: 12}
+        - {name: spawn_south, kind: edge, side: s, depth: 12}
+        - {name: spawn_west, kind: edge, side: w, depth: 12}
+        - {name: choke_north, kind: choke, between: [spawn_north, center], at: 0.45, gap: 7, wall_length: 20}
+        - {name: choke_east, kind: choke, between: [spawn_east, center], at: 0.45, gap: 7, wall_length: 20}
+        - {name: choke_south, kind: choke, between: [spawn_south, center], at: 0.45, gap: 7, wall_length: 20}
+        - {name: choke_west, kind: choke, between: [spawn_west, center], at: 0.45, gap: 7, wall_length: 20}
+      roads:
+        - {points: [spawn_north, player1], width: 3, wobble: 1.0}
+        - {points: [spawn_east, player1], width: 3, wobble: 1.0}
+        - {points: [spawn_south, player1], width: 3, wobble: 1.0}
+        - {points: [spawn_west, player1], width: 3, wobble: 1.0}
+    players:
+      1: {civilization: BRITONS, starting_age: FEUDAL, food: 300, wood: 300, gold: 100, stone: 100, population_cap: 200}
+      2: {civilization: GOTHS}
+    diplomacy: [{player: 1, others: [2], state: ENEMY}]
+    options: {victory_condition: CUSTOM}
+    messages:
+      instructions: "The Long Night. Hold your Town Center for 45 minutes. Every wave you survive earns currency for the Encampment."
+    blocks:
+      - {use: anchor, player: 2, at: [72, 1]}
+      - use: bank_load
+        keys: {meta_points: 0, perk_eco: 0, perk_guard: 0, perk_walls: 0, perk_drill: 0, heat: 0}
+      - use: perk_effects
+        var: perk_eco
+        levels:
+          1: &eco [{type: modify_resource, tribute_list: FOOD_STORAGE, quantity: 200, operation: ADD, source_player: 1},
+                   {type: modify_resource, tribute_list: WOOD_STORAGE, quantity: 200, operation: ADD, source_player: 1}]
+          2: *eco
+          3: *eco
+      - use: perk_effects
+        var: perk_guard
+        levels:
+          1: &guard [{type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
+                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
+                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base},
+                     {type: create_object, object_list_unit_id: MAN_AT_ARMS, source_player: 1, location: player1_base}]
+          2: *guard
+      - use: perk_effects
+        var: perk_walls
+        levels:
+          1: &walls [{type: modify_attribute, object_list_unit_id: TOWN_CENTER, source_player: 1,
+                      object_attributes: HIT_POINTS, operation: ADD, quantity: 800}]
+          2: *walls
+      - use: perk_effects
+        var: perk_drill
+        levels:
+          1: &drill [{type: modify_attribute_for_class, object_group2: INFANTRY, source_player: 1,
+                      object_attributes: HIT_POINTS, operation: ADD, quantity: 10}]
+          2: *drill
+          3: *drill
+      - {use: survive, minutes: 45, on_complete: []}
+      - use: waves
+        enemy: 2
+        spawns: [spawn_north, spawn_east, spawn_south, spawn_west]
+        target: player1_base
+        scale_var: heat
+        scale_max: 3
+        scale_extra: {MAN_AT_ARMS: 2, ARCHER: 1}
+        on_wave: [{$helper: earn, var: earned, amount: 10}]
+        waves:
+          $helper: escalating
+          duration_min: 45
+          interval_sec: 120
+          first_at_sec: 90
+          base: 4
+          growth: 1.12
+          boss_every: 5
+          boss: {BATTERING_RAM: 1, KNIGHT: 2}
+          pools:
+            - {from_min: 0, units: [MILITIA, ARCHER]}
+            - {from_min: 10, units: [MAN_AT_ARMS, SPEARMAN, ARCHER]}
+            - {from_min: 20, units: [LONG_SWORDSMAN, PIKEMAN, CROSSBOWMAN, KNIGHT]}
+            - {from_min: 32, units: [TWO_HANDED_SWORDSMAN, HALBERDIER, ARBALESTER, CAVALIER]}
+      - use: boon_offers
+        boons:
+          plunder: {label: "Plunder: +400 gold", effects: [
+            {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 400, operation: ADD, source_player: 1}]}
+          reinforce: {label: "Reinforcements: 5 Crossbowmen", effects: [
+            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
+            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
+            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
+            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base},
+            {type: create_object, object_list_unit_id: CROSSBOWMAN, source_player: 1, location: player1_base}]}
+          fortify: {label: "Fortify: +1000 Town Center HP", effects: [
+            {type: modify_attribute, object_list_unit_id: TOWN_CENTER, source_player: 1,
+             object_attributes: HIT_POINTS, operation: ADD, quantity: 1000}]}
+          bounty: {label: "Bounty: +50 currency now", effects: [{$helper: earn, var: earned, amount: 50}]}
+          swift: {label: "Swift Feet: villagers +15% speed", effects: [
+            {type: modify_attribute_for_class, object_group2: CIVILIAN, source_player: 1,
+             object_attributes: MOVEMENT_SPEED, operation: MULTIPLY, quantity: 1.15}]}
+        offers:
+          - {at: 600, pairs: [[plunder, reinforce], [swift, fortify], [bounty, plunder]]}
+          - {at: 1200, pairs: [[reinforce, fortify], [bounty, swift], [plunder, fortify]]}
+          - {at: 1800, pairs: [[fortify, bounty], [reinforce, plunder], [swift, reinforce]]}
+          - {at: 2400, pairs: [[bounty, reinforce], [plunder, swift], [fortify, plunder]]}
+      - use: run_end
+        success_trigger: Survive Complete
+        success_bonus: 150
+        fail_conditions:
+          - {type: own_fewer_objects, source_player: 1, object_list: TOWN_CENTER, quantity: 0}
+    triggers:
+      - name: Heat pay 1
+        conditions: [{type: timer, timer: {$secs: 2690}}, {type: variable_value, variable: heat, comparison: LARGER_OR_EQUAL, quantity: 1}]
+        effects: [{$helper: earn, var: earned, amount: 40}]
+      - name: Heat pay 2
+        conditions: [{type: timer, timer: {$secs: 2690}}, {type: variable_value, variable: heat, comparison: LARGER_OR_EQUAL, quantity: 2}]
+        effects: [{$helper: earn, var: earned, amount: 40}]
+      - name: Heat pay 3
+        conditions: [{type: timer, timer: {$secs: 2690}}, {type: variable_value, variable: heat, comparison: LARGER_OR_EQUAL, quantity: 3}]
+        effects: [{$helper: earn, var: earned, amount: 40}]
+    telemetry: {players: [1, 2], track_vars: [meta_points, earned, heat, perk_eco, perk_guard, perk_walls, perk_drill]}

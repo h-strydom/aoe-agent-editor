@@ -11,12 +11,14 @@ from .base import Ctx
 
 def pad_shop(ctx: Ctx, *, perks: list[dict], buyer: int = 1, buyer_unit: str | int | None = None,
              resource: str = "GOLD_STORAGE", exit_point=None, store_on_buy: bool = True,
-             marker: str = "FLAG_A", name: str = "Shop") -> dict:
+             marker: str = "FLAG_A", on_buy: list[dict] | None = None, name: str = "Shop") -> dict:
     """perks: [{"key": "perk_eco", "label": "Eager Hands", "pad": area, "costs": [100, 200, 400],
                "description": "+10% gather rate per level"}]
     Each perk keeps its level in a variable named like its key (load it from the bank first).
     Buying level L needs level == L-1 and resource >= costs[L-1]; it deducts the cost, raises the
-    level, stores the key (if store_on_buy) and teleports the buyer to `exit_point`."""
+    level, stores the key (if store_on_buy) and teleports the buyer to `exit_point`.
+    on_buy: extra effects after every purchase, e.g. store the remaining currency right away so
+    quitting the mission cannot keep perks without paying for them."""
     ex, ey = ctx.point(exit_point) if exit_point is not None else (None, None)
     created = []
     for perk in perks:
@@ -42,6 +44,7 @@ def pad_shop(ctx: Ctx, *, perks: list[dict], buyer: int = 1, buyer_unit: str | i
                 {"type": "display_instructions", "source_player": buyer, "display_time": 6,
                  "message": f"Bought {label} level {lvl}. {desc}".strip(), "instruction_panel_position": 0},
                 *bounce,
+                *(on_buy or []),
             ]
             ctx.trigger(t, [in_pad,
                             {"type": "accumulate_attribute", "attribute": resource, "source_player": buyer,

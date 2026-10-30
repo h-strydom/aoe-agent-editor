@@ -34,7 +34,7 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Modify Attribute quantities are integers unless the attribute is stored as a float (speed, rate
   of fire, work rate...). `MULTIPLY HIT_POINTS by 1.5` became "multiply by 1" — no effect. The
   trigger layer now rejects fractional quantities on integer attributes. *Smoke test.*
-- Open: whether Modify Attribute HIT_POINTS raises the HP of units already on the map.
+- Modify Attribute HIT_POINTS ADD 15 on ARCHER took effect in game. *Smoke replay, user-confirmed.*
 
 ## Campaign bank (Store / Load / Delete Key Value)
 *Verified with the kv_* test campaigns, 2026-10-19.*

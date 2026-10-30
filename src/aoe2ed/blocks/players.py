@@ -13,6 +13,9 @@ def anchor(ctx: Ctx, *, player: int, at=(1, 1), unit: str | int = "BARRACKS", na
     places a building that counts for survival, then makes it unattackable, untargetable and
     unselectable at game start. Put it in a corner nobody visits."""
     x, y = ctx.point(at)
+    um = ctx.scenario.unit_manager
+    for other in um.get_units_in_area(x1=x - 2, y1=y - 2, x2=x + 3, y2=y + 3):  # trees, resources
+        um.remove_unit(unit=other)
     u = ctx.scenario.unit_manager.add_unit(player=player, unit_const=object_id(unit), x=x + 0.5, y=y + 0.5)
     sel = {"selected_object_ids": [u.reference_id], "source_player": player}
     name = name or f"Anchor P{player}"
