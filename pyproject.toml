@@ -1,0 +1,35 @@
+[project]
+name = "aoe2-agent-editor"
+version = "0.1.0"
+description = "Let AI agents build Age of Empires II DE scenarios and campaigns end to end: MCP server, CLI and building blocks over AoE2ScenarioParser."
+authors = [
+    { name = "Hannes Strydom", email = "13560787+h-strydom@users.noreply.github.com" }
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "AoE2ScenarioParser>=0.9.8",
+    "mcp>=1.9",
+    "pillow>=10",
+    "pyyaml>=6",
+]
+
+[project.scripts]
+aoe2ed = "aoe2ed.cli:main"
+aoe2-editor-mcp = "aoe2ed.mcp_server:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aoe2ed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["ignore::DeprecationWarning"]
