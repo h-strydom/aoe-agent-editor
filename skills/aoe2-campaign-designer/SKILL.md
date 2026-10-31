@@ -51,7 +51,8 @@ project, not in the plugin folder. Conventions:
 - Use a generated `map:` with named zones for everything that blocks refer to (spawns, pads, gates, objectives).
   Missions that share a map put it in `defaults: {map: ...}`.
 - Give every raw timer `{$secs: N}` so test mode scales it.
-- Turn on telemetry for every mission and track the key variables.
+- Turn on telemetry for every mission and track the key variables. Test builds include it; release
+  builds leave it out unless a mission sets `telemetry: {release: true}`.
 - Write numbers for the real game. Test mode scales the time.
 
 Then hand over to **aoe2-builder**.

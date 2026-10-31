@@ -1,6 +1,19 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1
+
+Fixes from the first install test (a fresh session using only the installed plugin).
+
+- MCP tool errors now reach the client with their message. MCP SDK 2.x showed only
+  "Error executing tool <name>" for anything that wasn't a ToolError.
+- Unknown effect or condition types say so, suggest close matches and explain the defeat idiom.
+- `lose_if_destroyed` defaults to a defeat (the opponent is declared the victor); `effects` is optional.
+- Map specs accept lobby size names (`size: medium` = 168).
+- Mission telemetry is included in test builds only, unless `telemetry: {release: true}`.
+- Map generation errors name the mission.
+- Docs: defeat idiom, corner vs edge zones, dense forest maps.
+
+## 0.1.0
 
 First public version.
 

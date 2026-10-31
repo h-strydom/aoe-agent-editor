@@ -22,6 +22,8 @@ description: Reference for Age of Empires II DE scenario triggers, covering all 
 - **Every N seconds:** `looping: true` plus `timer: N`.
 - **Area entry:** `objects_in_area` with `source_player`, `area` and `quantity: 1`. Add `object_list` for a specific unit.
 - **Unit death / building lost:** `own_fewer_objects` with `object_list` and `quantity: 0`, or `destroy_object` with `unit_object` (a ref).
+- **Making a player lose:** there is no defeat effect. Use `declare_victory` with `source_player` set to the
+  opponent and `enabled: true` (the `lose_if_destroyed` block does this by default).
 - **Resource threshold:** `accumulate_attribute` (attribute e.g. `GOLD_STORAGE`). Add `inverted: true` for "less than".
 - **Spawn and attack:** one `create_object` per unit **on distinct tiles** (effects aimed at one tile place
   only one unit: use `{$helper: spawn, unit, count, at}`), then `attack_move` with the spawn `area` and the

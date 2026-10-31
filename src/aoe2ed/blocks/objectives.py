@@ -40,11 +40,16 @@ def objective(ctx: Ctx, name: str, text: str, conditions: list[dict], effects: l
     return {"triggers": [name]}
 
 
-def lose_if_destroyed(ctx: Ctx, *, player: int, unit_type: str | int, effects: list[dict],
-                      name: str = "Core Lost") -> dict:
-    """Run `effects` when `player` has no `unit_type` left (e.g. their Town Center or Wonder).
+def lose_if_destroyed(ctx: Ctx, *, player: int = 1, unit_type: str | int, effects: list[dict] | None = None,
+                      winner: int | None = None, name: str = "Core Lost") -> dict:
+    """When `player` has no `unit_type` left (e.g. their Town Center or Wonder), run `effects`.
+    By default that's a defeat: there is no "declare defeat" effect, so the opponent `winner`
+    (default: player 2, or 1 if `player` is 2) is declared the victor.
 
     Triggers created: "<name>" (default "Core Lost")."""
+    if effects is None:
+        winner = winner if winner is not None else (2 if player != 2 else 1)
+        effects = [{"type": "declare_victory", "source_player": winner, "enabled": True}]
     ctx.trigger(name, [{"type": "own_fewer_objects", "source_player": player, "object_list": unit_type,
                         "quantity": 0}], effects)
     return {"triggers": [name]}

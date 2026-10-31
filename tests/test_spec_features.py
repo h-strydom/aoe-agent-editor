@@ -210,3 +210,23 @@ def test_factions_example_compiles(tmp_path):
     rep = compile_campaign(Path(__file__).parents[1] / "examples" / "factions" / "campaign.yaml",
                            out_dir=tmp_path, test_mode=True, render=False)
     assert rep["ok"] and rep["warnings"] == [] and len(rep["missions"]) == 2
+
+
+def test_defeat_default_size_names_and_release_telemetry(tmp_path):
+    spec = {"name": "t", "missions": [{
+        "id": "m", "map": {"size": "small", "seed": 1, "players": 1, "extra_players": 1},
+        "blocks": [{"use": "lose_if_destroyed", "unit_type": "TOWN_CENTER"}],
+        "telemetry": True}]}
+    rel = compile_campaign(spec, out_dir=tmp_path / "rel", render=False)
+    s = _built(rel)
+    assert s.map_manager.map_size == 144
+    eff = _effects(s, "Core Lost")[0]
+    assert eff["type"] == "declare_victory" and eff["source_player"] == 2
+    assert rel["missions"][0]["telemetry"] is None  # release build: no telemetry
+    test = compile_campaign(spec, out_dir=tmp_path / "test", test_mode=True, render=False)
+    assert test["missions"][0]["telemetry"] is not None
+    keep = {**spec, "missions": [{**spec["missions"][0], "telemetry": {"release": True}}]}
+    assert compile_campaign(keep, out_dir=tmp_path / "keep", render=False)["missions"][0]["telemetry"]
+    with pytest.raises(CompileError, match="Unknown map size 'huge'"):
+        compile_campaign({**spec, "missions": [{**spec["missions"][0], "map": {"size": "huge"}}]},
+                         out_dir=tmp_path / "bad", render=False)

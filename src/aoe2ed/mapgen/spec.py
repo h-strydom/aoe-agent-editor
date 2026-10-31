@@ -21,6 +21,10 @@ from typing import Any, Union, get_args, get_origin, get_type_hints
 Point = tuple[int, int] | list[int] | str
 Rect = tuple[int, int, int, int]
 
+# The game lobby's map sizes (tiles per side), so a spec can say `size: medium`.
+MAP_SIZES = {"tiny": 120, "small": 144, "medium": 168, "normal": 200, "large": 220, "giant": 240,
+             "ludicrous": 480}
+
 
 @dataclass
 class Biome:
@@ -175,7 +179,7 @@ class UnitPlacement:
 
 @dataclass
 class MapSpec:
-    size: int = 120
+    size: int | str = 120               # tiles per side, or a lobby size name (see MAP_SIZES)
     seed: int = 0
     biome: str | Biome = "temperate"
     players: list[PlayerStart] | int = 2
@@ -198,6 +202,11 @@ class MapSpec:
             v = getattr(self, f.name)
             if isinstance(v, (dict, list)):
                 setattr(self, f.name, _convert(hints[f.name], v))
+        if isinstance(self.size, str):
+            try:
+                self.size = MAP_SIZES[self.size.strip().lower()]
+            except KeyError:
+                raise ValueError(f"Unknown map size {self.size!r}; names: {sorted(MAP_SIZES)} or a number") from None
         if not 36 <= self.size <= 480:
             raise ValueError("size must be between 36 and 480")
         if isinstance(self.players, int):

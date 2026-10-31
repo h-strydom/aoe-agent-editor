@@ -54,7 +54,7 @@ def condition_types() -> list[dict]:
 
 def _schema(dataset, enum_cls, type_name: str) -> dict:
     _ensure_loaded()
-    member = enum_cls[type_name.upper()]
+    member = _member(enum_cls, "effect" if enum_cls is EffectId else "condition", type_name)
     attrs = [a for a in dataset.attributes[member.value] if a not in ("effect_type", "condition_type")]
     defaults = dataset.default_attributes.get(member.value, {})
     doc = (member.__doc__ or "").strip()
@@ -194,14 +194,37 @@ def _check_fractional_quantity(dataset, type_id: int, params: dict) -> None:
                      f"number, e.g. operation ADD with the computed amount instead of MULTIPLY by {q}.")
 
 
+# Common guesses that aren't real types, with what to use instead.
+_TYPE_HINTS = {
+    "declare_defeat": "There is no defeat effect: declare victory for the opponent "
+                      "(declare_victory with source_player = the enemy), or use the lose_if_destroyed block.",
+}
+
+
+def _member(enum_cls, kind: str, type_name) -> object:
+    if not isinstance(type_name, str):
+        raise ValueError(f"{kind} needs a 'type' string")
+    try:
+        return enum_cls[type_name.upper()]
+    except KeyError:
+        import difflib
+        names = [m.name.lower() for m in enum_cls]
+        close = difflib.get_close_matches(type_name.lower(), names, n=3, cutoff=0.6)
+        hint = _TYPE_HINTS.get(type_name.lower(), "")
+        raise ValueError(f"Unknown {kind} type '{type_name}'."
+                         + (f" Did you mean: {', '.join(close)}?" if close else "")
+                         + (f" {hint}" if hint else "")
+                         + f" See {kind}_types().") from None
+
+
 def add_condition(trigger, spec: dict, resolver: Resolver):
-    member = ConditionId[spec["type"].upper()]
+    member = _member(ConditionId, "condition", spec.get("type"))
     params = resolver.params(condition_dataset, member.value, spec)
     return getattr(trigger.new_condition, member.name.lower())(**params)
 
 
 def add_effect(trigger, spec: dict, resolver: Resolver):
-    member = EffectId[spec["type"].upper()]
+    member = _member(EffectId, "effect", spec.get("type"))
     params = resolver.params(effect_dataset, member.value, spec)
     return getattr(trigger.new_effect, member.name.lower())(**params)
 

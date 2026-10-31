@@ -38,6 +38,7 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
     triggers: [<trigger dict>]              # raw triggers (triggers_add format)
     xs: "..."                               # extra XS (lint with xs_check first)
     telemetry: true | {players: [1, 2], track_vars: [...], interval_sec: 10, events: {"Trigger name": 1}}
+             # test builds only; add release: true to keep it in release builds (it writes an .xsdat)
     reveal_map: explored     # optional, also in release builds: visible | explored
 ```
 
@@ -87,7 +88,8 @@ Every field is optional. The same seed always gives the same map.
 **nw** (y = 0), **ne** (x = max), **se** (y = max) and **sw** (x = 0). So `edge:e` is a corner and
 a river from `sw` to `ne` runs left to right across the preview. The preview labels the corners.
 ```yaml
-size: 144                 # 36..480
+size: 144                 # 36..480, or a lobby name: tiny 120, small 144, medium 168, normal 200,
+                          #   large 220, giant 240, ludicrous 480
 seed: 45
 biome: temperate          # temperate | autumn | pine | desert | snow | jungle | mediterranean | steppe
 players: 2                # or [{position: center|[x,y]|edge:<dir>[:inset]|player<N>|<zone name>,
@@ -95,6 +97,7 @@ players: 2                # or [{position: center|[x,y]|edge:<dir>[:inset]|playe
 player_layout: ring       # ring | center | line
 extra_players: 1          # active players without a base (wave enemies). Anchor them!
 forests:   {coverage: 0.2, clumps: 14, border: 4, player_woodlines: 3, stragglers: 4}
+                          # a "forest map": coverage 0.35-0.45 with clear `zones` and `roads` for paths
 resources: {gold: [8, 6], stone: [6], berries: 6, sheep: 4, deer: 4, neutral_gold: [6], neutral_stone: [5]}
 water:     [{kind: lake, name: lake_w, radius: 7, center: [x, y], fish: 4},
             {kind: river, start: nw, end: se, width: 4, fords: 2}]   # start/end: compass names only;
@@ -103,7 +106,8 @@ elevation: {hills: 6, height: [2, 4], radius: [6, 11]}
 cliffs:    [{points: [[20, 20], [40, 30]]}]   # experimental
 roads:     [{points: [spawn_north, player1], width: 3, wobble: 1.0}]
 zones:                    # named areas, returned to blocks
-  - {name: spawn_north, kind: edge, side: n, width: 14, depth: 12}
+  - {name: spawn_north, kind: edge, side: n, depth: 12}        # n/e/s/w are corners: depth x depth
+  - {name: north_flank, kind: edge, side: ne, width: 20, depth: 8} # ne/se/sw/nw are edges: width along it
   - {name: choke_n, kind: choke, between: [spawn_north, center], at: 0.45, gap: 7, wall_length: 20}
   - {name: plaza, kind: circle, center: center, radius: 7, terrain: ROAD, flat: true}
   - {name: arena, kind: rect, rect: [10, 10, 30, 30]}
@@ -115,6 +119,8 @@ PNG preview before going further.
 ## Rules of thumb
 - One mission = one clear goal. Put the hub/meta mission first when the campaign has metaprogression.
 - Wave-only enemies need `{use: anchor, player: N}`, or the game ends at t=0.
+- There is no "declare defeat" effect. A player loses when the opponent is declared the victor:
+  `lose_if_destroyed` does this by default (`{use: lose_if_destroyed, unit_type: TOWN_CENTER}`).
 - Load bank keys at mission start and store them at the end (or on purchase). Store unlocks as flags (= 1), never as running counters.
 - Missions that must keep their stores should end in victory. `run_end` does this for roguelite runs.
 - Don't use fractional quantities on integer stats such as HP or attack; the compiler rejects them.

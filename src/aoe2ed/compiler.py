@@ -149,20 +149,24 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
 # ---------------------------------------------------------------- one mission
 
 def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bool = True,
-                  reveal_map: str | None = None, mission_no: int = 0) -> MissionResult:
+                  reveal_map: str | None = None, mission_no: int = 0, test_build: bool = False) -> MissionResult:
     mid = m["id"]
     file = m.get("file", mid)
-    if "map" in m:
-        from .mapgen import generate
-        gen = generate(m["map"])
-        o = SESSIONS.adopt(gen.scenario)
-        areas = {k: tuple(v) for k, v in gen.areas.items()}
-    elif "base" in m:
-        o = SESSIONS.get(TOOLS["scenario_open"](path=m["base"])["handle"])
-        areas = {}
-    else:
-        o = SESSIONS.new(m.get("map_size", 120))
-        areas = {}
+    try:
+        if "map" in m:
+            from .mapgen import generate
+            gen = generate(m["map"])
+            o = SESSIONS.adopt(gen.scenario)
+            areas = {k: tuple(v) for k, v in gen.areas.items()}
+        elif "base" in m:
+            o = SESSIONS.get(TOOLS["scenario_open"](path=m["base"])["handle"])
+            areas = {}
+        else:
+            o = SESSIONS.new(m.get("map_size", 120))
+            areas = {}
+    except Exception as e:
+        where = "map" if "map" in m else "base" if "base" in m else "map_size"
+        raise CompileError(f"[{mid}] {where}: {_err(e)}") from None
     h, s = o.handle, o.scenario
     areas.update({k: tuple(v) for k, v in (m.get("areas") or {}).items()})
     points = {k: tuple(v) for k, v in (m.get("points") or {}).items()}
@@ -255,8 +259,11 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         ctx.xs(m["xs"])
 
     telem = None
-    if m.get("telemetry"):
-        tcfg = {} if m["telemetry"] is True else dict(m["telemetry"])
+    tcfg_raw = m.get("telemetry")
+    # Telemetry writes an .xsdat on the player's machine, so release builds leave it out unless the
+    # mission says `telemetry: {release: true}`.
+    if tcfg_raw and (test_build or (isinstance(tcfg_raw, dict) and tcfg_raw.get("release"))):
+        tcfg = {} if tcfg_raw is True else {k: v for k, v in tcfg_raw.items() if k != "release"}
         tcfg.setdefault("track_vars", [v.name for v in s.trigger_manager.variables][:16])
         events = tcfg.pop("events", None)
         if events is None:  # mark every block-created end/complete trigger by default
@@ -319,7 +326,7 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
     try:
         for n, m in enumerate(missions, 1):
             results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render, reveal_map=reveal,
-                                         mission_no=n))
+                                         mission_no=n, test_build=is_test))
         for f in staging.iterdir():
             os.replace(f, out / f.name)
         for r in results:
