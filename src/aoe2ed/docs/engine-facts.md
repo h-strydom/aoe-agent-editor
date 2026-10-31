@@ -15,6 +15,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Script Call messages compile in trigger order and XS requires definition before use, so the
   shared XS trigger must be the first trigger (`Ctx.flush_xs` does this).
 - Int literals are limited to 9 digits. *xs-check, matches engine.*
+- `xsGetRandomNumber*` gives different values on every fresh start, both in campaigns and in standalone
+  scenarios. So XS randomness is usable for rolls (unlike the Random civ setting in campaigns).
+  *RNG probe, 2 fresh starts each, 2026-10-31.*
 - `xsCreateFile` writes `<profile>/profile/<scenario file name>.xsdat` for a standalone scenario, but
   `<campaign name>.xsdat` when the scenario is played inside a campaign, so all missions of a campaign share
   one file. `xsWriteInt` writes raw little-endian int32. *Smoke test + civ probe campaigns, 2026-10-31.*
@@ -32,6 +35,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Restart keeps it. **Inside a campaign, `RANDOM` and `FULL_RANDOM` always become Britons (civ 1)**, in every
   new campaign too, so random civs aren't available in campaigns. Set every civ explicitly; the compiler warns.
   *Editor-saved scenario compared field by field + civ probe in 3 campaigns (XS read civ id 1), 2026-10-31.*
+- `random_faction` works as the replacement: civ name, unique unit in a building, disabled units and bonus
+  applied; with `store_key` the pick was saved (bank `faction = 2`) and loaded in mission 2.
+  *Factions playtest, 2026-10-31.* To re-roll a saved pick, delete the key: `bank_set(campaign, {}, delete=["faction"])`
+  with the game closed.
 - Setting player 1's `REVEAL_MAP` resource (203) to 2 at start reveals the whole map with no fog; 1 = explored.
   *Frontier/probe playtest, 2026-10-31.*
 
