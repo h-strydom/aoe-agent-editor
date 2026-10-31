@@ -8,7 +8,9 @@ previews, a `.aoe2campaign` and `build_report.json`. Two full working examples:
 ```yaml
 name: my_campaign        # internal name. The campaign bank is scoped by it, so never rename a released campaign
 title: My Campaign       # optional
-test_mode: {time_scale: 0.1}   # used when compiling with test_mode=true
+test_mode: {time_scale: 0.1, reveal_map: visible}   # test builds (test_mode=true or any time_scale):
+                         # timers x time_scale, and the map revealed for player 1 so you can see problems in
+                         # the fog. reveal_map: visible | explored | false
 defaults:                # optional: keys every mission inherits. Dict values (map, players, options...)
   map: {size: 144, seed: 11, water: [...]}   # merge one level with the mission's own, so missions can
   options: {victory_condition: CUSTOM}       # share one map and override single fields
@@ -35,6 +37,7 @@ missions:                # play order. Mission N+1 unlocks after mission N is wo
     triggers: [<trigger dict>]              # raw triggers (triggers_add format)
     xs: "..."                               # extra XS (lint with xs_check first)
     telemetry: true | {players: [1, 2], track_vars: [...], interval_sec: 10, events: {"Trigger name": 1}}
+    reveal_map: explored     # optional, also in release builds: visible | explored
 ```
 
 Keys starting with `x-` are ignored (use them for YAML anchors). Any other unknown key is reported

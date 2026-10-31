@@ -48,7 +48,10 @@ TOOLS = load_all()
 
 TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description"}
 MISSION_KEYS = {"id", "file", "title", "description", "map", "base", "map_size", "areas", "points", "players",
-                "diplomacy", "options", "messages", "units", "blocks", "triggers", "xs", "telemetry"}
+                "diplomacy", "options", "messages", "units", "blocks", "triggers", "xs", "telemetry",
+                "reveal_map"}
+# REVEAL_MAP player resource (203) values, mirroring the lobby's Reveal Map setting.
+REVEAL_VALUES = {"explored": 1, "visible": 2, "all_visible": 2}
 
 
 class CompileError(ValueError):
@@ -136,7 +139,8 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
 
 # ---------------------------------------------------------------- one mission
 
-def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bool = True) -> MissionResult:
+def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bool = True,
+                  reveal_map: str | None = None) -> MissionResult:
     mid = m["id"]
     file = m.get("file", mid)
     if "map" in m:
@@ -224,6 +228,13 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         step("triggers", lambda: T.fill_triggers(s, shells, raw))
         tm.move_triggers([t.trigger_id for t in shells], len(tm.triggers))
     warnings = T.stacked_spawns(raw)
+    reveal = m.get("reveal_map", reveal_map)
+    if reveal:
+        if reveal not in REVEAL_VALUES:
+            raise CompileError(f"[{mid}] reveal_map must be one of {sorted(REVEAL_VALUES)} or false")
+        step("reveal_map", lambda: T.add_triggers(s, [{"name": "Reveal Map (test)", "effects": [
+            {"type": "modify_resource", "tribute_list": "REVEAL_MAP", "source_player": 1,
+             "quantity": REVEAL_VALUES[reveal], "operation": "SET"}]}]))
     if m.get("xs"):
         ctx.xs(m["xs"])
 
@@ -278,15 +289,19 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
             raise CompileError(f"mission {i}: missing 'id'")
         warnings += _unknown(m, MISSION_KEYS, f"[{m['id']}]")
         missions.append(_with_defaults(m, defaults))
-    scale = time_scale if time_scale is not None else (
-        (spec.get("test_mode") or {}).get("time_scale", 0.1) if test_mode else 1.0)
+    tm_cfg = spec.get("test_mode") or {}
+    scale = time_scale if time_scale is not None else (tm_cfg.get("time_scale", 0.1) if test_mode else 1.0)
+    # Test builds reveal the map for player 1 (so problems in the fog are visible) unless the spec's
+    # test_mode sets reveal_map: false. Release builds only reveal where a mission asks for it.
+    is_test = test_mode or scale != 1.0
+    reveal = tm_cfg.get("reveal_map", "visible") if is_test else None
     # Build into a staging folder so a failed compile leaves out_dir untouched.
     out.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=out))
     results: list[MissionResult] = []
     try:
         for m in missions:
-            results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render))
+            results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render, reveal_map=reveal))
         for f in staging.iterdir():
             os.replace(f, out / f.name)
         for r in results:
@@ -298,7 +313,7 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
             if r.handle:
                 SESSIONS.close(r.handle)
         shutil.rmtree(staging, ignore_errors=True)
-    report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "missions": [],
+    report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "reveal_map": reveal, "missions": [],
                               "warnings": warnings + [w for r in results for w in r.warnings]}
     for r in results:
         report["missions"].append({

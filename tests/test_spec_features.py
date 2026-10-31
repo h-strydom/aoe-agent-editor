@@ -164,3 +164,17 @@ def test_escort_uncontrollable_by_default():
     r = B.escort(ctx, unit="TRADE_CART_FULL", count=2, start="start", destination="home")
     first = _effects(o.scenario, "Escort Start")[0]
     assert first["type"] == "disable_object_selection" and first["selected_object_ids"] == r["unit_refs"]
+
+
+def test_reveal_map_in_test_builds_only(tmp_path):
+    spec = {"name": "t", "missions": [{"id": "a", "map_size": 40}, {"id": "b", "map_size": 40, "reveal_map": "explored"}]}
+    test = compile_campaign(spec, out_dir=tmp_path / "test", test_mode=True, render=False)
+    rel = compile_campaign(spec, out_dir=tmp_path / "rel", render=False)
+    eff = _effects(_built(test, 0), "Reveal Map (test)")[0]
+    assert eff["tribute_list"] == 203 and eff["quantity"] == 2
+    assert _effects(_built(test, 1), "Reveal Map (test)")[0]["quantity"] == 1  # mission setting wins
+    assert "Reveal Map (test)" not in [t.name for t in _built(rel, 0).trigger_manager.triggers]
+    assert _effects(_built(rel, 1), "Reveal Map (test)")[0]["quantity"] == 1
+    off = compile_campaign({**spec, "test_mode": {"reveal_map": False}}, out_dir=tmp_path / "off",
+                           test_mode=True, render=False)
+    assert "Reveal Map (test)" not in [t.name for t in _built(off, 0).trigger_manager.triggers]
