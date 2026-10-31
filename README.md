@@ -75,6 +75,19 @@ uv run pytest
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the layout, conventions and release steps, and
 [CHANGELOG.md](CHANGELOG.md) for what changed.
 
+## Known issues
+- **Return of Rome starting ages are unverified.** RoR's ages (Stone, Tool, Bronze, Iron) may not map
+  one to one onto the AoE2 age values that `starting_age` sets, so the RoR examples leave it unset (the
+  scenario default). Check in game before relying on `starting_age` in a `game: ror` spec.
+- **Random civilizations don't work inside campaigns.** RANDOM and FULL_RANDOM always play as Britons there
+  (only the scenario lobby rolls a civ); the compiler warns. Use the `random_faction` block instead.
+- **Unconfirmed in game:** `waves` with `chase` (raiders hunting moving units) and the `choice` block's
+  timeout default.
+- **Not yet supported:** bridges, steerable rivers with fixed ford positions, per-player resource
+  placement, and AI scripts (`.ai`/`.per`). Test mode scales timers but not unit travel.
+
+`guide("engine-facts")` lists what playtests have verified; anything not listed there is unverified.
+
 ## Safety
 - Files are written only where you point the tools and into the game's **profile** folders
   (scenario, campaign, xs); the game install is never modified. Overwrites keep a timestamped `.bak`.
