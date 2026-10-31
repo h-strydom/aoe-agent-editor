@@ -102,7 +102,7 @@ def xsdat_files() -> list[dict]:
     prof = paths().profile
     if not prof:
         return []
-    # Return of Rome may keep its own profile folder; list both, newest first.
+    # Return of Rome writes to the shared profile/ folder too (verified); modes/Pompeii/profile is a fallback.
     found = list((prof / "profile").glob("*.xsdat")) + list((prof / "modes" / "Pompeii" / "profile").glob("*.xsdat"))
     return [{"name": p.name, "path": str(p), "bytes": p.stat().st_size,
              "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.stat().st_mtime))}
