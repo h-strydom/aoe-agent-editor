@@ -4,7 +4,7 @@ Spec shape (full guide: guide("campaign-spec"); examples/):
 
   name: crucible                 # internal campaign name; the campaign bank is scoped by it
   title: The Crucible            # optional display text
-  defaults: {...}                # mission keys every mission inherits (dict values merge one level)
+  defaults: {...}                # mission keys every mission inherits (dicts deep-merge; lists replace)
   missions:
     - id: hub
       file: crucible_1_hub       # scenario file name (no extension)
@@ -68,9 +68,18 @@ def _unknown(keys, allowed: set[str], where: str) -> list[str]:
 
 
 def _with_defaults(mission: dict, defaults: dict) -> dict:
-    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in defaults.items()}
+    """Deep-merge: nested dicts merge at every level (players.2 keeps its default civ when a mission
+    only adds starting_age); lists and scalars from the mission replace the default."""
+    out = dict(defaults)
     for k, v in mission.items():
-        out[k] = {**out[k], **v} if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+        d = out.get(k)
+        if isinstance(v, dict) and isinstance(d, dict):
+            # YAML may give player ids as ints in one place and strings in another
+            d = {(int(x) if isinstance(x, str) and x.isdigit() else x): y for x, y in d.items()}
+            v = {(int(x) if isinstance(x, str) and x.isdigit() else x): y for x, y in v.items()}
+            out[k] = _with_defaults(v, d)
+        else:
+            out[k] = v
     return out
 
 
@@ -228,6 +237,11 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         step("triggers", lambda: T.fill_triggers(s, shells, raw))
         tm.move_triggers([t.trigger_id for t in shells], len(tm.triggers))
     warnings = T.stacked_spawns(raw)
+    for p in s.player_manager.players[1:]:
+        civ = getattr(p.civilization, "name", str(p.civilization))
+        if p.active and "RANDOM" in civ:
+            warnings.append(f"player {p.player_id} civilization is {civ}: the game plays this as Byzantines, "
+                            f"not a random civ. Set players.{p.player_id}.civilization.")
     reveal = m.get("reveal_map", reveal_map)
     if reveal:
         if reveal not in REVEAL_VALUES:

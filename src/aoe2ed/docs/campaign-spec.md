@@ -11,9 +11,9 @@ title: My Campaign       # optional
 test_mode: {time_scale: 0.1, reveal_map: visible}   # test builds (test_mode=true or any time_scale):
                          # timers x time_scale, and the map revealed for player 1 so you can see problems in
                          # the fog. reveal_map: visible | explored | false
-defaults:                # optional: keys every mission inherits. Dict values (map, players, options...)
-  map: {size: 144, seed: 11, water: [...]}   # merge one level with the mission's own, so missions can
-  options: {victory_condition: CUSTOM}       # share one map and override single fields
+defaults:                # optional: keys every mission inherits. Dicts (map, players, options...) deep-merge
+  map: {size: 144, seed: 11, water: [...]}   # with the mission's own, so missions share one map and override
+  options: {victory_condition: CUSTOM}       # single fields; lists (zones, units...) from a mission replace
 missions:                # play order. Mission N+1 unlocks after mission N is won
   - id: m1               # your reference
     file: my_campaign_1_intro    # scenario file name, no extension. Prefix with the campaign name

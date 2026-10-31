@@ -178,3 +178,12 @@ def test_reveal_map_in_test_builds_only(tmp_path):
     off = compile_campaign({**spec, "test_mode": {"reveal_map": False}}, out_dir=tmp_path / "off",
                            test_mode=True, render=False)
     assert "Reveal Map (test)" not in [t.name for t in _built(off, 0).trigger_manager.triggers]
+
+
+def test_defaults_deep_merge_players(tmp_path):
+    spec = {"name": "t", "defaults": {"players": {2: {"civilization": "MAGYARS"}}},
+            "missions": [{"id": "a", "map_size": 40, "players": {"2": {"starting_age": "CASTLE"}}}]}
+    rep = compile_campaign(spec, out_dir=tmp_path, render=False)
+    p2 = _built(rep).player_manager.players[2]
+    assert p2.civilization.name == "MAGYARS" and p2.starting_age.name == "CASTLE_AGE"
+    assert not any("player 2 civilization" in w for w in rep["warnings"])
