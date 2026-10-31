@@ -37,6 +37,8 @@ claude plugin marketplace add h-strydom/aoe-agent-editor
 ```bash
 claude plugin install aoe2-editor@aoe2-editor
 ```
+Update later with `claude plugin marketplace update aoe2-editor`, then
+`claude plugin update aoe2-editor@aoe2-editor`, and restart Claude Code.
 
 **Any MCP client:** clone the repo, then point your client at the server:
 ```json
