@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0
+
+Return of Rome support.
+
+- `game: ror` in campaign specs (per mission too), `scenario_new(game="ror")`: scenarios are flagged
+  for RoR and install into RoR's own profile folders (`modes/Pompeii/...`).
+- RoR unit, building, tech and civ names, generated from RoR's game data
+  (`scripts/gen_ror_dataset.py`, `src/aoe2ed/data/ror.json`). Every resolver, `lookup` and
+  `enum_values` switch tables for RoR scenarios. AoE2 names that mean a different RoR unit are
+  rejected with the RoR name (MILITIA's id is a Short Swordsman in RoR).
+- RoR civilizations (EGYPTIANS, GREEKS, ROMANS, ...) can be set even though the parser's civ list
+  lacks them.
+- Examples: `crucible_ror`, the Crucible rebuilt for RoR. `scripts/smoke_scenario.py --game ror`.
+- Installing, `scenario_open` and `campaign_read` find files in either game's folders; telemetry
+  files are looked for in both profiles.
+
 ## 0.1.1
 
 Fixes from the first install test (a fresh session using only the installed plugin).

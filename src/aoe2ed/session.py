@@ -10,6 +10,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import games
 from ._parser import AoE2DEScenario
 
 
@@ -24,6 +25,7 @@ class OpenScenario:
         s = self.scenario
         return {
             "handle": self.handle,
+            "game": games.scenario_game(s),
             "source": str(self.source) if self.source else None,
             "scenario_version": s.scenario_version,
             "map_size": s.map_manager.map_size,
@@ -50,8 +52,9 @@ class Sessions:
         scenario = AoE2DEScenario.from_file(str(path))
         return self._register(scenario, path)
 
-    def new(self, map_size: int | None = None) -> OpenScenario:
+    def new(self, map_size: int | None = None, game: str = "aoe2") -> OpenScenario:
         scenario = AoE2DEScenario.from_default()
+        games.set_scenario_game(scenario, game)
         if map_size:
             scenario.map_manager.map_size = map_size
         return self._register(scenario, None)
@@ -60,15 +63,18 @@ class Sessions:
         return self._register(scenario, source)
 
     def _register(self, scenario: AoE2DEScenario, source: Path | None) -> OpenScenario:
+        games.set_current(games.scenario_game(scenario))
         h = self._new_handle()
         self._open[h] = OpenScenario(h, scenario, source)
         return self._open[h]
 
     def get(self, handle: str) -> OpenScenario:
         try:
-            return self._open[handle]
+            o = self._open[handle]
         except KeyError:
             raise KeyError(f"No open scenario '{handle}'. Open: {sorted(self._open)}") from None
+        games.set_current(games.scenario_game(o.scenario))  # names resolve for this scenario's game
+        return o
 
     def close(self, handle: str) -> None:
         o = self._open.pop(handle)

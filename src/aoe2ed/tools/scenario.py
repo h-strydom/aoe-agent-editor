@@ -15,28 +15,37 @@ def paths_info() -> dict:
 
 
 @tool
-def scenario_files(kind: str = "scenario", pattern: str = "*") -> list[dict]:
-    """List files in the profile's user folder. kind: scenario | campaign | xs | ai."""
-    d = paths().user_dir(kind)
+def scenario_files(kind: str = "scenario", pattern: str = "*", game: str = "aoe2") -> list[dict]:
+    """List files in the profile's user folder. kind: scenario | campaign | xs | ai.
+    game: aoe2 | ror (Return of Rome keeps its own folders)."""
+    from .. import games
+    d = paths().user_dir(kind, games.normalize(game))
     return [{"name": p.name, "path": str(p), "bytes": p.stat().st_size}
             for p in sorted(d.glob(pattern)) if p.is_file()]
 
 
 @tool
-def scenario_new(map_size: int = 120) -> dict:
-    """Create a blank scenario at the parser's latest version. Returns a handle like 's1'."""
-    return SESSIONS.new(map_size).info()
+def scenario_new(map_size: int = 120, game: str = "aoe2") -> dict:
+    """Create a blank scenario at the parser's latest version. Returns a handle like 's1'.
+    game: aoe2 | ror. A Return of Rome scenario uses RoR's units, techs and civs (see lookup)."""
+    from .. import games
+    return SESSIONS.new(map_size, games.normalize(game)).info()
 
 
 @tool
 def scenario_open(path: str) -> dict:
-    """Open a .aoe2scenario file. A bare name is looked up in the profile's scenario folder."""
+    """Open a .aoe2scenario file. A bare name is looked up in the profile's scenario folders
+    (AoE2, then Return of Rome)."""
     p = Path(path)
     tried = [p.resolve()]
     if not p.is_absolute() and not p.exists():
-        cand = paths().user_dir("scenario") / p
-        p = cand if cand.suffix else cand.with_suffix(".aoe2scenario")
-        tried.append(p)
+        for game in ("aoe2", "ror"):
+            cand = paths().user_dir("scenario", game) / p
+            cand = cand if cand.suffix else cand.with_suffix(".aoe2scenario")
+            tried.append(cand)
+            if cand.exists():
+                break
+        p = tried[-1]
     if not p.exists():
         raise FileNotFoundError(f"No scenario at {' or '.join(str(t) for t in tried)}")
     return SESSIONS.open(p).info()
@@ -45,11 +54,14 @@ def scenario_open(path: str) -> dict:
 @tool
 def scenario_save(handle: str, path: str | None = None, overwrite: bool = False, install: bool = False) -> dict:
     """Save a scenario. With install=True and a bare file name, saves into the profile's scenario
-    folder so the game sees it. Overwriting keeps a timestamped .bak copy."""
+    folder (AoE2 or Return of Rome, by the scenario's game) so the game sees it. Overwriting keeps a
+    timestamped .bak copy."""
     if install:
         if not path:
             raise ValueError("install=True needs a file name")
-        path = str(paths().user_dir("scenario") / Path(path).name)
+        from .. import games
+        game = games.scenario_game(SESSIONS.get(handle).scenario)
+        path = str(paths().user_dir("scenario", game) / Path(path).name)
     return SESSIONS.save(handle, path, overwrite=overwrite)
 
 

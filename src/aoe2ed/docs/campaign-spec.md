@@ -9,6 +9,7 @@ missions). Relative paths in tool calls resolve against the current working dire
 ```yaml
 name: my_campaign        # internal name. The campaign bank is scoped by it, so never rename a released campaign
 title: My Campaign       # optional
+game: aoe2               # aoe2 | ror (Return of Rome). A mission may set its own `game`. See "Return of Rome"
 test_mode: {time_scale: 0.1, reveal_map: visible}   # test builds (test_mode=true or any time_scale):
                          # timers x time_scale, and the map revealed for player 1 so you can see problems in
                          # the fog. reveal_map: visible | explored | false
@@ -115,6 +116,16 @@ units: [{unit: MARKET, position: plaza, player: 1, offset: [0, 11]}]
 ```
 Generated areas always include `player<N>_base`, plus every zone, lake and hill. Look at the
 PNG preview before going further.
+
+## Return of Rome
+`game: ror` builds Return of Rome scenarios: they're flagged for RoR, install into RoR's own folders
+(`modes/Pompeii/...`) and play from RoR's menus. RoR has its own game data, so **unit, building, tech
+and civ names are RoR names**: CLUBMAN, BOWMAN, HOPLITE, SHORT_SWORDSMAN, CENTURION, LEGIONARY,
+CATAPHRACT, STONE_THROWER...; civs EGYPTIANS, GREEKS, ROMANS, PERSIANS... Many AoE2 names point at
+a different RoR unit (MILITIA's id is a Short Swordsman in RoR), so they're rejected with the RoR name.
+Find names with `lookup("swords", game="ror")`. Terrains, trees, gold, stone, berries, Town Center,
+villagers and houses are shared, so map specs work unchanged. RoR ages differ from AoE2's; leave
+`starting_age` out unless you've checked it. Example: the `crucible_ror` spec in `examples()`.
 
 ## Rules of thumb
 - One mission = one clear goal. Put the hub/meta mission first when the campaign has metaprogression.

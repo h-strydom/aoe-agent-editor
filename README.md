@@ -24,6 +24,8 @@ campaign, built with this toolkit.
 - **Telemetry:** injected XS records resources, kills, variables and trigger events to an `.xsdat`
   file, so the agent can see what happened in a playtest.
 - **Claude Code plugin** with skills for designing, building, playtesting, triggers, XS and editor UI.
+- **Return of Rome too:** `game: ror` builds RoR scenarios and campaigns with RoR's own units, techs
+  and civs (name tables generated from RoR's game data).
 - **Verified engine facts:** `guide("engine-facts")` lists game behaviour proven in playtests, and grows with each one.
 
 ## Install

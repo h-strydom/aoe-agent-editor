@@ -36,6 +36,8 @@ aren't found (set `AOE2DE_PATH` / `AOE2DE_PROFILE` to point at them).
   relevant skill and `coverage.md` in the same change.
 - **Regenerate the trigger reference** after upgrading AoE2ScenarioParser:
   `uv run python scripts/gen_trigger_reference.py`.
+- **Regenerate the Return of Rome name tables** after a game patch changes RoR's data:
+  `uv run --with genieutils-py python scripts/gen_ror_dataset.py`.
 - **Skills must work from an installed plugin**: no repo-relative paths (use tools or
   `${CLAUDE_PLUGIN_ROOT}`), portable frontmatter only. `tests/test_plugin_structure.py` enforces this.
 

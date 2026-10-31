@@ -16,6 +16,7 @@ Ask at most 3–4 questions, and only ones whose answers change the build. Offer
 - **Win/lose:** what ends each mission? How long should it take?
 - **Persistence:** what carries between missions (currency, unlocks, choices, survivors)?
 - **Faction:** a civ, or a custom tech tree built from triggers?
+- **Game:** AoE2 DE or Return of Rome (`game: ror`)? RoR uses its own units, civs and names.
 
 Restate the idea in 3–5 lines before designing.
 

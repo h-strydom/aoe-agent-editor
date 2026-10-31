@@ -3,6 +3,7 @@
 Spec shape (full guide: guide("campaign-spec"); examples/):
 
   name: crucible                 # internal campaign name; the campaign bank is scoped by it
+  game: aoe2                     # aoe2 | ror (Return of Rome); a mission may override it
   title: The Crucible            # optional display text
   defaults: {...}                # mission keys every mission inherits (dicts deep-merge; lists replace)
   missions:
@@ -37,6 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from . import blocks as B
+from . import games
 from . import triggers as T
 from .blocks.waves import near_tiles
 from .campaign import Campaign
@@ -46,10 +48,10 @@ from .tools import load_all
 
 TOOLS = load_all()
 
-TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description"}
+TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description", "game"}
 MISSION_KEYS = {"id", "file", "title", "description", "map", "base", "map_size", "areas", "points", "players",
                 "diplomacy", "options", "messages", "units", "blocks", "triggers", "xs", "telemetry",
-                "reveal_map"}
+                "reveal_map", "game"}
 # REVEAL_MAP player resource (203) values, mirroring the lobby's Reveal Map setting.
 REVEAL_VALUES = {"explored": 1, "visible": 2, "all_visible": 2}
 
@@ -149,9 +151,19 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
 # ---------------------------------------------------------------- one mission
 
 def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bool = True,
-                  reveal_map: str | None = None, mission_no: int = 0, test_build: bool = False) -> MissionResult:
+                  reveal_map: str | None = None, mission_no: int = 0, test_build: bool = False,
+                  game: str = "aoe2") -> MissionResult:
+    """Build one mission; every name inside resolves for `game` (aoe2 or ror)."""
+    with games.use(m.get("game", game)):
+        return _build_mission(m, out_dir=out_dir, time_scale=time_scale, render=render, reveal_map=reveal_map,
+                              mission_no=mission_no, test_build=test_build)
+
+
+def _build_mission(m: dict, *, out_dir: Path, time_scale: float, render: bool, reveal_map: str | None,
+                   mission_no: int, test_build: bool) -> MissionResult:
     mid = m["id"]
     file = m.get("file", mid)
+    game = games.current()
     try:
         if "map" in m:
             from .mapgen import generate
@@ -162,8 +174,11 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
             o = SESSIONS.get(TOOLS["scenario_open"](path=m["base"])["handle"])
             areas = {}
         else:
-            o = SESSIONS.new(m.get("map_size", 120))
+            o = SESSIONS.new(m.get("map_size", 120), game)
             areas = {}
+        if "base" not in m:  # a base scenario keeps its own game
+            games.set_scenario_game(o.scenario, game)
+        games.set_current(games.scenario_game(o.scenario))  # registering reset it from the variant
     except Exception as e:
         where = "map" if "map" in m else "base" if "base" in m else "map_size"
         raise CompileError(f"[{mid}] {where}: {_err(e)}") from None
@@ -313,6 +328,12 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
             raise CompileError(f"mission {i}: missing 'id'")
         warnings += _unknown(m, MISSION_KEYS, f"[{m['id']}]")
         missions.append(_with_defaults(m, defaults))
+    try:
+        game = games.normalize(spec.get("game"))
+        for m in missions:
+            games.normalize(m.get("game", game))
+    except ValueError as e:
+        raise CompileError(str(e)) from None
     tm_cfg = spec.get("test_mode") or {}
     scale = time_scale if time_scale is not None else (tm_cfg.get("time_scale", 0.1) if test_mode else 1.0)
     # Test builds reveal the map for player 1 (so problems in the fog are visible) unless the spec's
@@ -326,7 +347,7 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
     try:
         for n, m in enumerate(missions, 1):
             results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render, reveal_map=reveal,
-                                         mission_no=n, test_build=is_test))
+                                         mission_no=n, test_build=is_test, game=game))
         for f in staging.iterdir():
             os.replace(f, out / f.name)
         for r in results:
@@ -338,7 +359,8 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
             if r.handle:
                 SESSIONS.close(r.handle)
         shutil.rmtree(staging, ignore_errors=True)
-    report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "reveal_map": reveal, "missions": [],
+    report: dict[str, Any] = {"name": spec.get("name"), "game": game, "time_scale": scale, "reveal_map": reveal,
+                              "missions": [],
                               "warnings": warnings + [w for r in results for w in r.warnings]}
     in_campaign = bool(spec.get("name")) and (len(results) > 1 or spec.get("campaign", True))
     for n, r in enumerate(results, 1):
@@ -365,7 +387,7 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
         for r in results:
             installed.append(install_file(r.scenario_path)["installed"])
         if camp_path:
-            dest = paths().user_dir("campaign") / camp_path.name
+            dest = paths().user_dir("campaign", game) / camp_path.name
             if dest.exists():
                 backup_file(dest)
             installed.append(install_file(camp_path)["installed"])

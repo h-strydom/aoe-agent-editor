@@ -27,6 +27,7 @@ Two ways to build, which you can mix:
 - Handles: every tool takes `handle` ("s1"). With the CLI, handles die with the process, so chain
   handle-based calls with `aoe2ed script steps.json` (`[{"tool": ..., "args": {...}}, ...]`), not separate `aoe2ed call`s. `scenario_save(handle, path, overwrite)` keeps a `.bak`. `install=true` writes into the game's scenario folder.
 - Names work wherever ids do: units `"KNIGHT"`, players `"ONE"`/`1`, terrain `"GRASS_1"`, enums `"ADD"`. Use `lookup("pike")` to find a name and `enum_values("ObjectAttribute")` to list an enum.
+- Return of Rome: `scenario_new(game="ror")` or `game: ror` in a spec. Unit, tech and civ names then resolve against RoR's own data (`lookup("bowman", game="ror")`); tools switch automatically for any open RoR scenario.
 - Triggers: `triggers_add(handle, [ {name, conditions:[{type,...}], effects:[{type,...}]} ])`.
   - Shorthands: `area: [x1,y1,x2,y2]`, `location: [x,y]`, variables by name (created automatically), `trigger_id` by trigger name.
   - Look up parameters with `effect_schema(handle, "create_object")`. The full list is in `skills/aoe2-triggers`.

@@ -11,11 +11,18 @@ from . import tool
 
 
 def _resolve(path: str, kind: str, suffix: str) -> Path:
+    """A path as given, else a bare name in the AoE2 then the Return of Rome profile folder."""
     p = Path(path)
     if p.is_absolute() or p.exists():
         return p
-    cand = paths().user_dir(kind) / p
-    return cand if cand.suffix else cand.with_suffix(suffix)
+    first = None
+    for which in ("aoe2", "ror"):
+        cand = paths().user_dir(kind, which) / p
+        cand = cand if cand.suffix else cand.with_suffix(suffix)
+        first = first or cand
+        if cand.exists():
+            return cand
+    return first
 
 
 @tool
@@ -40,7 +47,9 @@ def campaign_build(name: str, scenarios: list[str], out: str | None = None, inst
             camp.add_scenario_file(o.source)
         else:
             camp.add_scenario_file(_resolve(ref, "scenario", ".aoe2scenario"))
-    dest = Path(out) if out else (paths().user_dir("campaign") / name if install else Path(name))
+    from .. import games
+    which = games.file_game(camp.scenarios[0].data) if camp.scenarios else "aoe2"
+    dest = Path(out) if out else (paths().user_dir("campaign", which) / name if install else Path(name))
     dest = dest.with_suffix(".aoe2campaign")
     backup = None
     if dest.exists():

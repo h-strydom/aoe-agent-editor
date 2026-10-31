@@ -4,6 +4,11 @@ Behaviour of AoE2 DE that blocks and skills rely on. Each entry says how it was 
 Add to this file whenever a playtest teaches something; never record guesses here.
 
 ## Files and loading
+- Return of Rome scenarios are the same 1.59 format with header variant 2 (AoE2 is 1); RoR keeps user
+  files under `<profile>/modes/Pompeii/resources/_common/`. RoR has its own data file: ids differ
+  (74 = Short Swordsman, 4 = Bowman, 93 = Hoplite) but terrains and gaia objects (trees, gold, stone,
+  berries, Town Center 109, villager 83) match AoE2. *Editor-saved RoR scenarios + both data files read
+  with genieutils-py, 2026-10-31.*
 - Scenarios written by AoE2ScenarioParser 0.9.8 at version 1.59 load and run in the current
   game (build 101.103.54800, Oct 2026). *Smoke test, 2026-10-30.*
 - `.aoe2campaign` layout is documented in `src/aoe2ed/campaign.py`; the writer reproduces all 47

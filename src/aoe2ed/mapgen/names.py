@@ -36,6 +36,13 @@ def terrain_id(v: str | int) -> int:
 def unit_id(v: str | int) -> int:
     if isinstance(v, int) or (isinstance(v, str) and v.isdigit()):
         return int(v)
+    from .. import games
+    if games.current() == "ror":  # Return of Rome names (see aoe2ed.games)
+        from ..datasets import object_id
+        try:
+            return object_id(v)
+        except KeyError as e:
+            raise ValueError(e.args[0]) from None
     name = v.upper().replace(" ", "_")
     for ds in (BuildingInfo, UnitInfo, OtherInfo, HeroInfo):
         if name in ds.__members__:

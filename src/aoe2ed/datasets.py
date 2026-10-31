@@ -2,6 +2,9 @@
 
 Agents write names ("ARCHER", "FEUDAL_AGE", "Set"), the file stores ints. Every resolver
 accepts an int, a numeric string or a case-insensitive member name.
+
+Object and tech names depend on the game (see aoe2ed.games): in Return of Rome they come from the
+RoR tables generated from that game's own data, because many ids mean different things there.
 """
 from __future__ import annotations
 
@@ -17,7 +20,10 @@ from AoE2ScenarioParser.datasets.techs import TechInfo
 from AoE2ScenarioParser.datasets.terrains import TerrainId
 from AoE2ScenarioParser.datasets.units import UnitInfo
 
-from . import _parser  # noqa: F401  (configures the parser)
+from . import (
+    _parser,  # noqa: F401  (configures the parser)
+    games,
+)
 
 OBJECT_DATASETS = {"unit": UnitInfo, "building": BuildingInfo, "hero": HeroInfo, "other": OtherInfo}
 
@@ -56,13 +62,27 @@ def _object_index() -> dict[str, int]:
     return out
 
 
+def _ror_object_id(key: str, value) -> int:
+    data = games.ror_data()
+    if key in data["objects"]:
+        return data["objects"][key]
+    if key in data["not_shared"]:
+        other = data["not_shared"][key]
+        raise KeyError(f"'{value}' is an AoE2 name; in Return of Rome that id is a different object"
+                       + (f" ({other})" if other else "") + f". Use lookup('{value}', game='ror') to find "
+                       f"the RoR unit.")
+    raise KeyError(f"Unknown Return of Rome object '{value}'. Try lookup('{value}').")
+
+
 def object_id(value: int | str) -> int:
-    """Resolve a unit/building/hero/gaia object name or id to its unit const."""
+    """Resolve a unit/building/hero/gaia object name or id to its unit const (for the current game)."""
     if isinstance(value, int):
         return value
     if str(value).lstrip("-").isdigit():
         return int(value)
     key = _norm(str(value))
+    if games.current() == "ror":
+        return _ror_object_id(key, value)
     idx = _object_index()
     if key in idx:
         return idx[key]
@@ -73,6 +93,11 @@ def tech_id(value: int | str) -> int:
     if isinstance(value, int) or str(value).lstrip("-").isdigit():
         return int(value)
     key = _norm(str(value))
+    if games.current() == "ror":
+        techs = games.ror_data()["techs"]
+        if key in techs:
+            return techs[key]
+        raise KeyError(f"Unknown Return of Rome technology '{value}'. Try lookup('{value}', kinds=['tech']).")
     idx = _info_index("TechInfo")
     if key in idx:
         return idx[key]
@@ -117,6 +142,9 @@ def describe_value(dataset_name: str, value) -> str | None:
     """Human name for a stored value, or None."""
     if value is None or value == -1 or isinstance(value, (list, str)):
         return None
+    if games.current() == "ror" and dataset_name in INFO_DATASETS:
+        table = "tech_names" if dataset_name == "TechInfo" else "object_names"
+        return games.ror_data()[table].get(str(value))
     try:
         if dataset_name in INFO_DATASETS:
             for m in INFO_DATASETS[dataset_name]:
@@ -140,20 +168,33 @@ def search(query: str, kinds: list[str] | None = None, limit: int = 25) -> list[
     kinds = kinds or ["unit", "building", "hero", "other", "tech", "terrain", "enum"]
     hits: list[dict] = []
 
-    kind_rank = {"unit": 0, "building": 0, "hero": 1, "other": 1, "tech": 1, "terrain": 2, "enum": 3}
+    kind_rank = {"unit": 0, "building": 0, "object": 0, "hero": 1, "other": 1, "tech": 1, "terrain": 2,
+                 "enum": 3}
 
     def consider(kind, name, id_, extra=None):
         if q in name:
             score = (0 if name == q else 1 if name.startswith(q) else 2, kind_rank[kind], len(name))
             hits.append({"kind": kind, "name": name, "id": id_, **(extra or {}), "_s": score})
 
-    for kind, ds in OBJECT_DATASETS.items():
-        if kind in kinds:
-            for m in ds:
-                consider(kind, m.name, m.ID)
-    if "tech" in kinds:
-        for m in TechInfo:
-            consider("tech", m.name, m.ID)
+    if games.current() == "ror":  # RoR tables don't split objects into units/buildings/gaia
+        data = games.ror_data()
+        if set(kinds) & {"unit", "building", "hero", "other", "object"}:
+            for name, id_ in data["objects"].items():
+                consider("object", name, id_)
+        if "tech" in kinds:
+            for name, id_ in data["techs"].items():
+                consider("tech", name, id_)
+        if "enum" in kinds:
+            for name, civ in data["civs"].items():
+                consider("enum", name, civ, {"enum": "Civilization (RoR)"})
+    else:
+        for kind, ds in OBJECT_DATASETS.items():
+            if kind in kinds:
+                for m in ds:
+                    consider(kind, m.name, m.ID)
+        if "tech" in kinds:
+            for m in TechInfo:
+                consider("tech", m.name, m.ID)
     if "terrain" in kinds:
         for m in TerrainId:
             consider("terrain", m.name, m.value)
@@ -171,6 +212,10 @@ def search(query: str, kinds: list[str] | None = None, limit: int = 25) -> list[
 
 
 def enum_members(dataset_name: str) -> list[dict]:
+    if games.current() == "ror" and dataset_name in INFO_DATASETS:
+        data = games.ror_data()
+        table = data["techs"] if dataset_name == "TechInfo" else data["objects"]
+        return [{"name": n, "id": i} for n, i in table.items()]
     if dataset_name in INFO_DATASETS:
         return [{"name": m.name, "id": m.ID} for m in INFO_DATASETS[dataset_name]]
     ds = ENUM_DATASETS[dataset_name]

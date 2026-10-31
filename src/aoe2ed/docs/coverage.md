@@ -37,6 +37,7 @@ dedicated MCP/CLI tool. **Block** means a building block in a campaign spec. **P
 | XS | Script file / embedded script | Tools `xs_set_script_name`, `xs_embed`; spec `xs:` |
 | | Check script | Tool `xs_check` (xs-check, offline) |
 | Test | Editor Test button | UI; normally a test-mode build plus a playtest (`aoe2-playtest`) |
+| Return of Rome | RoR scenarios and campaigns, RoR units/techs/civs | `game: ror` in a spec; `scenario_new(game="ror")`; `lookup(..., game="ror")` |
 | Campaigns | Campaign editor (add, order, name) | Tools `campaign_build`, `campaign_read`, `campaign_extract`; spec `missions:` |
 | | Persistent values between missions | Blocks `bank_load` / `bank_store`; tools `bank_show` / `bank_set` |
 

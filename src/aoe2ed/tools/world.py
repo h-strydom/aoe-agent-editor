@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from AoE2ScenarioParser.datasets.object_support import Civilization, StartingAge
 
+from .. import games
 from ..datasets import ENUM_DATASETS, describe_value, object_id, resolve_dataset_value, terrain_id
 from ..session import SESSIONS
 from . import tool
@@ -34,8 +35,23 @@ def players_get(handle: str) -> list[dict]:
 
 def _civ(v):
     if isinstance(v, str) and not v.isdigit():
-        return Civilization[v.upper().replace(" ", "_")]
+        name = v.upper().replace(" ", "_").replace("-", "_")
+        if games.current() == "ror":
+            civs = games.ror_data()["civs"]
+            if name in civs:
+                return civs[name]
+            if name in ("RANDOM", "FULL_RANDOM"):
+                return Civilization[name]
+            raise ValueError(f"Unknown Return of Rome civilization '{v}'. Options: {sorted(civs)}")
+        return Civilization[name]
     return v
+
+
+def _set_civ(p, field: str, value) -> None:
+    if isinstance(value, str):  # RoR civs aren't in the parser's Civilization enum; store the data name
+        setattr(p, f"_{field}", value)
+    else:
+        setattr(p, field, value)
 
 
 def _age(v):
@@ -73,7 +89,8 @@ def player_set(handle: str, player: int, fields: dict) -> dict:
         if k not in PLAYER_FIELDS:
             raise ValueError(f"Unknown player field '{k}'. Fields: {PLAYER_FIELDS}")
         if k in ("civilization", "architecture_set"):
-            v = _civ(v)
+            _set_civ(p, k, _civ(v))
+            continue
         elif k == "starting_age":
             v = _age(v)
         elif k in ("disabled_units", "disabled_buildings"):

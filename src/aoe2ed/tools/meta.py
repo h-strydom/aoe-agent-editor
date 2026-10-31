@@ -11,14 +11,18 @@ from . import tool
 
 
 @tool
-def lookup(query: str, kinds: list[str] | None = None, limit: int = 25) -> list[dict]:
+def lookup(query: str, kinds: list[str] | None = None, limit: int = 25, game: str | None = None) -> list[dict]:
     """Find ids by name. kinds: unit, building, hero, other (gaia/resources), tech, terrain,
-    enum (trigger enums like Operation, ObjectAttribute, DiplomacyState). Substring match."""
-    return datasets.search(query, kinds, limit)
+    enum (trigger enums like Operation, ObjectAttribute, DiplomacyState). Substring match.
+    game: aoe2 | ror (default: the game of the scenario last used). Return of Rome has its own
+    units, techs and civs, and many ids mean different things there."""
+    from .. import games
+    with games.use(game or games.current()):
+        return datasets.search(query, kinds, limit)
 
 
 @tool
-def enum_values(dataset: str | None = None, name: str | None = None) -> list[dict]:
+def enum_values(dataset: str | None = None, name: str | None = None, game: str | None = None) -> list[dict]:
     """All members of a dataset/enum, e.g. 'ObjectAttribute', 'Operation', 'TechInfo', 'TerrainId'.
     (`name` is accepted as an alias of `dataset`.)"""
     ds = dataset or name
@@ -27,7 +31,9 @@ def enum_values(dataset: str | None = None, name: str | None = None) -> list[dic
     if ds not in datasets.ENUM_DATASETS and ds not in datasets.INFO_DATASETS:
         raise ValueError(f"Unknown dataset '{ds}'. Datasets: "
                          f"{sorted(set(datasets.ENUM_DATASETS) | set(datasets.INFO_DATASETS))}")
-    return datasets.enum_members(ds)
+    from .. import games
+    with games.use(game or games.current()):
+        return datasets.enum_members(ds)
 
 
 @tool

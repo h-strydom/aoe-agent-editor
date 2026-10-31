@@ -113,11 +113,12 @@ class Paths:
     def game_logs(self) -> Path | None:
         return self.profile.parent / "logs" if self.profile else None
 
-    def user_dir(self, kind: str) -> Path:
-        """kind: scenario | campaign | xs | ai"""
+    def user_dir(self, kind: str, game: str = "aoe2") -> Path:
+        """kind: scenario | campaign | xs | ai. Return of Rome keeps its own copies under modes/Pompeii."""
         if not self.profile:
             raise RuntimeError("AoE2 DE profile folder not found; set AOE2DE_PROFILE")
-        return self.profile / "resources" / "_common" / kind
+        base = self.profile / "modes" / "Pompeii" if game == "ror" else self.profile
+        return base / "resources" / "_common" / kind
 
     @property
     def player_nfp(self) -> Path | None:
@@ -134,6 +135,8 @@ class Paths:
             "scenario_dir": str(self.user_dir("scenario")) if self.profile else None,
             "campaign_dir": str(self.user_dir("campaign")) if self.profile else None,
             "xs_dir": str(self.user_dir("xs")) if self.profile else None,
+            "ror_scenario_dir": str(self.user_dir("scenario", "ror")) if self.profile else None,
+            "ror_campaign_dir": str(self.user_dir("campaign", "ror")) if self.profile else None,
             "logs": str(self.game_logs) if self.game_logs else None,
         }
 

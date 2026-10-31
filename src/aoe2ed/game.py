@@ -44,20 +44,34 @@ def launch() -> dict:
     return {"launched": True, "via": url}
 
 
-def install(src: str | Path, kind: str | None = None, overwrite: bool = True) -> dict:
-    """Copy a .aoe2scenario/.aoe2campaign/.xs/.ai file into the matching profile folder."""
+def detect_game(src: Path) -> str:
+    """'ror' or 'aoe2' for a scenario or campaign file (a campaign follows its first scenario)."""
+    from . import games
+    if src.suffix.lower() == ".aoe2scenario":
+        return games.file_game(src.read_bytes())
+    if src.suffix.lower() == ".aoe2campaign":
+        from .campaign import Campaign
+        camp = Campaign.read(src)
+        return games.file_game(camp.scenarios[0].data) if camp.scenarios else "aoe2"
+    return games.current()
+
+
+def install(src: str | Path, kind: str | None = None, overwrite: bool = True, game: str | None = None) -> dict:
+    """Copy a .aoe2scenario/.aoe2campaign/.xs/.ai file into the matching profile folder of the game
+    it belongs to (Return of Rome files go under modes/Pompeii; detected from the file)."""
     src = Path(src)
     kind = kind or {".aoe2scenario": "scenario", ".aoe2campaign": "campaign", ".xs": "xs",
                     ".ai": "ai", ".per": "ai"}.get(src.suffix.lower())
     if not kind:
         raise ValueError(f"Can't tell where {src.name} goes; pass kind")
-    dest = paths().user_dir(kind) / src.name
+    game = game or detect_game(src)
+    dest = paths().user_dir(kind, game) / src.name
     if dest.exists() and not overwrite:
         raise FileExistsError(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.resolve() != src.resolve():
         shutil.copy2(src, dest)
-    return {"installed": str(dest), "kind": kind}
+    return {"installed": str(dest), "kind": kind, "game": game}
 
 
 def log_sessions() -> list[Path]:
@@ -88,9 +102,11 @@ def xsdat_files() -> list[dict]:
     prof = paths().profile
     if not prof:
         return []
+    # Return of Rome may keep its own profile folder; list both, newest first.
+    found = list((prof / "profile").glob("*.xsdat")) + list((prof / "modes" / "Pompeii" / "profile").glob("*.xsdat"))
     return [{"name": p.name, "path": str(p), "bytes": p.stat().st_size,
              "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.stat().st_mtime))}
-            for p in sorted((prof / "profile").glob("*.xsdat"), key=lambda p: p.stat().st_mtime, reverse=True)]
+            for p in sorted(found, key=lambda p: p.stat().st_mtime, reverse=True)]
 
 
 def read_xsdat(name_or_path: str, as_type: str = "int") -> dict:
@@ -100,7 +116,10 @@ def read_xsdat(name_or_path: str, as_type: str = "int") -> dict:
         profile = paths().profile
         if profile is None:
             raise RuntimeError("AoE2 DE profile folder not found; set AOE2DE_PROFILE or pass a full path")
-        p = profile / "profile" / (p.name if p.suffix else p.name + ".xsdat")
+        name = p.name if p.suffix else p.name + ".xsdat"
+        p = profile / "profile" / name
+        if not p.exists() and (profile / "modes" / "Pompeii" / "profile" / name).exists():
+            p = profile / "modes" / "Pompeii" / "profile" / name
     b = p.read_bytes()
     n = len(b) // 4
     fmt = f"<{n}{'i' if as_type == 'int' else 'f'}"
