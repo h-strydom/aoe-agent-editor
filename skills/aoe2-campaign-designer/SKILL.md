@@ -22,14 +22,15 @@ Restate the idea in 3–5 lines before designing.
 ## 2. Map the design onto what exists
 Call `blocks_list()` and `guide("engine-facts")`. Express each mechanic as:
 1. **a block**: survive, objective, lose_if_destroyed, waves (+ escalating, `chase`), anchor,
-   escort, choice, bank_load, bank_store, pad_shop, perk_effects, boon_offers, run_end, telemetry.
+   escort, choice, random_faction, bank_load, bank_store, pad_shop, perk_effects, boon_offers, run_end,
+   telemetry.
    Any block can be switched on a variable with `when:`;
 2. **raw triggers** (`skills/aoe2-triggers`) when no block fits;
 3. **XS** (`skills/aoe2-xs`) for loops, math, randomness or state that triggers can't express.
 
 Known engine constraints that shape designs:
 - **Persistence** happens only inside one campaign, through the bank (int values per key). Missions unlock in order; after that, any can be replayed. Replays ask "save your choices?". So hub-and-run loops work, and players must answer YES.
-- **Civ** can't be changed by triggers. Recreate a faction with enable/disable units and techs, attribute modifiers and `add_train_location`. You can rename the civ.
+- **Civ** can't be changed by triggers, and a Random civ always plays as Britons inside a campaign. Build factions with `random_faction` / `faction_effects`: enable/disable units and techs, attribute modifiers, `add_train_location`, free techs and a civ name. Architecture and voices stay the scenario civ's.
 - **Decisions** are popups with 2 options (`choice`). **Shops** use pads (walk a unit onto a flag) through `pad_shop`.
 - **Several units from one trigger** need distinct tiles (`spawn` helper, or `count:` on spec units).
 - A player with no counting objects is defeated at once. Enemies that only send waves need `anchor`.

@@ -1,0 +1,78 @@
+# Random factions: the campaign workaround for random civilizations.
+#
+# Inside a campaign a RANDOM civ always plays as Britons (verified), so this rolls one of three
+# trigger-built factions on top of a fixed civ. Mission 1 rolls and stores the pick in the campaign
+# bank; mission 2 loads it, so the campaign keeps its faction. Each mission ends in victory after 40 s
+# (12 s in test mode).
+#
+# What to look for (the instructions panel names the faction at ~2 s):
+#   1 Norse Raiders  - civ renamed "Norse", Berserk in the Barracks, no Knights/Scout Cavalry, infantry +20 HP
+#   2 Steppe Horde   - civ renamed "Steppe", Mangudai in the Archery Range, no Crossbowmen, cavalry +15% speed
+#   3 Desert Kingdom - civ renamed "Desert", Camel Rider in the Stable, Loom + Wheelbarrow researched, +300 gold
+#
+# Build: aoe2ed call compile_campaign '{"spec": "examples/factions/campaign.yaml", "test_mode": true, "install": true}'
+
+name: aoe2ed_factions
+title: Random Factions
+test_mode: {time_scale: 0.3}
+
+defaults:
+  map_size: 60
+  players:
+    1: {civilization: FRANKS, starting_age: CASTLE, food: 1000, wood: 1000, gold: 1000, stone: 500}
+    2: {civilization: GOTHS}
+  diplomacy: [{player: 1, others: [2], state: ENEMY}]
+  options: {victory_condition: CUSTOM}
+  points: {base: [20, 20]}
+  units:
+    - {player: 1, type: TOWN_CENTER, x: 20, y: 20}
+    - {player: 1, type: BARRACKS, x: 28, y: 14}
+    - {player: 1, type: ARCHERY_RANGE, x: 28, y: 22}
+    - {player: 1, type: STABLE, x: 14, y: 28}
+    - {player: 1, type: VILLAGER_MALE, at: base, count: 4, min_dist: 4}
+    - {player: 2, type: TOWN_CENTER, x: 50, y: 50}
+  # Every mission uses the same factions and the same bank key so the pick carries over.
+  blocks: &faction_blocks
+    - use: random_faction
+      store_key: faction
+      factions:
+        - name: Norse Raiders
+          civ_name: Norse
+          description: "Berserks train at the Barracks. No Knights or Scout Cavalry. Infantry +20 HP."
+          disable_units: [KNIGHT, SCOUT_CAVALRY]
+          train: [{unit: BERSERK, at: BARRACKS, button: r2c1}]
+          effects:
+            - {type: modify_attribute_for_class, object_group2: INFANTRY, source_player: 1,
+               object_attributes: HIT_POINTS, operation: ADD, quantity: 20}
+        - name: Steppe Horde
+          civ_name: Steppe
+          description: "Mangudai train at the Archery Range. No Crossbowmen. Cavalry +15% speed."
+          disable_units: [CROSSBOWMAN]
+          train: [{unit: MANGUDAI, at: ARCHERY_RANGE, button: r2c1}]
+          effects:
+            - {type: modify_attribute_for_class, object_group2: CAVALRY, source_player: 1,
+               object_attributes: MOVEMENT_SPEED, operation: MULTIPLY, quantity: 1.15}
+        - name: Desert Kingdom
+          civ_name: Desert
+          description: "Camel Riders train at the Stable. Loom and Wheelbarrow are free. +300 gold."
+          train: [{unit: CAMEL_RIDER, at: STABLE, button: r2c1}]
+          free_techs: [LOOM, WHEELBARROW]
+          effects:
+            - {type: modify_resource, tribute_list: GOLD_STORAGE, quantity: 300, operation: ADD, source_player: 1}
+    - {use: anchor, player: 2, at: [57, 2]}
+  triggers:
+    - name: Show Faction
+      conditions: [{type: timer, timer: 3}]
+      effects: [{$helper: say_var, text: "Faction rolled: %d (1 Norse, 2 Steppe, 3 Desert)", var: faction}]
+    - name: End
+      conditions: [{type: timer, timer: {$secs: 40}}]
+      effects: [{type: declare_victory, source_player: 1, enabled: true}]
+  telemetry: {players: [1], track_vars: [faction], interval_sec: 2}
+
+missions:
+  - id: roll
+    file: aoe2ed_factions_1_roll
+    messages: {instructions: "Mission 1: your faction is rolled at the start and saved for the campaign."}
+  - id: keep
+    file: aoe2ed_factions_2_keep
+    messages: {instructions: "Mission 2: you should have the same faction as in mission 1."}

@@ -6,6 +6,7 @@ from .bank import resource_to_var, store as bank_store, var_to_resource
 from .base import Ctx
 from .boons import boon_offers
 from .endings import earn, run_end
+from .factions import random_faction
 from .instrument import telemetry_harness
 from .players import anchor
 from .objectives import lose_if_destroyed, objective, survive
@@ -26,6 +27,7 @@ BLOCKS = {
     "boon_offers": boon_offers,
     "choice": choice,
     "escort": escort,
+    "random_faction": random_faction,
     "run_end": run_end,
     "telemetry": telemetry_harness,
 }

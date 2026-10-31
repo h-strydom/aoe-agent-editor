@@ -187,3 +187,26 @@ def test_defaults_deep_merge_players(tmp_path):
     p2 = _built(rep).player_manager.players[2]
     assert p2.civilization.name == "MAGYARS" and p2.starting_age.name == "CASTLE_AGE"
     assert not any("player 2 civilization" in w for w in rep["warnings"])
+
+
+def test_random_faction_block(tmp_path):
+    o = SESSIONS.new(40)
+    ctx = B.Ctx(o.scenario)
+    r = B.random_faction(ctx, store_key="faction", factions=[
+        {"name": "A", "civ_name": "Ayy", "disable_units": ["KNIGHT"], "train": [{"unit": "BERSERK", "at": "BARRACKS"}],
+         "free_techs": ["LOOM"]},
+        {"name": "B", "effects": [{"type": "send_chat", "source_player": 1, "message": "b"}]}])
+    s = o.scenario
+    assert r["triggers"] == ["Faction Load", "Faction Roll", "Faction 1", "Faction 2"]
+    roll = T.trigger_to_dict(T.find_trigger(s, "Faction Roll"))
+    assert "xsGetRandomNumberLH(1, 3)" in roll["effects"][0]["message"]
+    assert [c["type"] for c in roll["conditions"]] == ["timer", "variable_value"]
+    f1 = [e["type"] for e in _effects(s, "Faction 1")]
+    assert f1[:3] == ["store_key_value", "change_civilization_name", "enable_disable_object"]
+    assert {"add_train_location", "research_technology", "display_instructions"} <= set(f1)
+
+
+def test_factions_example_compiles(tmp_path):
+    rep = compile_campaign(Path(__file__).parents[1] / "examples" / "factions" / "campaign.yaml",
+                           out_dir=tmp_path, test_mode=True, render=False)
+    assert rep["ok"] and rep["warnings"] == [] and len(rep["missions"]) == 2

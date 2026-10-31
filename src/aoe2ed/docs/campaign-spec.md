@@ -3,7 +3,8 @@
 A campaign spec is a YAML (or JSON) file that `compile_campaign` turns into scenarios, PNG
 previews, a `.aoe2campaign` and `build_report.json`. Two full working examples:
 `examples/crucible/campaign.yaml` (roguelite: hub shop plus survival runs) and
-`examples/frontier/campaign.yaml` (story campaign: escort, siege with a choice, counter-attack).
+`examples/frontier/campaign.yaml` (story campaign: escort, siege with a choice, counter-attack), plus
+`examples/factions/campaign.yaml` (random factions kept across missions).
 
 ```yaml
 name: my_campaign        # internal name. The campaign bank is scoped by it, so never rename a released campaign
@@ -52,6 +53,9 @@ in `build_report.json` → `warnings`, so a typo like `trigers:` doesn't silentl
   (a two-option decision whose answer is stored, with a timeout default)
 - **Progression:** `bank_load`, `bank_store`, `pad_shop`, `perk_effects` (also handy for "apply once per
   unit of a variable"), `boon_offers`
+- **Factions:** `random_faction`: roll one of several trigger-built factions (civ name, tech tree, unique
+  units in buildings, bonuses, free techs) at start; with `store_key` the campaign keeps it. This replaces
+  random civs, which always play as Britons in campaigns. Example: `examples/factions/campaign.yaml`.
 - **Testing:** `telemetry` (or the mission-level `telemetry:` key)
 
 `when: [conditions]` on any block adds those conditions to every trigger the block creates, which
