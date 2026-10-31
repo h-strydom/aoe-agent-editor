@@ -23,7 +23,13 @@ def binary() -> Path:
     if env:
         return Path(env)
     base = Path(AoE2ScenarioParser.__file__).parent / "dependencies" / "xs-check"
-    return base / ("xs-check.exe" if sys.platform == "win32" else "xs-check")
+    exe = base / ("xs-check.exe" if sys.platform == "win32" else "xs-check")
+    if sys.platform != "win32" and exe.exists() and not os.access(exe, os.X_OK):
+        try:  # wheels don't always keep the execute bit on the bundled Linux binary
+            exe.chmod(exe.stat().st_mode | 0o111)
+        except OSError:
+            pass
+    return exe
 
 
 def parse_output(text: str) -> list[dict]:
