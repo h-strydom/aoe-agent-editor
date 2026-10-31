@@ -240,8 +240,8 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
     for p in s.player_manager.players[1:]:
         civ = getattr(p.civilization, "name", str(p.civilization))
         if p.active and "RANDOM" in civ:
-            warnings.append(f"player {p.player_id} civilization is {civ}: the game plays this as Byzantines, "
-                            f"not a random civ. Set players.{p.player_id}.civilization.")
+            warnings.append(f"player {p.player_id} civilization is {civ}: a random civ is rolled at start "
+                            f"(Restart keeps it). Set players.{p.player_id}.civilization if that's not intended.")
     reveal = m.get("reveal_map", reveal_map)
     if reveal:
         if reveal not in REVEAL_VALUES:

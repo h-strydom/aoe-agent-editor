@@ -26,9 +26,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - A computer player with the game's default AI **resigns** once it judges the game lost (frontier
   M3: it resigned after one camp building fell), which ends trigger-driven missions early. The
   compiler now gives players 2+ "None AI" unless the spec sets `players.<n>.ai`. *Frontier playtest, 2026-10-30.*
-- A player whose civilization is `RANDOM` / `FULL_RANDOM` (the parser's blank scenario sets every player to
-  `RANDOM-CIV`) played as **Byzantines** every time instead of a random civ. Always set a civ; the compiler
-  warns when one is left random. How the editor itself stores "Random" is still unknown. *Civ probe, 2026-10-31.*
+- Civilization `RANDOM` (stored as `RANDOM-CIV`, the same value the editor writes and the parser's blank-scenario
+  default) rolls a random civ when the scenario is started. **Restart keeps the rolled civ**; quit and start
+  again to re-roll. So a spec that leaves a player's civ unset gets a random civ, which is rarely intended;
+  the compiler notes it. *Editor-saved scenario compared field by field + user test, 2026-10-31.*
 - Setting player 1's `REVEAL_MAP` resource (203) to 2 at start reveals the whole map with no fog; 1 = explored.
   *Frontier/probe playtest, 2026-10-31.*
 
