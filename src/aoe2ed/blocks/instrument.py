@@ -1,11 +1,13 @@
 """Attach the telemetry harness to a scenario (see aoe2ed.telemetry)."""
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from .. import telemetry
 from .base import Ctx
 
 
-def telemetry_harness(ctx: Ctx, *, players: list[int] = (1, 2), track_vars: list[str] = (),
+def telemetry_harness(ctx: Ctx, *, players: Sequence[int] = (1, 2), track_vars: Sequence[str] = (),
                       interval_sec: int = 10, events: dict[str, int] | None = None,
                       mission_no: int = 0) -> dict:
     """Record resources/pop/kills per player and the given variables every `interval_sec` into

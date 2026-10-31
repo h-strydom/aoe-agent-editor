@@ -5,7 +5,7 @@ Tools take and return JSON-compatible values.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 TOOLS: dict[str, Callable] = {}
 

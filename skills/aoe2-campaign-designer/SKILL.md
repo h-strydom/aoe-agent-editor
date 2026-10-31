@@ -42,9 +42,11 @@ Known engine constraints that shape designs:
 For each mission give: goal, map (size, biome, layout, named zones), players, the blocks with their key numbers, persistent keys read and written, and the end conditions. Add a key table, for example `meta_points: currency, written by hub on buy/exit and by runs at end`. Get a yes before building, or note the assumptions if the person said to just go ahead.
 
 ## 4. Write the spec
-Read `guide("campaign-spec")` and start from the closest example: `examples/crucible/campaign.yaml`
-(roguelite: hub shop plus 45-minute survival run) or `examples/frontier/campaign.yaml` (story
-campaign: escort, siege with a choice, counter-attack shaped by it). Conventions:
+Read `guide("campaign-spec")` and start from the closest example from `examples()`: crucible
+(roguelite: hub shop plus 45-minute survival run), frontier (story campaign: escort, siege with a
+choice, counter-attack shaped by it) or factions (random factions kept across missions). The files
+are also at `${CLAUDE_PLUGIN_ROOT}/examples/<name>/campaign.yaml`. Write the user's spec in their
+project, not in the plugin folder. Conventions:
 - `name:` is short snake_case and stays stable forever, because the bank is scoped by it. Name files `<name>_<n>_<slug>`.
 - Use a generated `map:` with named zones for everything that blocks refer to (spawns, pads, gates, objectives).
   Missions that share a map put it in `defaults: {map: ...}`.

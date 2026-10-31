@@ -4,10 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from aoe2ed import triggers as T
 from aoe2ed.campaign import Campaign
 from aoe2ed.compiler import compile_campaign
 from aoe2ed.session import SESSIONS
-from aoe2ed import triggers as T
 
 SPEC = Path(__file__).parents[1] / "examples" / "crucible" / "campaign.yaml"
 

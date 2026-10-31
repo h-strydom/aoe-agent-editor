@@ -1,10 +1,10 @@
 # Campaign spec
 
 A campaign spec is a YAML (or JSON) file that `compile_campaign` turns into scenarios, PNG
-previews, a `.aoe2campaign` and `build_report.json`. Two full working examples:
-`examples/crucible/campaign.yaml` (roguelite: hub shop plus survival runs) and
-`examples/frontier/campaign.yaml` (story campaign: escort, siege with a choice, counter-attack), plus
-`examples/factions/campaign.yaml` (random factions kept across missions).
+previews, a `.aoe2campaign` and `build_report.json`. `examples()` lists the full working
+examples with their paths: crucible (roguelite: hub shop plus survival runs), frontier (story
+campaign: escort, siege with a choice, counter-attack) and factions (random factions kept across
+missions). Relative paths in tool calls resolve against the current working directory.
 
 ```yaml
 name: my_campaign        # internal name. The campaign bank is scoped by it, so never rename a released campaign
@@ -55,7 +55,7 @@ in `build_report.json` → `warnings`, so a typo like `trigers:` doesn't silentl
   unit of a variable"), `boon_offers`
 - **Factions:** `random_faction`: roll one of several trigger-built factions (civ name, tech tree, unique
   units in buildings, bonuses, free techs) at start; with `store_key` the campaign keeps it. This replaces
-  random civs, which always play as Britons in campaigns. Example: `examples/factions/campaign.yaml`.
+  random civs, which always play as Britons in campaigns. See the `factions` example.
 - **Testing:** `telemetry` (or the mission-level `telemetry:` key)
 
 `when: [conditions]` on any block adds those conditions to every trigger the block creates, which

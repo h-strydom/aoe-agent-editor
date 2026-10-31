@@ -7,8 +7,21 @@
 """
 from .canvas import Canvas
 from .generate import GeneratedMap, build_canvas, generate, write_canvas
-from .spec import (BIOMES, Biome, CliffSpec, ElevationSpec, ForestSpec, Hill, MapSpec, PlayerStart,
-                   ResourceSpec, RoadSpec, UnitPlacement, WaterSpec, ZoneSpec)
+from .spec import (
+                   BIOMES,
+                   Biome,
+                   CliffSpec,
+                   ElevationSpec,
+                   ForestSpec,
+                   Hill,
+                   MapSpec,
+                   PlayerStart,
+                   ResourceSpec,
+                   RoadSpec,
+                   UnitPlacement,
+                   WaterSpec,
+                   ZoneSpec,
+)
 from .steps import DEFAULT_PIPELINE, STEPS, GenContext
 
 __all__ = ["BIOMES", "Biome", "Canvas", "CliffSpec", "DEFAULT_PIPELINE", "ElevationSpec", "ForestSpec",

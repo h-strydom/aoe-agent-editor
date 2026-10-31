@@ -97,8 +97,11 @@ def read_xsdat(name_or_path: str, as_type: str = "int") -> dict:
     """Decode an .xsdat file as a flat sequence of int32 or float32 values."""
     p = Path(name_or_path)
     if not p.is_absolute():
-        p = paths().profile / "profile" / (p.name if p.suffix else p.name + ".xsdat")
+        profile = paths().profile
+        if profile is None:
+            raise RuntimeError("AoE2 DE profile folder not found; set AOE2DE_PROFILE or pass a full path")
+        p = profile / "profile" / (p.name if p.suffix else p.name + ".xsdat")
     b = p.read_bytes()
     n = len(b) // 4
-    fmt = "<%d%s" % (n, "i" if as_type == "int" else "f")
+    fmt = f"<{n}{'i' if as_type == 'int' else 'f'}"
     return {"path": str(p), "values": list(struct.unpack_from(fmt, b))}

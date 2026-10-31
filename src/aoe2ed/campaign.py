@@ -38,7 +38,7 @@ class Campaign:
 
     # ------------------------------------------------------------ io
     @classmethod
-    def from_bytes(cls, b: bytes) -> "Campaign":
+    def from_bytes(cls, b: bytes) -> Campaign:
         pos = 0
 
         def take(fmt):
@@ -71,7 +71,7 @@ class Campaign:
         return cls(name, scenarios, deps, version)
 
     @classmethod
-    def read(cls, path: str | Path) -> "Campaign":
+    def read(cls, path: str | Path) -> Campaign:
         return cls.from_bytes(Path(path).read_bytes())
 
     def to_bytes(self) -> bytes:

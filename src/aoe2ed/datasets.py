@@ -6,9 +6,8 @@ accepts an int, a numeric string or a case-insensitive member name.
 from __future__ import annotations
 
 import enum
-from functools import lru_cache
+from functools import cache
 
-from . import _parser  # noqa: F401  (configures the parser)
 from AoE2ScenarioParser.datasets import trigger_lists
 from AoE2ScenarioParser.datasets.buildings import BuildingInfo
 from AoE2ScenarioParser.datasets.heroes import HeroInfo
@@ -17,6 +16,8 @@ from AoE2ScenarioParser.datasets.players import PlayerColorId, PlayerId
 from AoE2ScenarioParser.datasets.techs import TechInfo
 from AoE2ScenarioParser.datasets.terrains import TerrainId
 from AoE2ScenarioParser.datasets.units import UnitInfo
+
+from . import _parser  # noqa: F401  (configures the parser)
 
 OBJECT_DATASETS = {"unit": UnitInfo, "building": BuildingInfo, "hero": HeroInfo, "other": OtherInfo}
 
@@ -39,13 +40,13 @@ def _norm(s: str) -> str:
     return s.strip().upper().replace(" ", "_").replace("-", "_")
 
 
-@lru_cache(maxsize=None)
+@cache
 def _info_index(dataset_name: str) -> dict[str, int]:
     ds = INFO_DATASETS[dataset_name]
     return {m.name: m.ID for m in ds}
 
 
-@lru_cache(maxsize=None)
+@cache
 def _object_index() -> dict[str, int]:
     """Any placeable object name -> unit const (units, buildings, heroes, gaia)."""
     out: dict[str, int] = {}
@@ -119,12 +120,12 @@ def describe_value(dataset_name: str, value) -> str | None:
     try:
         if dataset_name in INFO_DATASETS:
             for m in INFO_DATASETS[dataset_name]:
-                if m.ID == value:
+                if value == m.ID:
                     return m.name
             if dataset_name == "UnitInfo":
                 for ds in (BuildingInfo, HeroInfo, OtherInfo):
                     for m in ds:
-                        if m.ID == value:
+                        if value == m.ID:
                             return m.name
         elif dataset_name in ENUM_DATASETS:
             return ENUM_DATASETS[dataset_name](value).name

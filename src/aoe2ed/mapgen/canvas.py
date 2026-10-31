@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Iterator
 
 # Tile flags
 WATER = 1          # not walkable

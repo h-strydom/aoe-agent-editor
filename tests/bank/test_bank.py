@@ -2,9 +2,9 @@ import json
 import shutil
 import zlib
 
+import make_fixture
 import pytest
 
-import make_fixture
 from aoe2ed import bank as bankmod
 from aoe2ed.bank import Bank, BankFormatError, GameRunningError, load
 from aoe2ed.bank.__main__ import main

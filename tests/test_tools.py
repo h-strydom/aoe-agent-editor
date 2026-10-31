@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from aoe2ed.session import SESSIONS
 from aoe2ed.tools import load_all
 
 TOOLS = load_all()

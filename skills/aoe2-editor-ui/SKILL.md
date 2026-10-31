@@ -5,7 +5,7 @@ description: Drive the Age of Empires II DE in-game editor and menus through des
 
 # AoE2 editor and menu automation
 
-Almost everything a human does in the editor maps onto file edits (see `docs/coverage.md`). Use the
+Almost everything a human does in the editor maps onto file edits (see `guide("coverage")`). Use the
 UI only for these:
 
 | Task | Why it needs the UI |

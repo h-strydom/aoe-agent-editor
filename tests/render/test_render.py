@@ -1,4 +1,3 @@
-from pathlib import Path
 
 import pytest
 from AoE2ScenarioParser.datasets.terrains import TerrainId
@@ -7,7 +6,6 @@ from aoe2ed._parser import AoE2DEScenario
 from aoe2ed.mapgen import MapSpec, generate
 from aoe2ed.render import TERRAIN_COLORS, object_class, render_scenario, trigger_areas
 from aoe2ed.render.colors import GOLD_COLOR, TREE_COLOR
-
 
 
 @pytest.fixture(scope="module")

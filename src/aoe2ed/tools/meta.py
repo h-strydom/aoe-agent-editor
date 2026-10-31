@@ -38,6 +38,7 @@ def run_python(code: str, handle: str | None = None) -> dict:
     xs_manager / option_manager / message_manager, plus raw `scenario.sections`.
     Assign to `result` to return a JSON value; print() output is captured."""
     import aoe2ed
+
     from .._parser import ConditionId, EffectId
 
     env = {"sessions": SESSIONS, "datasets": datasets, "aoe2ed": aoe2ed,
@@ -60,11 +61,34 @@ def run_python(code: str, handle: str | None = None) -> dict:
     return {"result": res, "stdout": buf.getvalue()[-20000:], "error": error}
 
 
+def _examples_dir():
+    from pathlib import Path
+
+    import aoe2ed
+    d = Path(aoe2ed.__file__).resolve().parents[2] / "examples"  # plugin / repo checkout layout
+    return d if d.is_dir() else None
+
+
+@tool
+def examples() -> list[dict]:
+    """Example campaign specs shipped with the toolkit, with absolute paths you can pass to
+    compile_campaign or read as a starting point: crucible (roguelite hub + survival runs),
+    frontier (story: escort, siege with a choice, counter-attack), factions (random factions)."""
+    d = _examples_dir()
+    if d is None:
+        return []
+    out = []
+    for spec in sorted(d.glob("*/campaign.yaml")):
+        first = spec.read_text(encoding="utf-8").splitlines()[0].lstrip("# ").strip()
+        out.append({"name": spec.parent.name, "path": str(spec), "summary": first})
+    return out
+
+
 @tool
 def guide(topic: str = "index") -> str:
     """Reference docs shipped with aoe2ed. Topics: campaign-spec (spec format for
     compile_campaign), engine-facts (game behaviour verified in playtests, read before relying on
-    any mechanic), index (this list)."""
+    any mechanic), coverage (every editor feature and how an agent does it), index (this list)."""
     from importlib.resources import files
     docs = files("aoe2ed") / "docs"
     names = sorted(p.name[:-3] for p in docs.iterdir() if p.name.endswith(".md"))

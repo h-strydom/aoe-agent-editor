@@ -11,10 +11,10 @@ installs it, and checks it in playtests through telemetry. `examples/crucible/` 
 campaign, built with this toolkit.
 
 ## What's inside
-- **MCP server and CLI (63 tools)** over [AoE2ScenarioParser](https://github.com/KSneijders/AoE2ScenarioParser):
+- **MCP server and CLI (64 tools)** over [AoE2ScenarioParser](https://github.com/KSneijders/AoE2ScenarioParser):
   scenarios, players, diplomacy, terrain, units, triggers (JSON, names instead of ids), variables, XS
   with offline linting ([xs-check](https://github.com/Divy1211/xs-check)), campaign files, the campaign
-  bank, and the installed game. `run_python` covers anything left. See [docs/coverage.md](docs/coverage.md).
+  bank, and the installed game. `run_python` covers anything left. See [coverage](src/aoe2ed/docs/coverage.md), also served by `guide("coverage")`.
 - **Map generator:** spec-driven procedural maps (biomes, bases, spawns, choke points, lakes, rivers,
   hills, roads, forests, resources) that return *named areas*, plus PNG previews so the agent can see the map.
 - **Building blocks:** tested mechanics such as survive timers, escalating waves, pad shops with perk
@@ -41,7 +41,7 @@ claude plugin install aoe2-editor@aoe2-editor
 **Any MCP client:** clone the repo, then point your client at the server:
 ```json
 { "mcpServers": { "aoe2-editor": { "command": "uv",
-  "args": ["run", "--directory", "/path/to/aoe-agent-editor", "aoe2-editor-mcp"] } } }
+  "args": ["run", "--quiet", "--project", "/path/to/aoe-agent-editor", "aoe2-editor-mcp"] } } }
 ```
 
 **CLI only:** `uv run aoe2ed tools`, `uv run aoe2ed help triggers_add`,
@@ -67,6 +67,17 @@ uv run pytest
 - `scripts/smoke_scenario.py --install` builds a 2-minute scenario that exercises every block once.
 - `scripts/gen_trigger_reference.py` regenerates the trigger reference used by the skills.
 - `scripts/demo_mapgen.py` writes example maps and previews to `out/`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the layout, conventions and release steps, and
+[CHANGELOG.md](CHANGELOG.md) for what changed.
+
+## Safety
+- Files are written only where you point the tools and into the game's **profile** folders
+  (scenario, campaign, xs); the game install is never modified. Overwrites keep a timestamped `.bak`.
+- `bank_set` edits your `Player.nfp` (campaign progress). It makes a backup first and refuses to
+  run while the game is open.
+- `run_python` executes arbitrary Python in the MCP server process. It's the escape hatch for
+  anything the tools don't cover, so treat it like any code an agent runs on your machine.
 
 ## Credits
 AoE2ScenarioParser (KSneijders) handles the scenario format. xs-check (Divy1211 / Alian713) provides

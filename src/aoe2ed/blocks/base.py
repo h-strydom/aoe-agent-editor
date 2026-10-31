@@ -7,6 +7,7 @@ through names: variables and areas are referenced by name, never by raw id.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from .. import triggers as T
 
@@ -15,7 +16,7 @@ Area = tuple[int, int, int, int]
 
 @dataclass
 class Ctx:
-    scenario: object
+    scenario: Any  # AoE2DEScenario; the parser ships no type information
     areas: dict[str, Area] = field(default_factory=dict)
     points: dict[str, tuple[int, int]] = field(default_factory=dict)
     time_scale: float = 1.0          # test mode: 0.1 turns a 45 min survive into 4.5 min
@@ -96,7 +97,7 @@ def area_kw(a: Area) -> dict:
     return {"area": list(a)}
 
 
-def spread(area: Area, n: int) -> list[tuple[float, float]]:
+def spread(area: Area, n: int) -> list[tuple[int, int]]:
     """n deterministic, roughly even positions inside an area (tile centres)."""
     x1, y1, x2, y2 = area
     w, h = x2 - x1 + 1, y2 - y1 + 1

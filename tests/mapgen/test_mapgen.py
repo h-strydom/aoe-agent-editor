@@ -1,9 +1,20 @@
 import pytest
 
 from aoe2ed._parser import AoE2DEScenario
-from aoe2ed.mapgen import (ElevationSpec, ForestSpec, MapSpec, PlayerStart, ResourceSpec, RoadSpec,
-                           UnitPlacement, WaterSpec, ZoneSpec, build_canvas, generate)
-from aoe2ed.mapgen import compass
+from aoe2ed.mapgen import (
+    ElevationSpec,
+    ForestSpec,
+    MapSpec,
+    PlayerStart,
+    ResourceSpec,
+    RoadSpec,
+    UnitPlacement,
+    WaterSpec,
+    ZoneSpec,
+    build_canvas,
+    compass,
+    generate,
+)
 from aoe2ed.mapgen.canvas import WATER
 from aoe2ed.mapgen.names import unit_id
 from aoe2ed.mapgen.steps import DEFAULT_PIPELINE

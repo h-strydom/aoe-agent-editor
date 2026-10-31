@@ -5,7 +5,7 @@ description: Reference for Age of Empires II DE scenario triggers, covering all 
 
 # AoE2 triggers
 
-- `reference/effects.md` and `reference/conditions.md` list every type with its parameters. They are generated from the parser by `scripts/gen_trigger_reference.py`.
+- `reference/effects.md` and `reference/conditions.md` list every type with its parameters. They are generated from the parser's schemas, so they match what the tools accept.
 - `reference/enums.md` lists the names accepted for enum parameters.
 - For a live schema with defaults, call `effect_schema(handle, type)` / `condition_schema(handle, type)`.
 

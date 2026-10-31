@@ -87,8 +87,10 @@ def decode(data: bytes, var_names: dict[int, str] | None = None, event_names: di
     else:
         mission_no, (np, nv) = None, vals[2:4]
         i = 4
-    players = vals[i:i + np]; i += np
-    var_ids = vals[i:i + nv]; i += nv
+    players = vals[i:i + np]
+    i += np
+    var_ids = vals[i:i + nv]
+    i += nv
     var_names = var_names or {}
     event_names = event_names or {}
     samples, events = [], []

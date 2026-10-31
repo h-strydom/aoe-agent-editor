@@ -18,7 +18,7 @@ import types
 from dataclasses import dataclass, field
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
-Point = Union[tuple[int, int], list[int], str]
+Point = tuple[int, int] | list[int] | str
 Rect = tuple[int, int, int, int]
 
 
@@ -215,7 +215,7 @@ class MapSpec:
             raise ValueError(f"Unknown biome {self.biome!r}; presets: {sorted(BIOMES)}") from None
 
     @classmethod
-    def from_dict(cls, data: dict) -> "MapSpec":
+    def from_dict(cls, data: dict) -> MapSpec:
         return _from_dict(cls, data)
 
     def to_dict(self) -> dict:

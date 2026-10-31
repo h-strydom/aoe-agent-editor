@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 from . import compass
 from .canvas import BLOCKED, CLEAR, FLAT, FOREST, NOTREE, ROAD, WALL, WATER, Canvas
@@ -375,7 +375,7 @@ def roads(ctx: GenContext) -> None:
     c = ctx.canvas
     rng = ctx.rng("roads")
     shallows = terrain_id(ctx.biome.shallows)
-    for k, r in enumerate(ctx.spec.roads, start=1):
+    for r in ctx.spec.roads:
         pts = [ctx.point(p) for p in r.points]
         if len(pts) < 2:
             raise ValueError("roads need at least two points")
@@ -477,7 +477,7 @@ def forests(ctx: GenContext) -> None:
               if min(x, y, n - 1 - x, n - 1 - y) < fs.border * (0.6 + 0.8 * bn(x, y))])
     starts = ctx.data.get("starts", [])
     for (sx, sy), p in zip(starts, ctx.spec.players):
-        for w in range(fs.player_woodlines):
+        for _w in range(fs.player_woodlines):
             a = rng.random() * 2 * math.pi
             for _ in range(40):
                 d = p.base_radius + rng.uniform(1.5, 5)

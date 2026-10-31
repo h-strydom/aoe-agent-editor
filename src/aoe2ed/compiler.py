@@ -168,16 +168,17 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
     points = {k: tuple(v) for k, v in (m.get("points") or {}).items()}
     ctx = B.Ctx(s, areas=areas, points=points, time_scale=time_scale, test_mode=time_scale != 1.0)
 
-    def step(where: str, fn):
+    def step(where: str, fn, *args, **kwargs):
+        """Run fn(*args, **kwargs); any failure becomes a CompileError naming the mission and step."""
         try:
-            return fn()
+            return fn(*args, **kwargs)
         except CompileError:
             raise
         except Exception as e:
             raise CompileError(f"[{mid}] {where}: {_err(e)}") from None
 
     for pid, fields in (m.get("players") or {}).items():
-        step(f"players.{pid}", lambda: TOOLS["player_set"](handle=h, player=int(pid), fields=fields))
+        step(f"players.{pid}", TOOLS["player_set"], handle=h, player=int(pid), fields=fields)
     # Verified in game: the default AI resigns once it thinks it has lost (frontier M3 resigned after
     # one building fell), ending trigger-driven missions early. Computer players get no AI script
     # unless the spec asks for one with players.<n>.ai.
@@ -191,11 +192,11 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
             p.human = False
             set_ai(p, "none")
     for d in m.get("diplomacy") or []:
-        step("diplomacy", lambda: TOOLS["diplomacy_set"](handle=h, **d))
+        step("diplomacy", TOOLS["diplomacy_set"], handle=h, **d)
     if m.get("options"):
-        step("options", lambda: TOOLS["options_set"](handle=h, fields=m["options"]))
+        step("options", TOOLS["options_set"], handle=h, fields=m["options"])
     if m.get("messages"):
-        step("messages", lambda: TOOLS["messages_set"](handle=h, fields=m["messages"]))
+        step("messages", TOOLS["messages_set"], handle=h, fields=m["messages"])
     units = []
     taken: set[tuple[int, int]] = set()  # tiles used by `at:` placements, so entries never stack
     for i, u in enumerate(m.get("units") or []):
@@ -203,7 +204,7 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         count, min_dist = int(u.pop("count", 1)), float(u.pop("min_dist", 0))
         if "at" in u:
             at = u.pop("at")
-            tiles = step(f"units {i}", lambda: near_tiles(ctx, at, count, min_dist, taken))
+            tiles = step(f"units {i}", near_tiles, ctx, at, count, min_dist, taken)
             for x, y in tiles:
                 units.append({**u, "x": x + 0.5, "y": y + 0.5})
         elif count > 1:
@@ -211,14 +212,14 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         else:
             units.append(u)
     if units:
-        step("units", lambda: TOOLS["units_add"](handle=h, units=units))
+        step("units", TOOLS["units_add"], handle=h, units=units)
 
     tm = s.trigger_manager
     # Raw triggers exist as empty shells first so blocks can reference them by name (e.g.
     # done_effects: activate "Caravan Victory"); they are filled after the blocks and moved last.
     raw_specs = m.get("triggers") or []
-    shells = step("triggers", lambda: T.create_shells(s, [
-        {k: v for k, v in t.items() if k not in ("conditions", "effects")} for t in raw_specs]))
+    shells = step("triggers", T.create_shells, s, [
+        {k: v for k, v in t.items() if k not in ("conditions", "effects")} for t in raw_specs])
     for i, blk in enumerate(m.get("blocks") or []):
         blk = dict(blk)
         name = blk.pop("use", None)
@@ -226,15 +227,15 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
         if name not in B.BLOCKS:
             raise CompileError(f"[{mid}] block {i}: unknown block '{name}'. Blocks: {sorted(B.BLOCKS)}")
         before = len(tm.triggers)
-        step(f"block {i} ({name})", lambda: B.BLOCKS[name](ctx, **_expand(blk, ctx)))
+        step(f"block {i} ({name})", lambda b=blk, n=name: B.BLOCKS[n](ctx, **_expand(b, ctx)))
         if when:
             new_names = [t.name for t in tm.triggers[before:]]
-            step(f"block {i} ({name}) when", lambda: ctx.gate(new_names, _expand(when, ctx)))
+            step(f"block {i} ({name}) when", lambda n=new_names, w=when: ctx.gate(n, _expand(w, ctx)))
     raw = []
     for i, t in enumerate(raw_specs):
-        raw.append(step(f"trigger {i} ('{t.get('name', '?')}')", lambda: _expand(t, ctx)))
+        raw.append(step(f"trigger {i} ('{t.get('name', '?')}')", _expand, t, ctx))
     if raw:
-        step("triggers", lambda: T.fill_triggers(s, shells, raw))
+        step("triggers", T.fill_triggers, s, shells, raw)
         tm.move_triggers([t.trigger_id for t in shells], len(tm.triggers))
     warnings = T.stacked_spawns(raw)
     for p in s.player_manager.players[1:]:
@@ -247,9 +248,9 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
     if reveal:
         if reveal not in REVEAL_VALUES:
             raise CompileError(f"[{mid}] reveal_map must be one of {sorted(REVEAL_VALUES)} or false")
-        step("reveal_map", lambda: T.add_triggers(s, [{"name": "Reveal Map (test)", "effects": [
+        step("reveal_map", T.add_triggers, s, [{"name": "Reveal Map (test)", "effects": [
             {"type": "modify_resource", "tribute_list": "REVEAL_MAP", "source_player": 1,
-             "quantity": REVEAL_VALUES[reveal], "operation": "SET"}]}]))
+             "quantity": REVEAL_VALUES[reveal], "operation": "SET"}]}])
     if m.get("xs"):
         ctx.xs(m["xs"])
 

@@ -19,8 +19,8 @@ settings.SHOW_SCENARIO_VERSION_WARNINGS = False
 settings.ALLOW_OVERWRITING_SOURCE = True  # aoe2ed handles backups itself
 settings.ENABLE_XS_CHECK_INTEGRATION = False  # we run xs-check explicitly; see aoe2ed.xs
 
-from AoE2ScenarioParser.sections.retrievers.retriever_object_link import RetrieverObjectLink  # noqa: E402
 from AoE2ScenarioParser.scenarios.scenario_store import getters as _getters  # noqa: E402
+from AoE2ScenarioParser.sections.retrievers.retriever_object_link import RetrieverObjectLink  # noqa: E402
 
 
 def _unsupported_without_class_patch(self, class_reference, uuid) -> bool:

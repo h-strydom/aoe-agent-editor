@@ -21,7 +21,7 @@ they have granted it. Ask them which.
    - `bank_show("<campaign>")` shows what was persisted.
    - `game_log(grep="error")` shows engine-level problems. XS chat output is not in the log.
 5. **Compare** the evidence with the design and the person's report. Each mismatch is a bug in the spec, a block or an assumption. Fix it in the toolkit or spec, never by hand-editing output, then rebuild.
-6. **Record what you learned:** new verified engine behaviour goes into `src/aoe2ed/docs/engine-facts.md` (see `guide("engine-facts")`), with how it was verified.
+6. **Record what you learned:** tell the person about any engine behaviour the playtest proved that isn't in `guide("engine-facts")`, with how it was verified. Keep it in the project's own notes; don't edit files in the plugin folder, because updates replace them. Toolkit maintainers record it in the engine-facts document in the aoe-agent-editor repository.
 
 ## Reading telemetry
 - No `.xsdat` at all: the XS didn't run (a compile error in game?). Check `xs_ok` and whether the mission started.

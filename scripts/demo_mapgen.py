@@ -10,8 +10,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from aoe2ed._parser import AoE2DEScenario  # noqa: E402  (configures the parser quietly)
-from aoe2ed.mapgen import (ElevationSpec, ForestSpec, MapSpec, PlayerStart, ResourceSpec,  # noqa: E402
-                           RoadSpec, UnitPlacement, WaterSpec, ZoneSpec, generate)
+from aoe2ed.mapgen import (  # noqa: E402
+    ElevationSpec,
+    ForestSpec,
+    MapSpec,
+    PlayerStart,
+    ResourceSpec,
+    RoadSpec,
+    UnitPlacement,
+    WaterSpec,
+    ZoneSpec,
+    generate,
+)
 
 SPAWNS = {"north": "n", "east": "e", "south": "s", "west": "w"}
 

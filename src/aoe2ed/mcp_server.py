@@ -14,6 +14,10 @@ it in the game's scenario folder). Names are accepted wherever ids are: units 'A
 players 'ONE', terrains 'GRASS_1', operation 'Add'. Use lookup() to find names and
 effect_schema()/condition_schema() for trigger parameters. run_python is the escape hatch for
 anything AoE2ScenarioParser can do that no tool covers. Lint XS with xs_check before embedding.
+
+Whole campaigns: write a YAML spec (guide("campaign-spec"), examples() for working specs) and build
+it with compile_campaign. Check guide("engine-facts") before relying on any game behaviour.
+Relative paths resolve against the current working directory.
 """
 
 

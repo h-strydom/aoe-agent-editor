@@ -23,7 +23,7 @@ aoe2ed = "aoe2ed.cli:main"
 aoe2-editor-mcp = "aoe2ed.mcp_server:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.8"]
 
 [build-system]
 requires = ["hatchling"]
@@ -36,3 +36,13 @@ packages = ["src/aoe2ed"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "SIM", "UP", "I"]
+# E501: long docstrings and data tables read better unwrapped; SIM105: explicit try/except/pass is clearer
+# here; B905: many zip() calls pair a sequence with its own tail (path, path[1:]), so lengths differ by design.
+ignore = ["E501", "SIM105", "B905"]

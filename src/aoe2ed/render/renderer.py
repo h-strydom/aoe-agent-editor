@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Callable, Mapping
 
 from PIL import Image, ImageDraw, ImageFont
 
