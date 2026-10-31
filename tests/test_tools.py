@@ -27,13 +27,22 @@ def blank():
     return call("scenario_new", map_size=100)["handle"]
 
 
-def test_open_fixture_summary():
-    h = call("scenario_open", path=str(FIX / "siege.aoe2scenario"))["handle"]
+def test_open_old_version_then_new():
+    # The parser's own 1.54 default scenario predates execute_on_load (1.55). Opening it must not
+    # break newer scenarios in the same process (see the patch in aoe2ed._parser).
+    import AoE2ScenarioParser
+    old = Path(AoE2ScenarioParser.__file__).parent / "versions" / "DE" / "v1.54" / "default.aoe2scenario"
+    h = call("scenario_open", path=str(old))["handle"]
+    assert call("scenario_summary", handle=h)["scenario_version"] == "1.54"
+    new = call("scenario_new")["handle"]
+    call("triggers_add", handle=new, triggers=[{"name": "T", "execute_on_load": True}])
+    assert call("trigger_get", handle=new, trigger="T")["execute_on_load"] is True
+
+
+def test_summary_of_fixture():
+    h = call("scenario_open", path=str(FIX / "kv_store.aoe2scenario"))["handle"]
     s = call("scenario_summary", handle=h)
-    assert s["triggers"] > 50 and s["units"] > 0
-    assert any(t["name"] for t in s["trigger_list"])
-    # Opening an old (1.53) scenario must not break newer ones in the same process.
-    assert call("scenario_new")["scenario_version"] >= "1.59"
+    assert s["triggers"] >= 1 and any(t["name"] for t in s["trigger_list"])
 
 
 def test_triggers_roundtrip(blank, tmp_path):

@@ -1,4 +1,4 @@
-# aoe2-agent-editor
+# aoe-agent-editor
 
 Let an AI agent build **Age of Empires II: Definitive Edition** scenarios and whole campaigns from a
 plain-language idea:
@@ -32,7 +32,7 @@ Requirements: AoE2 DE (Steam), [uv](https://docs.astral.sh/uv/), Windows (Linux/
 
 **Claude Code plugin** (skills + MCP server):
 ```bash
-claude plugin marketplace add h-strydom/aoe2-agent-editor
+claude plugin marketplace add h-strydom/aoe-agent-editor
 ```
 ```bash
 claude plugin install aoe2-editor@aoe2-editor
@@ -41,7 +41,7 @@ claude plugin install aoe2-editor@aoe2-editor
 **Any MCP client:** clone the repo, then point your client at the server:
 ```json
 { "mcpServers": { "aoe2-editor": { "command": "uv",
-  "args": ["run", "--directory", "/path/to/aoe2-agent-editor", "aoe2-editor-mcp"] } } }
+  "args": ["run", "--directory", "/path/to/aoe-agent-editor", "aoe2-editor-mcp"] } } }
 ```
 
 **CLI only:** `uv run aoe2ed tools`, `uv run aoe2ed help triggers_add`,

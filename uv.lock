@@ -29,7 +29,7 @@ wheels = [
 ]
 
 [[package]]
-name = "aoe2-agent-editor"
+name = "aoe-agent-editor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

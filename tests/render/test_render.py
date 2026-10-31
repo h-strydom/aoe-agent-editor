@@ -8,7 +8,6 @@ from aoe2ed.mapgen import MapSpec, generate
 from aoe2ed.render import TERRAIN_COLORS, object_class, render_scenario, trigger_areas
 from aoe2ed.render.colors import GOLD_COLOR, TREE_COLOR
 
-SIEGE = Path(__file__).resolve().parents[1] / "fixtures" / "siege.aoe2scenario"
 
 
 @pytest.fixture(scope="module")
@@ -72,9 +71,14 @@ def test_elevation_changes_shading():
     assert list(flat.getdata()) != list(hilly.getdata())
 
 
-def test_render_real_scenario_from_path_with_trigger_areas(tmp_path):
-    out = tmp_path / "siege.png"
-    render_scenario(str(SIEGE), out, scale=2, show_trigger_areas=True)
+def test_render_scenario_from_path_with_trigger_areas(tmp_path, small_map):
+    from aoe2ed import blocks as B
+    ctx = B.Ctx(small_map.scenario, areas={"sp": (1, 1, 6, 6)}, points={"t": (30, 30)})
+    B.waves(ctx, spawns=["sp"], target="t", waves=[{"at": 5, "units": {"MILITIA": 2}}])
+    path = tmp_path / "with_triggers.aoe2scenario"
+    small_map.save(path)
+    out = tmp_path / "with_triggers.png"
+    render_scenario(str(path), out, scale=2, show_trigger_areas=True)
     assert out.exists()
-    areas = trigger_areas(AoE2DEScenario.from_file(str(SIEGE)))
+    areas = trigger_areas(AoE2DEScenario.from_file(str(path)))
     assert areas and all(len(r) == 4 for r in areas.values())

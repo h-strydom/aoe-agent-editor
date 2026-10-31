@@ -1,5 +1,5 @@
 [project]
-name = "aoe2-agent-editor"
+name = "aoe-agent-editor"
 version = "0.1.0"
 description = "Let AI agents build Age of Empires II DE scenarios and campaigns end to end: MCP server, CLI and building blocks over AoE2ScenarioParser."
 authors = [
@@ -14,6 +14,9 @@ dependencies = [
     "pillow>=10",
     "pyyaml>=6",
 ]
+
+[project.urls]
+Repository = "https://github.com/h-strydom/aoe-agent-editor"
 
 [project.scripts]
 aoe2ed = "aoe2ed.cli:main"

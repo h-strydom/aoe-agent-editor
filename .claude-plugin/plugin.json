@@ -2,13 +2,29 @@
   "name": "aoe2-editor",
   "version": "0.1.0",
   "description": "Build Age of Empires II DE scenarios and whole campaigns from a plain-language idea: map generation, triggers, XS, campaign files, persistent progression and telemetry-based playtesting.",
-  "author": { "name": "Hannes Strydom" },
+  "author": {
+    "name": "Hannes Strydom"
+  },
+  "homepage": "https://github.com/h-strydom/aoe-agent-editor",
+  "repository": "https://github.com/h-strydom/aoe-agent-editor",
   "license": "MIT",
-  "keywords": ["aoe2", "age-of-empires", "scenario", "campaign", "game-modding"],
+  "keywords": [
+    "aoe2",
+    "age-of-empires",
+    "scenario",
+    "campaign",
+    "game-modding"
+  ],
   "mcpServers": {
     "aoe2-editor": {
       "command": "uv",
-      "args": ["run", "--quiet", "--directory", "${CLAUDE_PLUGIN_ROOT}", "aoe2-editor-mcp"]
+      "args": [
+        "run",
+        "--quiet",
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "aoe2-editor-mcp"
+      ]
     }
   }
 }
