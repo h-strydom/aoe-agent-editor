@@ -86,23 +86,31 @@ def compile_campaign(spec: str | dict, out_dir: str = "out/build", test_mode: bo
 
 
 @tool
-def telemetry_read(xsdat: str, build_report: str | None = None, mission: str | None = None,
+def telemetry_read(xsdat: str | None = None, build_report: str | None = None, mission: str | None = None,
                    last_samples: int = 5) -> dict:
-    """Decode a telemetry .xsdat written during a playtest (name like 'crucible_2_the_long_night'
-    or a path). With the compile's build_report.json (+ mission id), variables and events get names.
+    """Decode a telemetry .xsdat written during a playtest. Inside a campaign the file is named after
+    the campaign ('crucible') and holds only the latest mission played; standalone scenarios use the
+    scenario name. Pass the compile's build_report.json to get variable/event names: the mission is
+    detected from the file header (or pass `mission`). xsdat may be omitted when build_report is given.
     Returns events, the last samples and the final state."""
     from .. import telemetry
     from ..game import read_xsdat
+    rep = json.loads(Path(build_report).read_text(encoding="utf-8")) if build_report else None
+    if not xsdat:
+        if not rep:
+            raise ValueError("Pass xsdat or build_report")
+        xsdat = next((m["telemetry"]["xsdat"] for m in rep["missions"] if m.get("telemetry")), None)
     path = Path(read_xsdat(xsdat)["path"])
-    var_names, event_names = {}, {}
-    if build_report:
-        rep = json.loads(Path(build_report).read_text(encoding="utf-8"))
+    d = telemetry.read(path)
+    if rep and "error" not in d:
         for m in rep["missions"]:
-            if (mission and m["id"] == mission) or (not mission and Path(m["scenario"]).stem == path.stem):
-                t = m.get("telemetry") or {}
-                var_names = {int(k): v for k, v in t.get("var_names", {}).items()}
-                event_names = {int(k): v for k, v in t.get("event_names", {}).items()}
-    d = telemetry.read(path, var_names=var_names, event_names=event_names)
+            t = m.get("telemetry") or {}
+            if (mission and m["id"] == mission) or (not mission and t.get("mission_no") == d.get("mission_no")) \
+                    or (not mission and d.get("mission_no") is None and Path(m["scenario"]).stem == path.stem):
+                d = telemetry.read(path, var_names={int(k): v for k, v in t.get("var_names", {}).items()},
+                                   event_names={int(k): v for k, v in t.get("event_names", {}).items()})
+                d["mission"] = m["id"]
+                break
     if "samples" in d:
         d["sample_count"] = len(d["samples"])
         d["samples"] = d["samples"][-last_samples:]

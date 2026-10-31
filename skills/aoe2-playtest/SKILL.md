@@ -6,7 +6,7 @@ description: Playtest generated Age of Empires II DE scenarios and campaigns and
 # AoE2 playtest
 
 The agent can't see the game by default. It observes through **telemetry**: XS injected by
-the compiler writes state to `<scenario>.xsdat` (resources, population, kills, military
+the compiler writes state to an `.xsdat` file (resources, population, kills, military
 population and tracked variables every N seconds, plus event markers when key triggers fire).
 Someone has to actually play the scenario: the person, or you through desktop automation if
 they have granted it. Ask them which.
@@ -16,7 +16,8 @@ they have granted it. Ask them which.
 2. **Prepare the bank** for campaign tests (optional). `bank_show("<campaign>")` shows the state. `bank_set("<campaign>", {"meta_points": 500})` jumps ahead, for example to test the shop without grinding. It needs the game to be closed, and it backs up Player.nfp.
 3. **Give the player a checklist:** where to open it (Single Player → Campaigns → name, or → Scenario for a single file), what should happen and at what (scaled) times, and what to note. Remind them to answer YES to "save your choices?" when replaying a mission.
 4. **Read the evidence:**
-   - `telemetry_read("<scenario file stem>", build_report="out/<name>/build_report.json")` gives the events with times, the final state, and variables by name.
+   - `telemetry_read(build_report="out/<name>/build_report.json")` gives the events with times, the final state, and variables by name.
+     Inside a campaign the file is `<campaign name>.xsdat` and holds **only the latest mission played**, so read it right after each mission. A standalone scenario writes `<scenario>.xsdat`.
    - `bank_show("<campaign>")` shows what was persisted.
    - `game_log(grep="error")` shows engine-level problems. XS chat output is not in the log.
 5. **Compare** the evidence with the design and the person's report. Each mismatch is a bug in the spec, a block or an assumption. Fix it in the toolkit or spec, never by hand-editing output, then rebuild.

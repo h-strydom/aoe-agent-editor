@@ -15,8 +15,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Script Call messages compile in trigger order and XS requires definition before use, so the
   shared XS trigger must be the first trigger (`Ctx.flush_xs` does this).
 - Int literals are limited to 9 digits. *xs-check, matches engine.*
-- `xsCreateFile` writes `<profile>/profile/<scenario file name>.xsdat`; `xsWriteInt` writes raw
-  little-endian int32. *Smoke test telemetry.*
+- `xsCreateFile` writes `<profile>/profile/<scenario file name>.xsdat` for a standalone scenario, but
+  `<campaign name>.xsdat` when the scenario is played inside a campaign, so all missions of a campaign share
+  one file. `xsWriteInt` writes raw little-endian int32. *Smoke test + civ probe campaigns, 2026-10-31.*
 - XS chat/print output does not appear in `logs/<session>/MainLog.txt`.
 - `xsChatData("... %d", value)` substitutes the value. *Smoke test results message.*
 
@@ -27,9 +28,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   M3: it resigned after one camp building fell), which ends trigger-driven missions early. The
   compiler now gives players 2+ "None AI" unless the spec sets `players.<n>.ai`. *Frontier playtest, 2026-10-30.*
 - Civilization `RANDOM` (stored as `RANDOM-CIV`, the same value the editor writes and the parser's blank-scenario
-  default) rolls a random civ when the scenario is started. **Restart keeps the rolled civ**; quit and start
-  again to re-roll. So a spec that leaves a player's civ unset gets a random civ, which is rarely intended;
-  the compiler notes it. *Editor-saved scenario compared field by field + user test, 2026-10-31.*
+  default) is only resolved by the **scenario lobby** (Single Player → Scenario), which rolls a civ at launch;
+  Restart keeps it. **Inside a campaign, `RANDOM` and `FULL_RANDOM` always become Britons (civ 1)**, in every
+  new campaign too, so random civs aren't available in campaigns. Set every civ explicitly; the compiler warns.
+  *Editor-saved scenario compared field by field + civ probe in 3 campaigns (XS read civ id 1), 2026-10-31.*
 - Setting player 1's `REVEAL_MAP` resource (203) to 2 at start reveals the whole map with no fog; 1 = explored.
   *Frontier/probe playtest, 2026-10-31.*
 

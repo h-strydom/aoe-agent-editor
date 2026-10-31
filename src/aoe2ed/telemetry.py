@@ -2,11 +2,13 @@
 agent can see what happened in a playtest without watching the screen.
 
 Stream of int32:
-  header  [MAGIC, VERSION, n_players, n_vars, player ids..., var ids...]
+  header  [MAGIC, VERSION, mission_no, n_players, n_vars, player ids..., var ids...]   (v1: no mission_no)
   sample  [1, game_time_s, per player: food, wood, gold, stone, population, units_killed,
            military_count, per var: value]
   event   [2, game_time_s, event_id]          (from telemetry_event() effects in triggers)
-xsCreateFile writes a file named after the scenario being played (per XS docs).
+xsCreateFile writes <scenario>.xsdat for a standalone scenario but <campaign name>.xsdat inside a
+campaign (verified), so every mission of a campaign writes the same file: the latest mission played
+overwrites it. mission_no in the header says which one wrote it.
 """
 from __future__ import annotations
 
@@ -14,11 +16,11 @@ import struct
 from pathlib import Path
 
 MAGIC = 412320001  # XS int literals are limited to 9 digits
-VERSION = 1
+VERSION = 2
 RESOURCES = ("food", "wood", "gold", "stone", "population", "units_killed", "military")
 
 
-def xs_code(players: list[int], var_ids: list[int], interval_sec: int = 10) -> str:
+def xs_code(players: list[int], var_ids: list[int], interval_sec: int = 10, mission_no: int = 0) -> str:
     np, nv = len(players), len(var_ids)
     plist = "".join(f"    xsWriteInt({p});\n" for p in players)
     vlist = "".join(f"    xsWriteInt({v});\n" for v in var_ids)
@@ -42,6 +44,7 @@ rule aoe2edTelemetryInit
     xsCreateFile(false);
     xsWriteInt({MAGIC});
     xsWriteInt({VERSION});
+    xsWriteInt({mission_no});
     xsWriteInt({np});
     xsWriteInt({nv});
 {plist}{vlist}    xsCloseFile();
@@ -77,8 +80,13 @@ def decode(data: bytes, var_names: dict[int, str] | None = None, event_names: di
     vals = list(struct.unpack_from(f"<{len(data) // 4}i", data))
     if len(vals) < 4 or vals[0] != MAGIC:
         return {"error": "not an aoe2ed telemetry file", "raw": vals[:64]}
-    _, version, np, nv = vals[:4]
-    i = 4
+    version = vals[1]
+    if version >= 2:
+        mission_no, np, nv = vals[2:5]
+        i = 5
+    else:
+        mission_no, (np, nv) = None, vals[2:4]
+        i = 4
     players = vals[i:i + np]; i += np
     var_ids = vals[i:i + nv]; i += nv
     var_names = var_names or {}
@@ -102,7 +110,7 @@ def decode(data: bytes, var_names: dict[int, str] | None = None, event_names: di
             i += 3
         else:
             return {"error": f"bad tag {tag} at {i}", "samples": samples, "events": events}
-    return {"version": version, "players": players, "samples": samples, "events": events,
+    return {"version": version, "mission_no": mission_no, "players": players, "samples": samples, "events": events,
             "last": samples[-1] if samples else None}
 
 

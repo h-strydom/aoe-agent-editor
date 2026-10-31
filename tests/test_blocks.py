@@ -80,8 +80,11 @@ def test_hub_shop(tmp_path):
 
 def test_telemetry_decode():
     import struct
-    vals = [telemetry.MAGIC, 1, 1, 1, 1, 7, 1, 10, 200, 100, 300, 50, 5, 2, 3, 42, 2, 12, 9]
+    v1 = [telemetry.MAGIC, 1, 1, 1, 1, 7, 1, 10, 200, 100, 300, 50, 5, 2, 3, 42, 2, 12, 9]
+    assert telemetry.decode(struct.pack(f"<{len(v1)}i", *v1))["mission_no"] is None  # old files still read
+    vals = [telemetry.MAGIC, 2, 3, 1, 1, 1, 7, 1, 10, 200, 100, 300, 50, 5, 2, 3, 42, 2, 12, 9]
     d = telemetry.decode(struct.pack(f"<{len(vals)}i", *vals), var_names={7: "meta"}, event_names={9: "end"})
+    assert d["mission_no"] == 3
     assert d["last"]["players"][1]["gold"] == 300 and d["last"]["vars"]["meta"] == 42
     assert d["events"] == [{"t": 12, "event": "end"}]
 

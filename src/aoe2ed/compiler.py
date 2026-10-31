@@ -149,7 +149,7 @@ def _expand(value: Any, ctx: B.Ctx) -> Any:
 # ---------------------------------------------------------------- one mission
 
 def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bool = True,
-                  reveal_map: str | None = None) -> MissionResult:
+                  reveal_map: str | None = None, mission_no: int = 0) -> MissionResult:
     mid = m["id"]
     file = m.get("file", mid)
     if "map" in m:
@@ -240,8 +240,9 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
     for p in s.player_manager.players[1:]:
         civ = getattr(p.civilization, "name", str(p.civilization))
         if p.active and "RANDOM" in civ:
-            warnings.append(f"player {p.player_id} civilization is {civ}: a random civ is rolled at start "
-                            f"(Restart keeps it). Set players.{p.player_id}.civilization if that's not intended.")
+            warnings.append(f"player {p.player_id} civilization is {civ}: inside a campaign this always plays "
+                            f"as Britons (only the scenario lobby rolls a random civ). "
+                            f"Set players.{p.player_id}.civilization.")
     reveal = m.get("reveal_map", reveal_map)
     if reveal:
         if reveal not in REVEAL_VALUES:
@@ -262,6 +263,7 @@ def build_mission(m: dict, *, out_dir: Path, time_scale: float = 1.0, render: bo
             events = {n: i + 1 for i, n in enumerate(
                 n for n in names if n.endswith((" End", " Complete")) or n.startswith("Wave "))}
             events = {n: i for n, i in list(events.items())[:200] if "+" not in n and "Keepalive" not in n}
+        tcfg.setdefault("mission_no", mission_no)
         telem = B.telemetry_harness(ctx, events=events, **tcfg)
         telem["event_names"] = {v: k for k, v in events.items()}
     ctx.flush_xs()
@@ -314,8 +316,9 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
     staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=out))
     results: list[MissionResult] = []
     try:
-        for m in missions:
-            results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render, reveal_map=reveal))
+        for n, m in enumerate(missions, 1):
+            results.append(build_mission(m, out_dir=staging, time_scale=scale, render=render, reveal_map=reveal,
+                                         mission_no=n))
         for f in staging.iterdir():
             os.replace(f, out / f.name)
         for r in results:
@@ -329,13 +332,15 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
         shutil.rmtree(staging, ignore_errors=True)
     report: dict[str, Any] = {"name": spec.get("name"), "time_scale": scale, "reveal_map": reveal, "missions": [],
                               "warnings": warnings + [w for r in results for w in r.warnings]}
-    for r in results:
+    in_campaign = bool(spec.get("name")) and (len(results) > 1 or spec.get("campaign", True))
+    for n, r in enumerate(results, 1):
         report["missions"].append({
             "id": r.id, "file": r.file, "scenario": r.scenario_path, "preview": r.preview, "triggers": r.triggers,
             "xs_ok": r.xs_ok, "xs_errors": [d for d in r.xs_diagnostics if d["severity"] == "error"],
             "variables": r.variables, "areas": r.areas,
             "telemetry": None if not r.telemetry else {
-                "xsdat": f"{r.file}.xsdat", "var_names": {str(i): n for n, i in r.telemetry["var_ids"].items()},
+                "xsdat": f"{spec['name']}.xsdat" if in_campaign else f"{r.file}.xsdat",
+                "xsdat_standalone": f"{r.file}.xsdat", "mission_no": n, "var_names": {str(i): n for n, i in r.telemetry["var_ids"].items()},
                 "event_names": {str(k): v for k, v in r.telemetry["event_names"].items()}},
         })
     camp_path = None
