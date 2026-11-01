@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0
+
+Campaign screens: map backgrounds, mission icons and intro slideshows.
+
+- `campaign_screens(game)` lists the game's own campaign screens (background, one icon per mission
+  button, intro file); `campaign_install_mod(...)` installs a campaign with a screen as a local mod,
+  reusing an official screen with your title and mission labels (and its narrated intros), or your
+  own layout/intro JSON and images.
+- `screen:` in campaign specs: `compile_campaign(..., install=True)` installs the campaign as a mod
+  with its screen.
+- `aoe2ed.screens`: layout/intro reading (tolerates the game's leading-zero numbers), building layouts
+  from scratch, mod install. Verified in game: screens are only read from mods, and only when the
+  campaign's internal name equals its file name. Without a screen the default book shows 9 missions.
+
 ## 0.2.0
 
 Return of Rome support.

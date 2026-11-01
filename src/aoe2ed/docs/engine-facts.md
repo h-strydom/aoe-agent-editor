@@ -19,6 +19,18 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - `.aoe2campaign` layout is documented in `src/aoe2ed/campaign.py`; the writer reproduces all 47
   campaigns on the dev machine byte for byte, and generated campaigns load. *Round-trip + earlier tests.*
 
+## Campaign screens
+- A campaign's screen (background map, one flag/icon button per mission, title) comes from
+  `<name>_layout.json`, its intro slideshows from `<name>.json`, next to `<name>.aoe2campaign`.
+- The game reads them **only from a mod** (`<profile>/mods/local/<Mod>/modes/Pompeii/resources/_common/campaign/`
+  for RoR); beside a campaign in the profile's own campaign folder they are ignored.
+- The campaign's **internal name must equal the file name** (`<name>`), as in the official files
+  (`acam1.aoe2campaign` holds "acam1"); with any other internal name the layout isn't found.
+- Literal text works in the layout's title; the game's own materials (RoR: CampaignBackgroundAscent,
+  CampaignIconVillagerHunter, ...) work from a mod's layout. Without a layout, the default book shows
+  at most 9 mission flags. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign),
+  2026-11-01.*
+
 ## XS
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*

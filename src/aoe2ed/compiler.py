@@ -5,6 +5,11 @@ Spec shape (full guide: guide("campaign-spec"); examples/):
   name: crucible                 # internal campaign name; the campaign bank is scoped by it
   game: aoe2                     # aoe2 | ror (Return of Rome); a mission may override it
   title: The Crucible            # optional display text
+  screen:                        # optional campaign screen; installs the campaign as a local mod
+    mod: My Campaigns            #   mod folder name (the game reads screens only from mods)
+    official: aoecam1            #   reuse a game layout (campaign_screens), labels from mission titles
+    layout: my_layout.json       #   ... or your own layout / intro_file JSON, with files: [images]
+    intro: true                  #   copy the official screen's intros when the mission count matches
   defaults: {...}                # mission keys every mission inherits (dicts deep-merge; lists replace)
   missions:
     - id: hub
@@ -48,7 +53,7 @@ from .tools import load_all
 
 TOOLS = load_all()
 
-TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description", "game"}
+TOP_KEYS = {"name", "title", "test_mode", "missions", "campaign", "defaults", "description", "game", "screen"}
 MISSION_KEYS = {"id", "file", "title", "description", "map", "base", "map_size", "areas", "points", "players",
                 "diplomacy", "options", "messages", "units", "blocks", "triggers", "xs", "telemetry",
                 "reveal_map", "game"}
@@ -312,6 +317,19 @@ def _build_mission(m: dict, *, out_dir: Path, time_scale: float, render: bool, r
 
 # ---------------------------------------------------------------- campaign
 
+def _install_screen(spec: dict, missions: list[dict], camp_path: Path) -> dict:
+    """Install the campaign with its screen (spec["screen"]) as a local mod."""
+    scr = spec["screen"]
+    unknown = set(scr) - {"mod", "official", "layout", "intro", "intro_file", "files", "labels"}
+    if unknown or not scr.get("mod"):
+        raise CompileError(f"screen: needs 'mod'; unknown keys {sorted(unknown)}" if unknown else "screen: needs 'mod'")
+    labels = scr.get("labels") or [f"{i}. {m.get('title') or m['id']}" for i, m in enumerate(missions, 1)]
+    return TOOLS["campaign_install_mod"](
+        str(camp_path), scr["mod"], official=scr.get("official"), title=spec.get("title") or spec["name"],
+        labels=labels if scr.get("official") else None, intro=scr.get("intro", True),
+        layout_path=scr.get("layout"), intro_path=scr.get("intro_file"), files=scr.get("files"))
+
+
 def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/build", test_mode: bool = False,
                      time_scale: float | None = None, install: bool = False, render: bool = True) -> dict:
     """Build every mission, lint XS, write the campaign file and a build report."""
@@ -386,7 +404,10 @@ def compile_campaign(spec: str | Path | dict, *, out_dir: str | Path = "out/buil
         installed = []
         for r in results:
             installed.append(install_file(r.scenario_path)["installed"])
-        if camp_path:
+        if camp_path and spec.get("screen"):
+            report["screen"] = _install_screen(spec, missions, camp_path)
+            installed += report["screen"]["written"]
+        elif camp_path:
             dest = paths().user_dir("campaign", game) / camp_path.name
             if dest.exists():
                 backup_file(dest)

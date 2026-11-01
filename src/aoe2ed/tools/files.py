@@ -61,6 +61,41 @@ def campaign_build(name: str, scenarios: list[str], out: str | None = None, inst
 
 
 @tool
+def campaign_screens(game: str = "aoe2") -> list[dict]:
+    """The game's own campaign screens (layouts) you can reuse: name, background, number of mission
+    buttons, the icon of each, whether an intro file exists. game: aoe2 | ror."""
+    from .. import screens
+    return screens.official_screens(game)
+
+
+@tool
+def campaign_install_mod(campaign: str, mod: str, official: str | None = None, title: str | None = None,
+                         labels: list[str] | None = None, intro: bool = True, layout_path: str | None = None,
+                         intro_path: str | None = None, files: list[str] | None = None) -> dict:
+    """Install a campaign with a campaign screen (map background, mission flags/icons, intro slideshows) as
+    a local mod: the game only reads screens from mods, and only when the campaign's internal name equals
+    its file name (done for you). Either reuse an official screen (`official`, from campaign_screens, with
+    your `title` and one label per mission; intro=True also copies its narrated intros when the mission
+    count matches) or pass your own `layout_path` / `intro_path` JSON (custom images in `files`, named in
+    the layout's UserMaterials). Without a screen, the game's default book shows at most 9 missions.
+    The user must enable the mod once (Mods > Installed Mods) and restart the game."""
+    from .. import screens
+    src = _resolve(campaign, "campaign", ".aoe2campaign")
+    which = game.detect_game(src)
+    n = len(Campaign.read(src).scenarios)
+    layout = screens.read_json(layout_path) if layout_path else None
+    intro_data = screens.read_json(intro_path) if intro_path else None
+    if official:
+        layout = screens.layout_from_official(official, title=title, labels=labels, game=which)
+        buttons = sum(1 for w in layout["Widgets"] if w["Widget"].get("Name", "").startswith("ScenarioButton"))
+        if buttons != n:
+            raise ValueError(f"{official} has {buttons} mission buttons, the campaign has {n} missions")
+        if intro and intro_data is None:
+            intro_data = screens.intro_from_official(official, missions=n, game=which)
+    return screens.install_campaign_mod(src, mod, layout=layout, intro=intro_data, files=files, game=which)
+
+
+@tool
 def campaign_extract(path: str, out_dir: str) -> dict:
     """Write each scenario inside a campaign out as its own .aoe2scenario file."""
     camp = Campaign.read(_resolve(path, "campaign", ".aoe2campaign"))

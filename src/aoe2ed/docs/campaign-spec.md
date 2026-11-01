@@ -127,6 +127,21 @@ Find names with `lookup("swords", game="ror")`. Terrains, trees, gold, stone, be
 villagers and houses are shared, so map specs work unchanged. RoR ages differ from AoE2's; leave
 `starting_age` out unless you've checked it. Example: the `crucible_ror` spec in `examples()`.
 
+## Campaign screens (`screen:`)
+The campaign selection screen: a background map with one icon/flag per mission, and intro slideshows.
+The game reads screens only from mods, so with `screen:` an install puts the campaign in a local mod:
+
+```yaml
+screen:
+  mod: My Campaigns        # mods/local/<mod>; the user enables it once (Mods > Installed Mods) and restarts
+  official: aoecam1        # reuse a game screen; campaign_screens(game) lists them with their mission count
+  intro: true              # also copy that screen's narrated intros (needs the same mission count)
+  labels: ["1. Hunting"]   # optional; default "<n>. <mission title or id>"
+  # or your own: layout: path/to/x_layout.json, intro_file: path/to/x.json, files: [images in UserMaterials]
+```
+The official screen must have exactly as many mission buttons as the campaign has missions. Without a
+screen the default book holds at most 9 missions. Build custom layouts with `aoe2ed.screens.build_layout`.
+
 ## Rules of thumb
 - One mission = one clear goal. Put the hub/meta mission first when the campaign has metaprogression.
 - Wave-only enemies need `{use: anchor, player: N}`, or the game ends at t=0.

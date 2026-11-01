@@ -39,6 +39,7 @@ dedicated MCP/CLI tool. **Block** means a building block in a campaign spec. **P
 | Test | Editor Test button | UI; normally a test-mode build plus a playtest (`aoe2-playtest`) |
 | Return of Rome | RoR scenarios and campaigns, RoR units/techs/civs | `game: ror` in a spec; `scenario_new(game="ror")`; `lookup(..., game="ror")` |
 | Campaigns | Campaign editor (add, order, name) | Tools `campaign_build`, `campaign_read`, `campaign_extract`; spec `missions:` |
+| Campaign screens | Map background, mission icons/flags, intro slideshows (no editor UI; JSON in a mod) | Tools `campaign_screens`, `campaign_install_mod`; spec `screen:`; `aoe2ed.screens.build_layout` |
 | | Persistent values between missions | Blocks `bank_load` / `bank_store`; tools `bank_show` / `bank_set` |
 
 Gaps worth tooling later: tile and unit copy/paste between maps, trigger-area visualisation in
