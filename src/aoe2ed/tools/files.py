@@ -71,13 +71,17 @@ def campaign_screens(game: str = "aoe2") -> list[dict]:
 @tool
 def campaign_install_mod(campaign: str, mod: str, official: str | None = None, title: str | None = None,
                          labels: list[str] | None = None, intro: bool = True, layout_path: str | None = None,
-                         intro_path: str | None = None, files: list[str] | None = None) -> dict:
+                         intro_path: str | None = None, files: list[str] | None = None,
+                         widget_files: dict[str, str] | None = None) -> dict:
     """Install a campaign with a campaign screen (map background, mission flags/icons, intro slideshows) as
     a local mod: the game only reads screens from mods, and only when the campaign's internal name equals
     its file name (done for you). Either reuse an official screen (`official`, from campaign_screens, with
     your `title` and one label per mission; intro=True also copies its narrated intros when the mission
     count matches) or pass your own `layout_path` / `intro_path` JSON (custom images in `files`, named in
     the layout's UserMaterials). Without a screen, the game's default book shows at most 9 missions.
+    Intro slide images: widget_files {"textures/campaign/<name>/<mission>/intro/1.png": source path, ...},
+    referenced in the intro JSON as "SlideImageSequence": "textures/campaign/<name>/<mission>/intro/%d.png"
+    (one image per slide, counting from 1). Custom sounds don't play; "Sound" takes only the game's events.
     The user must enable the mod once (Mods > Installed Mods) and restart the game."""
     from .. import screens
     src = _resolve(campaign, "campaign", ".aoe2campaign")
@@ -92,7 +96,8 @@ def campaign_install_mod(campaign: str, mod: str, official: str | None = None, t
             raise ValueError(f"{official} has {buttons} mission buttons, the campaign has {n} missions")
         if intro and intro_data is None:
             intro_data = screens.intro_from_official(official, missions=n, game=which)
-    return screens.install_campaign_mod(src, mod, layout=layout, intro=intro_data, files=files, game=which)
+    return screens.install_campaign_mod(src, mod, layout=layout, intro=intro_data, files=files,
+                                        widget_files=widget_files, game=which)
 
 
 @tool

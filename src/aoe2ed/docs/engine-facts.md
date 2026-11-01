@@ -28,7 +28,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (`acam1.aoe2campaign` holds "acam1"); with any other internal name the layout isn't found.
 - Literal text works in the layout's title; the game's own materials (RoR: CampaignBackgroundAscent,
   CampaignIconVillagerHunter, ...) work from a mod's layout. Without a layout, the default book shows
-  at most 9 mission flags. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign),
+  at most 9 mission flags. Intro slide images load from the mod's `modes/Pompeii/widgetui/` (not the mod's
+  root `widgetui/`) via "SlideImageSequence": "textures/campaign/<name>/<n>/intro/%d.png", with %d counting
+  from 1. Custom narration doesn't play: MP3, WAV and OGG in the mod's `resources/_common/drs/sounds` (root
+  and `modes/Pompeii`) were all silent; "Sound" plays only the game's Wwise events. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign),
   2026-11-01.*
 
 ## XS

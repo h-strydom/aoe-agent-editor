@@ -6,6 +6,9 @@ Verified in game (Return of Rome, 2026-11-01):
   - The game only reads them from a mod: `<profile>/mods/local/<Mod>/[modes/Pompeii/]resources/_common/
     campaign/`. Next to a campaign in the profile's own campaign folder they are ignored.
   - The campaign's internal name must equal `<name>` (the official files do this: acam1 -> "acam1").
+  - Intro slide images: `widget_files` into the mod's `[modes/Pompeii/]widgetui/`, referenced by
+    "SlideImageSequence" with %d counting from 1. Custom sounds don't play (MP3/WAV/OGG tried in RoR):
+    "Sound" only takes the game's own Wwise events.
   - Text can be literal (TitleLabel, labels); the game's own materials (backgrounds, CampaignIcon*)
     work from a mod's layout. Without a layout the game shows its default book with up to 9 flags.
 Community reference for every layout key: the "JSON Kungfu" guide,
@@ -23,6 +26,11 @@ from .config import paths
 
 GAME_CAMPAIGN_DIRS = {"aoe2": Path("resources") / "_common" / "campaign",
                       "ror": Path("modes") / "Pompeii" / "resources" / "_common" / "campaign"}
+# A mod's own UI textures (intro slide images) live under these, per game.
+WIDGET_DIRS = {"aoe2": Path("widgetui"), "ror": Path("modes") / "Pompeii" / "widgetui"}
+# Intro slides: "SlideImageSequence": WIDGET_SLIDES (with %d) -> <widgetui>/textures/campaign/<name>/<mission>/intro/<n>.png,
+# n counting from 1 (one image per slide). Verified in RoR.
+WIDGET_SLIDES = "textures/campaign/{name}/{mission}/intro/%d.png"
 _LEADING_ZERO = re.compile(r"(:\s*)0+(\d)")   # official files have numbers like 09.21; strict JSON rejects them
 STATES = ("Normal", "Hover", "Pressed", "Disabled")
 
@@ -173,13 +181,15 @@ def mod_enabled(mod: str, profile: Path | None = None) -> bool | None:
 
 
 def install_campaign_mod(campaign: str | Path, mod: str, *, layout: dict | None = None, intro: dict | None = None,
-                         files: list[str | Path] | None = None, game: str | None = None, description: str = "",
-                         author: str = "", profile: Path | None = None) -> dict:
+                         files: list[str | Path] | None = None, widget_files: dict[str, str | Path] | None = None,
+                         game: str | None = None, description: str = "", author: str = "",
+                         profile: Path | None = None) -> dict:
     """Install a campaign with its screen as a local mod, the only place the game reads layouts from.
 
     Copies the campaign into the mod's campaign folder with its internal name set to the file stem
     (required for the layout to be found), writes `<stem>_layout.json` / `<stem>.json`, copies `files`
-    (custom images named in the layout's UserMaterials) beside them, and writes the mod's info.json.
+    (custom images named in the layout's UserMaterials) beside them, writes `widget_files` (path relative to
+    the mod's widgetui folder -> source file; intro slide images, see WIDGET_SLIDES) and the mod's info.json.
     The mod must be enabled once in the game (Mods > Installed Mods), then the game restarted."""
     from .game import detect_game
     src = Path(campaign)
@@ -199,6 +209,12 @@ def install_campaign_mod(campaign: str | Path, mod: str, *, layout: dict | None 
     for f in files or []:
         dest = folder / Path(f).name
         dest.write_bytes(Path(f).read_bytes())
+        written.append(dest)
+    widgets = root / WIDGET_DIRS[game]
+    for rel, source in (widget_files or {}).items():
+        dest = widgets / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(Path(source).read_bytes())
         written.append(dest)
     info = root / "info.json"
     info.write_text(json.dumps({"Author": author, "CacheStatus": 0, "Description": description, "Title": mod}),

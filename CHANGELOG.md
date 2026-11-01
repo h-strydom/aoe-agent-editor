@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- `campaign_install_mod(widget_files=...)` / `install_campaign_mod(widget_files=...)`: intro slide images,
+  written to the mod's `[modes/Pompeii/]widgetui/` and referenced with "SlideImageSequence" (%d from 1).
+- Engine facts: where slide images load from, and that custom narration doesn't play (only the game's
+  own sound events).
+
 ## 0.3.0
 
 Campaign screens: map backgrounds, mission icons and intro slideshows.

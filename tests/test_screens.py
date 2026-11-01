@@ -75,7 +75,10 @@ def test_install_campaign_mod(tmp_path):
     image = tmp_path / "bg.dds"
     image.write_bytes(b"dds")
     res = screens.install_campaign_mod(src, "My Mod", layout={"Widgets": []}, intro={"Scenarios": []},
-                                       files=[image], game="ror", profile=profile)
+                                       files=[image], widget_files={"textures/campaign/my_campaign/1/intro/1.png": image},
+                                       game="ror", profile=profile)
+    slide = profile / "mods" / "local" / "My Mod" / "modes" / "Pompeii" / "widgetui" / "textures" / "campaign"
+    assert (slide / "my_campaign" / "1" / "intro" / "1.png").read_bytes() == b"dds"
     folder = profile / "mods" / "local" / "My Mod" / screens.GAME_CAMPAIGN_DIRS["ror"]
     assert Campaign.read(folder / "my_campaign.aoe2campaign").name == "my_campaign"
     assert {p.name for p in folder.iterdir()} == {"my_campaign.aoe2campaign", "my_campaign_layout.json",
