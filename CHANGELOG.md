@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+AI scripts: first-class computer player AI.
+
+- AI specs: a readable description of a computer player (build order of build/train/research steps,
+  villagers, houses, gatherer split, attack timing and group sizes, strategic numbers, raw rules) compiled
+  to a `.per` script (`aoe2ed.ai.spec`). Generated scripts give unit, building and tech ids with defconst,
+  as Return of Rome's own AIs do, so they work for RoR and AoE2.
+- A `.per` checker (`aoe2ed.ai.per`): bracket and rule-shape errors, plus warnings for facts, actions,
+  strategic numbers and names the game's own scripts never use. The vocabulary is extracted from the 87
+  AI scripts shipped with AoE2 DE and RoR (`scripts/gen_ai_vocab.py`), all of which check clean.
+- Tools `ai_build`, `ai_check`, `ai_set` (embed a spec, script or none/immobile/default in a scenario
+  player), `ai_lookup`; `player_set` and campaign specs take `ai: {name, spec}`.
+- Guide `ai-spec`, skill `aoe2-ai`.
+
 ## 0.3.1
 
 - `campaign_install_mod(widget_files=...)` / `install_campaign_mod(widget_files=...)`: intro slide images,

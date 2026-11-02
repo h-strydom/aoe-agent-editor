@@ -62,14 +62,22 @@ def _age(v):
 
 
 def set_ai(p, ai) -> None:
-    if isinstance(ai, dict):
+    if isinstance(ai, dict) and "spec" in ai:          # an AI spec (aoe2ed.ai.spec), built for the current game
+        from ..ai.per import check
+        from ..ai.spec import build_script
+        script = build_script(ai["spec"], games.current())
+        errors = [d.message for d in check(script) if d.severity == "error"]
+        if errors:
+            raise ValueError(f"AI spec gives a script with errors: {errors[:5]}")
+        p.set_custom_ai(ai.get("name") or ai["spec"].get("name") or "Custom AI", ai_script=script)
+    elif isinstance(ai, dict):
         p.set_custom_ai(ai["name"], ai_script=ai.get("script"), per_file_path=ai.get("per_file"))
     elif ai == "none":
         p.set_none_ai()
     elif ai == "immobile":
         p.set_immobile_ai()
     elif ai != "default":
-        raise ValueError("ai must be 'none', 'immobile', 'default' or {name, script|per_file}")
+        raise ValueError("ai must be 'none', 'immobile', 'default' or {name, spec|script|per_file}")
 
 
 @tool
@@ -78,7 +86,8 @@ def player_set(handle: str, player: int, fields: dict) -> dict:
     disabled_units/disabled_techs/disabled_buildings as lists of names or ids.
     ai: 'none' (no AI script: never resigns or acts on its own, the right choice for trigger-driven
     enemies), 'immobile', 'default' (the game's standard AI, which resigns when it judges the game
-    lost), or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}.
+    lost), {"name": ..., "spec": {<AI spec: build order, attacks, ...; guide("ai-spec")>}},
+    or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}.
     Fields: see players_get output."""
     s = SESSIONS.get(handle).scenario
     p = s.player_manager.players[player]

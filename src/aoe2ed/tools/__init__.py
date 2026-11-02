@@ -16,5 +16,5 @@ def tool(fn: Callable) -> Callable:
 
 
 def load_all() -> dict[str, Callable]:
-    from . import build, files, logic, meta, scenario, world  # noqa: F401  (registration side effects)
+    from . import ai, build, files, logic, meta, scenario, world  # noqa: F401  (registration side effects)
     return TOOLS

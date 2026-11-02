@@ -35,6 +35,7 @@ Two ways to build, which you can mix:
 - Maps: `map_generate(spec, out, preview)` creates a map with named areas; then `map_set_terrain` / `map_set_elevation` / `units_add` refine it. `map_preview` shows it.
 - XS: `xs_check(code)`, then `xs_embed(handle, code)`. See `skills/aoe2-xs`.
 - Campaign files: `campaign_build(name, [scenario paths in order], install=true)`, `campaign_read`, `campaign_extract`.
+- Computer player AI: `ai_set(handle, player, spec)` with an AI spec (build order, attacks); see the `aoe2-ai` skill.
 - Campaign screens (map, mission icons, intros; needed for more than 9 missions): `campaign_screens(game)` to pick an
   official screen, then `campaign_install_mod(campaign, mod, official=..., title=..., labels=[...])`, or `screen:` in
   the spec. They only load from a mod: tell the user to enable it (Mods > Installed Mods) and restart.
