@@ -17,24 +17,35 @@ Spec (YAML/JSON; every key optional):
   attack:                            # omit or null = never attacks
     first: 600                       #   seconds into the game
     every: 240                       #   seconds between attacks
-    min_group: 4                     #   soldiers needed before it attacks
+    min_group: 4                     #   idle soldiers needed before it attacks
     max_group: 12
+    percent: 80                      #   share of idle soldiers that go (default 80)
+    naval: false                     #   warships also attack on the same timing (default false)
   strategic_numbers: {sn-number-explore-groups: 1}     # raw engine settings (names checked)
   rules: "(defrule ...)"             # extra raw .per appended as is
+  debug: false                       # announce each build step and attack in chat (for playtests)
 
 Unit, building and tech names are the game's (RoR names for game: ror; see lookup). Scripted AIs never
 resign: the engine only resigns when a script says (resign).
+
+Attacks follow DE's AIBuilder (shipped with RoR, the designers' scenario AI): target the closest enemy, set
+the share of soldiers that go, attack-now; warships separately. The setup enables DE's building system and full
+response to sighted enemies, as AIBuilder does.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
-            "strategic_numbers", "rules", "transports", "transport_unit"}
+            "strategic_numbers", "rules", "transports", "transport_unit", "debug"}
 TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
-ATTACK_KEYS = {"first", "every", "min_group", "max_group"}
+ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval"}
 STEP_KINDS = ("build", "train", "research")
-STEP_GOAL, STEP_TIMER, ATTACK_TIMER = 1, 1, 2
+STEP_GOAL, STEP_TIMER, ATTACK_TIMER, TARGET_GOAL, NAVAL_TIMER = 1, 1, 2, 2, 3
+# AIBuilder's constants for (up-find-player enemy find-closest goal): the engine's stance and search ids.
+ENEMY_STANCE, FIND_CLOSEST = 3, 2
+# Always set, as AIBuilder's setup does: DE's building placement, answer every sighted enemy.
+BASE_SNS = {"sn-enable-new-building-system": 1, "sn-percent-enemy-sighted-response": 100}
 DEFAULT_GATHERERS = {"food": 50, "wood": 30, "gold": 15, "stone": 5}
 HOUSE_HEADROOM = 4
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
@@ -117,16 +128,25 @@ def build_script(spec: dict, game: str = "ror") -> str:
 
     body = []
     init = [f"(set-strategic-number sn-{k}-gatherer-percentage {v})" for k, v in gatherers.items()]
-    init += [f"(set-strategic-number {k} {int(v)})" for k, v in (spec.get("strategic_numbers") or {}).items()]
+    sns = {**BASE_SNS, **(spec.get("strategic_numbers") or {})}
+    init += [f"(set-strategic-number {k} {int(v)})" for k, v in sns.items()]
     if attack:
         init += [f"(set-strategic-number sn-minimum-attack-group-size {int(attack.get('min_group', 4))})",
                  f"(set-strategic-number sn-maximum-attack-group-size {int(attack.get('max_group', 12))})",
                  f"(enable-timer {ATTACK_TIMER} {int(attack.get('first', 600))})"]
+        if attack.get("naval"):
+            init.append(f"(enable-timer {NAVAL_TIMER} {int(attack.get('first', 600))})")
     init += ["(set-goal my-step 1)"]
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
     for n, start in enumerate(range(0, len(init), SETUP_CHUNK), start=1):   # the engine limits rule length
         body.append(_rule(["(true)"], [*init[start:start + SETUP_CHUNK], "(disable-self)"], f"setup {n}"))
+
+    debug = bool(spec.get("debug"))
+    who = str(spec.get("name", "AI")).replace('"', "'")
+
+    def say(text: str) -> list[str]:
+        return [f'(chat-to-all "{who}: {text}")'] if debug else []
 
     restart = [f"(disable-timer {STEP_TIMER})", f"(enable-timer {STEP_TIMER} {timeout})"] if timeout else []
     for i, (kind, name, count) in enumerate(steps, start=1):
@@ -134,10 +154,12 @@ def build_script(spec: dict, game: str = "ror") -> str:
         todo, actions, done = _do(kind, const, count)
         label = f"step {i}: {kind} {name}" + (f" x{count}" if kind != "research" else "")
         body.append(_rule([f"(goal my-step {i})", *todo], actions, label))
-        body.append(_rule([f"(goal my-step {i})", done], [f"(set-goal my-step {i + 1})", *restart]))
+        body.append(_rule([f"(goal my-step {i})", done],
+                          [f"(set-goal my-step {i + 1})", *restart, *say(f"{label} done")]))
         if timeout:
             body.append(_rule([f"(goal my-step {i})", f"(timer-triggered {STEP_TIMER})"],
-                              [f"(set-goal my-step {i + 1})", *restart], f"step {i} stuck: skip it"))
+                              [f"(set-goal my-step {i + 1})", *restart, *say(f"{label} skipped (stuck)")],
+                              f"step {i} stuck: skip it"))
 
     if spec.get("villagers"):
         v = names.const("VILLAGER", "object")
@@ -157,13 +179,26 @@ def build_script(spec: dict, game: str = "ror") -> str:
         todo, actions, _ = _do(kind, const, count)
         body.append(_rule([f"(goal my-step {len(steps) + 1})", *todo], actions, f"keep {name} x{count}"))
     if attack:
-        body.append(_rule([f"(timer-triggered {ATTACK_TIMER})",
-                           f"(military-population >= {int(attack.get('min_group', 4))})"],
-                          ["(attack-now)", f"(disable-timer {ATTACK_TIMER})",
-                           f"(enable-timer {ATTACK_TIMER} {int(attack.get('every', 240))})"], "attack"))
+        every, percent = int(attack.get("every", 240)), int(attack.get("percent", 80))
+        target = [f"(up-find-player my-enemy my-find-closest {TARGET_GOAL})",
+                  f"(up-modify-sn sn-target-player-number g:= {TARGET_GOAL})"]
+        body.append(_rule([f"(timer-triggered {ATTACK_TIMER})", "(players-building-count any-enemy >= 1)",
+                           f"(defend-soldier-count >= {int(attack.get('min_group', 4))})"],
+                          [*target, f"(set-strategic-number sn-percent-attack-soldiers {percent})",
+                           "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)",
+                           f"(disable-timer {ATTACK_TIMER})", f"(enable-timer {ATTACK_TIMER} {every})",
+                           *say("attacking")], "attack"))
+        if attack.get("naval"):
+            body.append(_rule([f"(timer-triggered {NAVAL_TIMER})", "(players-building-count any-enemy >= 1)",
+                               "(warboat-count > 0)"],
+                              [*target, f"(set-strategic-number sn-percent-attack-boats {percent})",
+                               "(set-strategic-number sn-percent-attack-soldiers 0)", "(attack-now)",
+                               f"(disable-timer {NAVAL_TIMER})", f"(enable-timer {NAVAL_TIMER} {every})",
+                               *say("naval attack")], "naval attack"))
 
     head = [f"; {spec.get('name', 'AI')}: generated by aoe-agent-editor from an AI spec ({game})",
-            f"(defconst my-step {STEP_GOAL})"]
+            f"(defconst my-step {STEP_GOAL})", f"(defconst my-enemy {ENEMY_STANCE})",
+            f"(defconst my-find-closest {FIND_CLOSEST})"]
     head += [f"(defconst {c} {i})" for c, i in names.ids.values()]
     extra = spec.get("rules") or ""
     return "\n".join(head) + "\n\n" + "\n".join(body) + (f"\n{extra.strip()}\n" if extra else "")

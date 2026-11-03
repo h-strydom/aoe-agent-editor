@@ -36,6 +36,8 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert "(defconst my-t-tool-age 101)" in script and "(attack-now)" in script
     assert per.check(script) == []
     assert script.count("(defrule") == 1 + 3 * 3 + 2 + 1          # setup, 3 steps, villagers + houses, attack
+    assert "(set-strategic-number sn-percent-attack-soldiers 80)" in script     # AIBuilder's attack
+    assert "(up-find-player my-enemy my-find-closest 2)" in script
 
 
 def test_many_strategic_numbers_split_the_setup():
@@ -108,3 +110,12 @@ def test_transports_are_kept_from_the_start():
     rule = script[script.index("; transports x2"):]
     assert "goal my-step" not in rule.split(")\n", 3)[0]                 # not gated on the build order
     assert "(build my-o-dock)" in script and per.check(script) == []
+
+
+def test_naval_attacks_and_debug_chat():
+    with games.use("ror"):
+        script = build_script({"name": "Troy", "debug": True, "build_order": [{"build": "DOCK"}],
+                               "attack": {"first": 60, "naval": True}}, "ror")
+    assert "; naval attack" in script and "(warboat-count > 0)" in script
+    assert '(chat-to-all "Troy: step 1: build DOCK x1 done")' in script and '"Troy: attacking"' in script
+    assert per.check(script) == []

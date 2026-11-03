@@ -2,6 +2,10 @@
 
 ## 0.4.1
 
+- AI specs attack the way DE's AIBuilder (RoR's scenario AI framework) does: target the closest enemy, set the
+  share of soldiers that go (`attack.percent`, default 80), attack-now; `attack.naval` sends warships too. The
+  setup always enables DE's building system and full response to sighted enemies. `debug: true` announces each
+  build step and attack in chat, for playtests.
 - AI specs: `transports` keeps that many transport ships from the start (default unit per game), so attacks can
   cross water on island and coast maps; `keep` also takes `build` entries, so destroyed buildings are rebuilt.
 - AI scripts: rules longer than the engine allows are now checker errors (more than 16 facts, or more than 32
