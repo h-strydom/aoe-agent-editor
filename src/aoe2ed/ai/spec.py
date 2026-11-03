@@ -11,7 +11,9 @@ Spec (YAML/JSON; every key optional):
     - {train: CLUBMAN, count: 5}     #   count = how many alive in total
     - {research: TOOL_AGE}           #   techs and ages
   step_timeout: 180                  # seconds before a stuck step (can't afford, disabled) is skipped; 0 = never
-  keep: [{train: BOWMAN, count: 10}] # after the build order: keep these topped up
+  keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order: keep these topped up / rebuilt
+  transports: 2                      # water maps: keep this many transport ships from the start, so attacks can
+  transport_unit: LIGHT_TRANSPORT    #   cross water (the engine ferries attack groups); default per game
   attack:                            # omit or null = never attacks
     first: 600                       #   seconds into the game
     every: 240                       #   seconds between attacks
@@ -28,7 +30,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
-            "strategic_numbers", "rules"}
+            "strategic_numbers", "rules", "transports", "transport_unit"}
+TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
 ATTACK_KEYS = {"first", "every", "min_group", "max_group"}
 STEP_KINDS = ("build", "train", "research")
 STEP_GOAL, STEP_TIMER, ATTACK_TIMER = 1, 1, 2
@@ -140,6 +143,10 @@ def build_script(spec: dict, game: str = "ror") -> str:
         v = names.const("VILLAGER", "object")
         body.append(_rule([f"(civilian-population < {int(spec['villagers'])})", f"(can-train {v})"],
                           [f"(train {v})"], "villagers"))
+    if spec.get("transports"):
+        tr = names.const(spec.get("transport_unit") or TRANSPORT_UNITS.get(game, "TRANSPORT_SHIP"), "object")
+        body.append(_rule([f"(unit-type-count-total {tr} < {int(spec['transports'])})", f"(can-train {tr})"],
+                          [f"(train {tr})"], f"transports x{int(spec['transports'])}"))
     if spec.get("houses", True):
         h = names.const("HOUSE", "object")
         body.append(_rule([f"(housing-headroom < {HOUSE_HEADROOM})", "(population-headroom > 0)", f"(can-build {h})"],

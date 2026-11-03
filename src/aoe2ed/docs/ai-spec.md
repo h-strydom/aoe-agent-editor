@@ -21,7 +21,9 @@ build_order:                        # done in order; a step is done once its cou
   - {train: CLUBMAN, count: 5}      # count: how many alive in total
   - {research: TOOL_AGE}            # techs and ages
 step_timeout: 180                   # seconds before a step that can't happen (no resources, disabled) is skipped; 0 = never
-keep: [{train: BOWMAN, count: 10}]  # after the build order, keep these topped up
+keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order, keep these topped up / rebuilt
+transports: 2                       # water maps: keep this many transport ships from the start (needs a dock)
+transport_unit: LIGHT_TRANSPORT     # default: LIGHT_TRANSPORT (ror), TRANSPORT_SHIP (aoe2)
 attack:                             # leave out to never attack
   first: 600                        # seconds into the game
   every: 240                        # seconds between attacks
@@ -46,6 +48,9 @@ clean. A warning isn't always wrong, but nothing proves the engine accepts it.
 
 - Scripted AIs never resign; only `(resign)` in a script does that. The game's standard AI ("default") does
   resign when it judges the game lost, so use a spec, "none" or "immobile" for scenario enemies.
+- Attacks across water: `attack-now` sends attack groups, and the engine ferries them in the AI's transport ships, as
+  RoR's own AI relies on (it only checks that it owns transports). So water maps need `transports`; without
+  ships an AI can't reach an enemy on another island. *Unverified in game for generated scripts.*
 - "none": no script, the player does nothing on its own (trigger-driven enemies). "immobile": units hold position.
 - Return of Rome runs the same script engine; its own AIs give RoR units by id with `defconst`, which is
   what generated scripts do.

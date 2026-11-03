@@ -2,6 +2,8 @@
 
 ## 0.4.1
 
+- AI specs: `transports` keeps that many transport ships from the start (default unit per game), so attacks can
+  cross water on island and coast maps; `keep` also takes `build` entries, so destroyed buildings are rebuilt.
 - AI scripts: rules longer than the engine allows are now checker errors (more than 16 facts, or more than 32
   facts and actions together: the game's own longest), and AI specs split their setup into rules of at most
   16 actions. A spec with many strategic numbers made a setup rule RoR refused ("ERR6002: Rule too long").

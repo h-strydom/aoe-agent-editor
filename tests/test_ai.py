@@ -98,3 +98,13 @@ def test_player_set_takes_an_ai_spec():
         assert o.scenario.player_manager.players[2].personality == "Raiders"
     finally:
         SESSIONS.close(o.handle)
+
+
+def test_transports_are_kept_from_the_start():
+    with games.use("ror"):
+        script = build_script({"transports": 2, "keep": [{"build": "DOCK"}], "build_order": [{"build": "HOUSE"}]}, "ror")
+    assert "(defconst my-o-light-transport" in script
+    assert "(unit-type-count-total my-o-light-transport < 2)" in script
+    rule = script[script.index("; transports x2"):]
+    assert "goal my-step" not in rule.split(")\n", 3)[0]                 # not gated on the build order
+    assert "(build my-o-dock)" in script and per.check(script) == []
