@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+- AI scripts: rules longer than the engine allows are now checker errors (more than 16 facts, or more than 32
+  facts and actions together: the game's own longest), and AI specs split their setup into rules of at most
+  16 actions. A spec with many strategic numbers made a setup rule RoR refused ("ERR6002: Rule too long").
+
 ## 0.4.0
 
 AI scripts: first-class computer player AI.

@@ -34,6 +34,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   and `modes/Pompeii`) were all silent; "Sound" plays only the game's Wwise events. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign),
   2026-11-01.*
 
+## AI scripts
+- Scenario-embedded AI scripts (custom AI on a player) load in Return of Rome. A rule with about 40 actions
+  fails to load with "AI Script Error ... ERR6002: Rule too long"; the game's own scripts never exceed 16 facts
+  or 32 facts and actions in a rule, which the checker enforces. *RoR playtest, Trojan War, 2026-11-03.*
+
 ## XS
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*

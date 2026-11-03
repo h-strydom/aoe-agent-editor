@@ -37,7 +37,7 @@ step counter (goal 1), with timer 1 skipping stuck steps and timer 2 timing atta
 
 ## The checker
 
-Bracket and rule-shape mistakes are errors, which `ai_set` refuses. Facts, actions, strategic numbers and names
+Bracket and rule-shape mistakes, and rules longer than the engine allows (16 facts, 32 facts and actions), are errors, which `ai_set` refuses. Facts, actions, strategic numbers and names
 that the game's own scripts never use are warnings: the vocabulary is extracted from the 87 `.per` files
 shipped with AoE2 DE and Return of Rome (`scripts/gen_ai_vocab.py`), and every one of those files checks
 clean. A warning isn't always wrong, but nothing proves the engine accepts it.

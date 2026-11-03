@@ -38,6 +38,14 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert script.count("(defrule") == 1 + 3 * 3 + 2 + 1          # setup, 3 steps, villagers + houses, attack
 
 
+def test_many_strategic_numbers_split_the_setup():
+    sns = {s: 1 for s in sorted(per.vocab()["strategic_numbers"])[:60]}
+    with games.use("ror"):
+        script = build_script({"strategic_numbers": sns}, "ror")
+    assert script.count("; setup ") == 5                             # 4 gatherer + 60 settings + goal = 65 actions
+    assert not [d for d in per.check(script) if d.severity == "error"]
+
+
 def test_spec_errors_are_clear():
     with games.use("ror"), pytest.raises(SpecError, match="unknown object 'TANK'"):
         build_script({"build_order": [{"build": "TANK"}]}, "ror")

@@ -21,6 +21,9 @@ LOGIC = {"not", "or", "and", "nand", "nor"}
 COMPARISON = {"<", "<=", ">", ">=", "==", "!=", "less-than", "less-or-equal", "greater-than",
               "greater-or-equal", "equal", "not-equal"}
 RULE_LIMIT = 10000
+# Longest rules in the game's own scripts: 16 facts, 32 facts and actions together. A longer rule fails to
+# load with "ERR6002: Rule too long" (seen in RoR with ~40 actions).
+MAX_FACTS, MAX_RULE_SIZE = 16, 32
 
 
 @dataclass
@@ -143,6 +146,11 @@ def check(text: str) -> list[Diagnostic]:
             continue
         if not facts or not actions:
             problems.append(Diagnostic("error", rule.line, "defrule needs at least one fact and one action"))
+        if len(facts) > MAX_FACTS:
+            problems.append(Diagnostic("error", rule.line, f"rule too long: {len(facts)} facts (at most {MAX_FACTS})"))
+        if len(facts) + len(actions) > MAX_RULE_SIZE:
+            problems.append(Diagnostic("error", rule.line, f"rule too long: {len(facts) + len(actions)} facts and "
+                                                           f"actions (at most {MAX_RULE_SIZE})"))
         for kind, forms_, names in (("fact", list(_walk_facts(facts)), v["facts"]), ("action", actions, v["actions"])):
             for node in forms_:
                 if not isinstance(node, Node):

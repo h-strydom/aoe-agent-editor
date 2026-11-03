@@ -34,6 +34,7 @@ STEP_KINDS = ("build", "train", "research")
 STEP_GOAL, STEP_TIMER, ATTACK_TIMER = 1, 1, 2
 DEFAULT_GATHERERS = {"food": 50, "wood": 30, "gold": 15, "stone": 5}
 HOUSE_HEADROOM = 4
+SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
 
 class SpecError(ValueError):
@@ -121,7 +122,8 @@ def build_script(spec: dict, game: str = "ror") -> str:
     init += ["(set-goal my-step 1)"]
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
-    body.append(_rule(["(true)"], [*init, "(disable-self)"], "setup"))
+    for n, start in enumerate(range(0, len(init), SETUP_CHUNK), start=1):   # the engine limits rule length
+        body.append(_rule(["(true)"], [*init[start:start + SETUP_CHUNK], "(disable-self)"], f"setup {n}"))
 
     restart = [f"(disable-timer {STEP_TIMER})", f"(enable-timer {STEP_TIMER} {timeout})"] if timeout else []
     for i, (kind, name, count) in enumerate(steps, start=1):
