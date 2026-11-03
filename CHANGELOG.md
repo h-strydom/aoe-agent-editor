@@ -2,6 +2,13 @@
 
 ## 0.4.1
 
+- Full unit, building and tech tables for Return of Rome and AoE2 (`data/tables/{ror,aoe2}.json`, from the
+  game's own data: `scripts/gen_unit_tables.py`): every object id with its display and internal name, kind,
+  class, hit points, cost and where it's made; buildings that exist once per age look know their age and the
+  Age1 base to build; every tech with its cost and where it's researched. Tool `unit_info`. The tables are
+  pinned to the game build (101.103.57257.0) and each data file's SHA-256; tool `game_build_check` (and a test)
+  says when a patch or DLC has changed the game since. AoE2 names the parser's datasets don't list yet (newer
+  DLC units) now resolve from the table.
 - RoR names: ACADEMY is 103 and TEMPLE 104, the Age1 buildings villagers build, not later-age looks (18, 30)
   that have lower ids. An AI told to build ACADEMY never could, so it never trained hoplites. The Town Center
   stays 109 (its "Age1" entry, 621, is the foundation).

@@ -22,6 +22,33 @@ def lookup(query: str, kinds: list[str] | None = None, limit: int = 25, game: st
 
 
 @tool
+def unit_info(query: str, game: str | None = None, kinds: list[str] | None = None, limit: int = 10) -> dict:
+    """Full facts about units, buildings and techs from the game's own data: display name, internal name, kind,
+    class, hit points, cost, where it's trained/built/researched, and for buildings that exist once per age look
+    (RoR's "Academy Age1..Age4"), its age, the Age1 base to build and its other looks. query: an id or a name
+    (substring). kinds: unit, building, other, tech. game: aoe2 | ror (default: the current game).
+    The tables are pinned to one game build; see game_build_check."""
+    from .. import games, tables
+    game = games.normalize(game or games.current())
+    t = tables.load(game)
+    hits = tables.search(query, game, kinds, limit) if not str(query).lstrip("-").isdigit() else         [{"kind": k, "id": int(query)} for k in ("object", "tech")]
+    out = []
+    for h in hits:
+        kind = "tech" if h["kind"] == "tech" else "object"
+        if (e := tables.info(h["id"], game, kind)) is not None and (not kinds or e.get("kind", "tech") in kinds):
+            out.append(e)
+    return {"game": game, "build": t["build"], "results": out}
+
+
+@tool
+def game_build_check() -> dict:
+    """Whether the unit/tech tables match the installed game build. After a patch or DLC, ok is false and the
+    tables may miss new units: rerun scripts/gen_unit_tables.py (and gen_ror_dataset.py, gen_ai_vocab.py)."""
+    from .. import tables
+    return tables.build_check()
+
+
+@tool
 def enum_values(dataset: str | None = None, name: str | None = None, game: str | None = None) -> list[dict]:
     """All members of a dataset/enum, e.g. 'ObjectAttribute', 'Operation', 'TechInfo', 'TerrainId'.
     (`name` is accepted as an alias of `dataset`.)"""

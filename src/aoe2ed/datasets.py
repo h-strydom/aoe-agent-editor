@@ -23,6 +23,7 @@ from AoE2ScenarioParser.datasets.units import UnitInfo
 from . import (
     _parser,  # noqa: F401  (configures the parser)
     games,
+    tables,
 )
 
 OBJECT_DATASETS = {"unit": UnitInfo, "building": BuildingInfo, "hero": HeroInfo, "other": OtherInfo}
@@ -86,6 +87,9 @@ def object_id(value: int | str) -> int:
     idx = _object_index()
     if key in idx:
         return idx[key]
+    found = tables.object_id(key, "aoe2")              # units the parser's datasets don't list yet
+    if found is not None:
+        return found
     raise KeyError(f"Unknown object '{value}'. Try lookup('{value}').")
 
 
@@ -101,7 +105,10 @@ def tech_id(value: int | str) -> int:
     idx = _info_index("TechInfo")
     if key in idx:
         return idx[key]
-    raise KeyError(f"Unknown technology '{value}'")
+    found = tables.tech_id(key, "aoe2")
+    if found is not None:
+        return found
+    raise KeyError(f"Unknown technology '{value}'. Try lookup('{value}', kinds=['tech']).")
 
 
 def terrain_id(value: int | str) -> int:
@@ -159,6 +166,9 @@ def describe_value(dataset_name: str, value) -> str | None:
             return ENUM_DATASETS[dataset_name](value).name
     except (ValueError, KeyError):
         return None
+    if dataset_name in INFO_DATASETS:
+        kind = "techs" if dataset_name == "TechInfo" else "objects"
+        return tables.load("aoe2")[kind].get(str(value), {}).get("name")
     return None
 
 
