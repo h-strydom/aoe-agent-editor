@@ -2,6 +2,9 @@
 
 ## 0.4.1
 
+- RoR names: ACADEMY is 103 and TEMPLE 104, the Age1 buildings villagers build, not later-age looks (18, 30)
+  that have lower ids. An AI told to build ACADEMY never could, so it never trained hoplites. The Town Center
+  stays 109 (its "Age1" entry, 621, is the foundation).
 - The AI checker knows how many arguments each command takes in the game's own scripts and reports any other
   count as an error: `(goal 3 < 4)` (there's no comparison form; it's `up-compare-goal`) loaded in RoR as
   "ERR2011: Missing closing parenthesis". Waiting steps now use `up-compare-goal`.

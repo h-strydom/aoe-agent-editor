@@ -88,3 +88,10 @@ def test_ror_crucible_example_compiles(tmp_path):
     from aoe2ed.campaign import Campaign
     camp = Campaign.read(rep["campaign"])
     assert all(games.file_game(sc.data) == "ror" for sc in camp.scenarios)
+
+
+def test_buildings_are_their_buildable_base():
+    # RoR lists each building per age; the name is the Age1 base villagers build, not a later look
+    # ("Academy Age3" 18 has a lower id than "Academy Age1" 103). AIs build by these ids.
+    objects = games.ror_data()["objects"]
+    assert (objects["ACADEMY"], objects["TEMPLE"], objects["TOWN_CENTER"]) == (103, 104, 109)

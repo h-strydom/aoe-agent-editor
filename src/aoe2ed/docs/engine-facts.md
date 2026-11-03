@@ -35,6 +35,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   2026-11-01.*
 
 ## AI scripts
+- RoR buildings exist once per age look (Academy 103/105/18/19 for Ages 1-4); AIs build the Age1 base, and the
+  Town Center by 109 (the engine places its foundation, 621). *Trojan War playtest, 2026-11-03: an AI given 18
+  never built an Academy.*
 - Scenario-embedded AI scripts (custom AI on a player) load in Return of Rome. A rule with about 40 actions
   fails to load with "AI Script Error ... ERR6002: Rule too long"; the game's own scripts never exceed 16 facts
   or 32 facts and actions in a rule, which the checker enforces. *RoR playtest, Trojan War, 2026-11-03.*

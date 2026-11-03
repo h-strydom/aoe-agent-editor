@@ -27,6 +27,7 @@ from aoe2ed.datasets import OBJECT_DATASETS
 
 OUT = Path(__file__).resolve().parents[1] / "src" / "aoe2ed" / "data" / "ror.json"
 COSTS = OUT.with_name("costs.json")
+PINNED = {"TOWN_CENTER": 109}
 
 
 def strings(path: Path) -> dict[int, str]:
@@ -92,7 +93,16 @@ def main(game: Path) -> None:
 
     objects: dict[str, int] = {}
     display: dict[int, str] = {}  # id -> name from RoR's display strings
-    for i in sorted(playable) + sorted(ror):  # lowest id first: a building's Age1 base, not its later look
+    # Earliest age first, then lowest id: a building's buildable base ("Academy Age1", 103), not a later look
+    # ("Academy Age3", 18) that happens to have a lower id.
+    def earliest(i: int) -> tuple[int, int]:
+        m = re.search(r"Age(\d)", ror[i].name)
+        return (int(m.group(1)) if m else 0, i)
+
+    # The Town Center's "Age1" entry is the foundation villagers place (621, the AIs' town-center-foundation);
+    # the town center itself, what maps place and AIs build, is 109.
+    objects.update(PINNED)
+    for i in sorted(playable, key=earliest) + sorted(ror, key=earliest):
         u = ror[i]
         k = key(names.get(u.language_dll_name, ""))
         if k and k not in objects:
