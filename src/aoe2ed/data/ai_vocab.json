@@ -920,5 +920,868 @@
   "wonder",
   "wood",
   "yucatan"
- ]
+ ],
+ "arity": {
+  "acknowledge-taunt": [
+   2
+  ],
+  "attack-now": [
+   0
+  ],
+  "build": [
+   1
+  ],
+  "build-forward": [
+   1
+  ],
+  "build-gate": [
+   1
+  ],
+  "build-wall": [
+   2
+  ],
+  "building-available": [
+   1
+  ],
+  "building-count": [
+   2
+  ],
+  "building-count-total": [
+   2
+  ],
+  "building-type-count": [
+   3
+  ],
+  "building-type-count-total": [
+   3
+  ],
+  "buy-commodity": [
+   1
+  ],
+  "can-afford-building": [
+   1
+  ],
+  "can-afford-research": [
+   1
+  ],
+  "can-afford-unit": [
+   1
+  ],
+  "can-build": [
+   1
+  ],
+  "can-build-gate": [
+   1
+  ],
+  "can-build-wall": [
+   2
+  ],
+  "can-build-with-escrow": [
+   1
+  ],
+  "can-buy-commodity": [
+   1
+  ],
+  "can-research": [
+   1
+  ],
+  "can-research-with-escrow": [
+   1
+  ],
+  "can-sell-commodity": [
+   1
+  ],
+  "can-train": [
+   1
+  ],
+  "can-train-with-escrow": [
+   1
+  ],
+  "cc-add-resource": [
+   2
+  ],
+  "cc-players-building-type-count": [
+   4
+  ],
+  "cc-players-unit-type-count": [
+   4
+  ],
+  "chat-local-to-self": [
+   1
+  ],
+  "chat-to-all": [
+   1
+  ],
+  "chat-to-all-using-id": [
+   1
+  ],
+  "chat-to-all-using-range": [
+   2
+  ],
+  "chat-to-allies": [
+   1
+  ],
+  "chat-to-allies-using-id": [
+   1
+  ],
+  "chat-to-enemies": [
+   1
+  ],
+  "chat-to-player": [
+   2
+  ],
+  "chat-to-player-using-id": [
+   2
+  ],
+  "civ-selected": [
+   1
+  ],
+  "civilian-population": [
+   2
+  ],
+  "clear-tribute-memory": [
+   2
+  ],
+  "commodity-buying-price": [
+   3
+  ],
+  "commodity-selling-price": [
+   3
+  ],
+  "current-age": [
+   2
+  ],
+  "current-age-time": [
+   2
+  ],
+  "death-match-game": [
+   0
+  ],
+  "defend-soldier-count": [
+   2
+  ],
+  "delete-building": [
+   1
+  ],
+  "delete-unit": [
+   1
+  ],
+  "difficulty": [
+   2
+  ],
+  "disable-self": [
+   0
+  ],
+  "disable-timer": [
+   1
+  ],
+  "do-nothing": [
+   0
+  ],
+  "dropsite-min-distance": [
+   3
+  ],
+  "enable-timer": [
+   2
+  ],
+  "enable-wall-placement": [
+   1
+  ],
+  "enemy-buildings-in-town": [
+   0
+  ],
+  "enemy-captured-relics": [
+   0
+  ],
+  "escrow-amount": [
+   3
+  ],
+  "event-detected": [
+   2
+  ],
+  "false": [
+   0
+  ],
+  "fe-break-point": [
+   4
+  ],
+  "fe-cc-effect-percent": [
+   4
+  ],
+  "fe-filter-garrisoned": [
+   2
+  ],
+  "fe-idle-pasture-count": [
+   2
+  ],
+  "food-amount": [
+   2
+  ],
+  "game-time": [
+   2
+  ],
+  "game-type": [
+   2
+  ],
+  "generate-random-number": [
+   1
+  ],
+  "goal": [
+   2
+  ],
+  "gold-amount": [
+   2
+  ],
+  "hold-koh-ruin": [
+   0
+  ],
+  "hold-relics": [
+   0
+  ],
+  "housing-headroom": [
+   2
+  ],
+  "idle-farm-count": [
+   2
+  ],
+  "map-size": [
+   1
+  ],
+  "map-type": [
+   1
+  ],
+  "military-population": [
+   2
+  ],
+  "player-human": [
+   1
+  ],
+  "player-in-game": [
+   1
+  ],
+  "player-number": [
+   1
+  ],
+  "player-resigned": [
+   1
+  ],
+  "player-valid": [
+   1
+  ],
+  "players-building-count": [
+   3
+  ],
+  "players-building-type-count": [
+   4
+  ],
+  "players-civ": [
+   2
+  ],
+  "players-civilian-population": [
+   3
+  ],
+  "players-current-age": [
+   3
+  ],
+  "players-current-age-time": [
+   3
+  ],
+  "players-military-population": [
+   3
+  ],
+  "players-population": [
+   3
+  ],
+  "players-stance": [
+   2
+  ],
+  "players-tribute-memory": [
+   4
+  ],
+  "players-unit-count": [
+   3
+  ],
+  "players-unit-type-count": [
+   4
+  ],
+  "population": [
+   2
+  ],
+  "population-cap": [
+   2
+  ],
+  "population-headroom": [
+   2
+  ],
+  "random-number": [
+   2
+  ],
+  "regicide-game": [
+   0
+  ],
+  "release-escrow": [
+   1
+  ],
+  "research": [
+   1
+  ],
+  "research-available": [
+   1
+  ],
+  "research-completed": [
+   1
+  ],
+  "resign": [
+   0
+  ],
+  "resource-found": [
+   1
+  ],
+  "sell-commodity": [
+   1
+  ],
+  "set-difficulty-parameter": [
+   2
+  ],
+  "set-escrow-percentage": [
+   2
+  ],
+  "set-goal": [
+   2
+  ],
+  "set-signal": [
+   1
+  ],
+  "set-stance": [
+   2
+  ],
+  "set-strategic-number": [
+   2
+  ],
+  "sheep-and-forage-too-far": [
+   0
+  ],
+  "soldier-count": [
+   2
+  ],
+  "stance-toward": [
+   2
+  ],
+  "starting-age": [
+   2
+  ],
+  "starting-resources": [
+   2
+  ],
+  "stone-amount": [
+   2
+  ],
+  "strategic-number": [
+   3
+  ],
+  "taunt-detected": [
+   2
+  ],
+  "timer-triggered": [
+   1
+  ],
+  "town-under-attack": [
+   0
+  ],
+  "train": [
+   1
+  ],
+  "tribute-to-player": [
+   3
+  ],
+  "true": [
+   0
+  ],
+  "unit-available": [
+   1
+  ],
+  "unit-type-count": [
+   3
+  ],
+  "unit-type-count-total": [
+   3
+  ],
+  "up-add-object-by-id": [
+   3
+  ],
+  "up-add-object-cost": [
+   4
+  ],
+  "up-add-point": [
+   4
+  ],
+  "up-add-research-cost": [
+   4
+  ],
+  "up-allied-goal": [
+   4
+  ],
+  "up-allied-resource-amount": [
+   4
+  ],
+  "up-allied-resource-percent": [
+   4
+  ],
+  "up-allied-sn": [
+   4
+  ],
+  "up-assign-builders": [
+   4
+  ],
+  "up-bound-point": [
+   2
+  ],
+  "up-bound-precise-point": [
+   4
+  ],
+  "up-build": [
+   4
+  ],
+  "up-build-line": [
+   4
+  ],
+  "up-building-type-in-town": [
+   4
+  ],
+  "up-can-build": [
+   3
+  ],
+  "up-can-build-line": [
+   4
+  ],
+  "up-can-train": [
+   3
+  ],
+  "up-cc-add-resource": [
+   4
+  ],
+  "up-change-name": [
+   1
+  ],
+  "up-chat-data-to-all": [
+   3
+  ],
+  "up-chat-data-to-all-using-id": [
+   3
+  ],
+  "up-chat-data-to-player": [
+   4
+  ],
+  "up-chat-data-to-player-using-id": [
+   4
+  ],
+  "up-chat-data-to-self": [
+   3
+  ],
+  "up-clean-search": [
+   3
+  ],
+  "up-compare-const": [
+   3
+  ],
+  "up-compare-flag": [
+   3
+  ],
+  "up-compare-goal": [
+   3
+  ],
+  "up-compare-sn": [
+   3
+  ],
+  "up-compare-text": [
+   4
+  ],
+  "up-copy-point": [
+   2
+  ],
+  "up-create-group": [
+   4
+  ],
+  "up-cross-tiles": [
+   4
+  ],
+  "up-delete-distant-farms": [
+   2
+  ],
+  "up-delete-objects": [
+   4
+  ],
+  "up-drop-resources": [
+   3
+  ],
+  "up-enemy-buildings-in-town": [
+   2
+  ],
+  "up-enemy-units-in-town": [
+   2
+  ],
+  "up-enemy-villagers-in-town": [
+   2
+  ],
+  "up-filter-distance": [
+   4
+  ],
+  "up-filter-exclude": [
+   4
+  ],
+  "up-filter-garrison": [
+   4
+  ],
+  "up-filter-include": [
+   4
+  ],
+  "up-filter-range": [
+   4
+  ],
+  "up-filter-status": [
+   4
+  ],
+  "up-find-flare": [
+   1
+  ],
+  "up-find-local": [
+   4
+  ],
+  "up-find-next-player": [
+   3
+  ],
+  "up-find-player": [
+   3
+  ],
+  "up-find-player-flare": [
+   2
+  ],
+  "up-find-remote": [
+   4
+  ],
+  "up-find-resource": [
+   4
+  ],
+  "up-find-status-local": [
+   4
+  ],
+  "up-find-status-remote": [
+   4
+  ],
+  "up-full-reset-search": [
+   0
+  ],
+  "up-gaia-type-count": [
+   4
+  ],
+  "up-gaia-type-count-total": [
+   4
+  ],
+  "up-garrison": [
+   3
+  ],
+  "up-gather-inside": [
+   4
+  ],
+  "up-get-fact": [
+   3
+  ],
+  "up-get-fact-max": [
+   4
+  ],
+  "up-get-fact-min": [
+   4
+  ],
+  "up-get-fact-sum": [
+   4
+  ],
+  "up-get-focus-fact": [
+   3
+  ],
+  "up-get-group-size": [
+   3
+  ],
+  "up-get-indirect-goal": [
+   3
+  ],
+  "up-get-object-data": [
+   2
+  ],
+  "up-get-object-target-data": [
+   2
+  ],
+  "up-get-path-distance": [
+   3
+  ],
+  "up-get-player-fact": [
+   4
+  ],
+  "up-get-point": [
+   2
+  ],
+  "up-get-point-contains": [
+   4
+  ],
+  "up-get-point-distance": [
+   3
+  ],
+  "up-get-point-elevation": [
+   2
+  ],
+  "up-get-point-zone": [
+   2
+  ],
+  "up-get-precise-time": [
+   2
+  ],
+  "up-get-projectile-player": [
+   2
+  ],
+  "up-get-rule-id": [
+   1
+  ],
+  "up-get-search-state": [
+   1
+  ],
+  "up-get-target-fact": [
+   3
+  ],
+  "up-get-threat-data": [
+   4
+  ],
+  "up-get-timer": [
+   3
+  ],
+  "up-get-treaty-data": [
+   1
+  ],
+  "up-get-victory-data": [
+   3
+  ],
+  "up-group-size": [
+   4
+  ],
+  "up-idle-unit-count": [
+   3
+  ],
+  "up-jump-direct": [
+   2
+  ],
+  "up-jump-rule": [
+   1
+  ],
+  "up-lerp-percent": [
+   4
+  ],
+  "up-lerp-tiles": [
+   4
+  ],
+  "up-modify-escrow": [
+   3
+  ],
+  "up-modify-flag": [
+   3
+  ],
+  "up-modify-goal": [
+   3
+  ],
+  "up-modify-group-flag": [
+   3
+  ],
+  "up-modify-sn": [
+   3
+  ],
+  "up-object-data": [
+   3
+  ],
+  "up-object-target-data": [
+   3
+  ],
+  "up-object-type-count": [
+   4
+  ],
+  "up-object-type-count-total": [
+   4
+  ],
+  "up-path-distance": [
+   4
+  ],
+  "up-pending-objects": [
+   4
+  ],
+  "up-pending-placement": [
+   2
+  ],
+  "up-players-in-game": [
+   3
+  ],
+  "up-point-contains": [
+   3
+  ],
+  "up-point-distance": [
+   4
+  ],
+  "up-point-elevation": [
+   3
+  ],
+  "up-point-explored": [
+   3
+  ],
+  "up-point-terrain": [
+   3
+  ],
+  "up-point-zone": [
+   3
+  ],
+  "up-projectile-detected": [
+   3
+  ],
+  "up-projectile-target": [
+   3
+  ],
+  "up-release-escrow": [
+   0
+  ],
+  "up-remove-objects": [
+   4
+  ],
+  "up-request-hunters": [
+   2
+  ],
+  "up-research": [
+   3
+  ],
+  "up-research-status": [
+   4
+  ],
+  "up-reset-building": [
+   3
+  ],
+  "up-reset-cost-data": [
+   1
+  ],
+  "up-reset-filters": [
+   0
+  ],
+  "up-reset-group": [
+   2
+  ],
+  "up-reset-placement": [
+   2
+  ],
+  "up-reset-scouts": [
+   0
+  ],
+  "up-reset-search": [
+   4
+  ],
+  "up-reset-unit": [
+   2
+  ],
+  "up-resource-amount": [
+   3
+  ],
+  "up-resource-percent": [
+   3
+  ],
+  "up-retreat-now": [
+   0
+  ],
+  "up-retreat-to": [
+   3
+  ],
+  "up-send-flare": [
+   1
+  ],
+  "up-send-scout": [
+   2
+  ],
+  "up-set-attack-stance": [
+   3
+  ],
+  "up-set-defense-priority": [
+   4
+  ],
+  "up-set-group": [
+   3
+  ],
+  "up-set-indirect-goal": [
+   4
+  ],
+  "up-set-offense-priority": [
+   4
+  ],
+  "up-set-placement-data": [
+   4
+  ],
+  "up-set-precise-target-point": [
+   1
+  ],
+  "up-set-target-by-id": [
+   2
+  ],
+  "up-set-target-object": [
+   3
+  ],
+  "up-set-target-point": [
+   1
+  ],
+  "up-set-timer": [
+   4
+  ],
+  "up-setup-cost-data": [
+   2
+  ],
+  "up-store-player-chat": [
+   1
+  ],
+  "up-store-player-name": [
+   1
+  ],
+  "up-target-objects": [
+   4
+  ],
+  "up-target-point": [
+   4
+  ],
+  "up-timer-status": [
+   3
+  ],
+  "up-train": [
+   3
+  ],
+  "up-train-site-ready": [
+   2
+  ],
+  "up-tribute-to-player": [
+   4
+  ],
+  "up-ungarrison": [
+   2
+  ],
+  "up-unit-type-in-town": [
+   4
+  ],
+  "up-update-targets": [
+   0
+  ],
+  "victory-condition": [
+   1
+  ],
+  "wall-completed-percentage": [
+   3
+  ],
+  "warboat-count": [
+   2
+  ],
+  "wood-amount": [
+   2
+  ],
+  "xnor": [
+   2
+  ],
+  "xs-script-call": [
+   1
+  ]
+ }
 }

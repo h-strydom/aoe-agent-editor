@@ -209,10 +209,10 @@ def build_script(spec: dict, game: str = "ror") -> str:
                               [f"(set-goal my-step {i + 1})", *advance, *say(f"{label} skipped (can't be made)")],
                               f"step {i}: affordable but still not made, so it can't be: skip it"))
     if steps and timeout:                                 # not affordable yet: wait, up to MAX_WAITS timeouts
-        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(goal {WAIT_GOAL} < {MAX_WAITS})"],
+        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(up-compare-goal {WAIT_GOAL} < {MAX_WAITS})"],
                           [f"(up-modify-goal {WAIT_GOAL} c:+ 1)", *restart, *say("waiting for resources")],
                           "step waiting for resources"))
-        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(goal {WAIT_GOAL} >= {MAX_WAITS})"],
+        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(up-compare-goal {WAIT_GOAL} >= {MAX_WAITS})"],
                           ["(up-modify-goal my-step c:+ 1)", *advance, *say("gave up on a step")],
                           "step waited too long: skip it"))
 

@@ -138,3 +138,10 @@ def test_steps_wait_for_resources_and_skip_only_the_impossible():
     assert "(food-amount >= 60)" in skip and "(gold-amount >= 40)" in skip    # only skipped when it could be paid for
     assert "; step waiting for resources" in script and "(up-modify-goal 3 c:+ 1)" in script
     assert "; step waited too long: skip it" in script and per.check(script) == []
+
+
+def test_argument_counts_follow_the_games_own_scripts():
+    # (goal id value) has no comparison form: RoR refused (goal 3 < 4) with "ERR2011: Missing closing parenthesis"
+    assert ("error", "(goal ...) takes 2 arguments in the game's own scripts, not 3") in _severities(
+        "(defrule (goal 3 < 4) => (disable-self))")
+    assert _severities("(defrule (up-compare-goal 3 < 4) => (disable-self))") == []

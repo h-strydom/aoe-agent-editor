@@ -112,7 +112,9 @@ def _walk_facts(facts):
 def vocab() -> dict:
     data = resources.files("aoe2ed").joinpath("data/ai_vocab.json").read_text(encoding="utf-8")
     v = json.loads(data)
-    return {k: set(v[k]) if isinstance(v[k], list) else v[k] for k in v}
+    out = {k: set(v[k]) if isinstance(v[k], list) else v[k] for k in v}
+    out["arity"] = {k: set(n) for k, n in v.get("arity", {}).items()}
+    return out
 
 
 def constants(forms: list[Node]) -> dict[str, str]:
@@ -159,6 +161,10 @@ def check(text: str) -> list[Diagnostic]:
                 cmd = _head(node)
                 if cmd not in names:
                     problems.append(Diagnostic("warning", node.line, f"unknown {kind} '{cmd}'"))
+                elif cmd in v["arity"] and len(node.items) - 1 not in v["arity"][cmd]:
+                    seen = "/".join(map(str, sorted(v["arity"][cmd])))
+                    problems.append(Diagnostic("error", node.line, f"({cmd} ...) takes {seen} arguments in the game's "
+                                                                   f"own scripts, not {len(node.items) - 1}"))
                 for arg in node.items[1:]:
                     if isinstance(arg, Node):
                         continue

@@ -2,6 +2,9 @@
 
 ## 0.4.1
 
+- The AI checker knows how many arguments each command takes in the game's own scripts and reports any other
+  count as an error: `(goal 3 < 4)` (there's no comparison form; it's `up-compare-goal`) loaded in RoR as
+  "ERR2011: Missing closing parenthesis". Waiting steps now use `up-compare-goal`.
 - Unit, building and tech costs for RoR and AoE2 (`data/costs.json`, from both games' data;
   `scripts/gen_ror_dataset.py`). AI specs use them: `gatherers: auto` (the default) splits villagers by what the
   build order and keep list cost, blended with AIBuilder's 45/30/15/10; a stalled step is only skipped when it's
