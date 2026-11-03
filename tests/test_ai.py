@@ -35,7 +35,7 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert "(defconst my-o-barracks 12)" in script and "(defconst my-o-clubman 281)" in script
     assert "(defconst my-t-tool-age 101)" in script and "(attack-now)" in script
     assert per.check(script) == []
-    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 1          # setup, 3 steps, villagers + houses, attack
+    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1      # setup, 3 steps, 2 waiting, villagers + houses, attack
     assert "(set-strategic-number sn-percent-attack-soldiers 80)" in script     # AIBuilder's attack
     assert "(up-find-player my-enemy my-find-closest 2)" in script
 
@@ -119,3 +119,22 @@ def test_naval_attacks_and_debug_chat():
     assert "; naval attack" in script and "(warboat-count > 0)" in script
     assert '(chat-to-all "Troy: step 1: build DOCK x1 done")' in script and '"Troy: attacking"' in script
     assert per.check(script) == []
+
+
+def test_gatherers_follow_what_the_ai_builds():
+    from aoe2ed.ai.spec import auto_gatherers, cost
+    assert cost("object", 93, "ror") == {"food": 60, "gold": 40}            # hoplite, from RoR's data
+    army = auto_gatherers([("object", 38, 20)], "ror")                     # cavalry: 70 food, 80 gold
+    assert sum(army.values()) == 100 and army["gold"] > 25 and army["stone"] >= 5
+    with games.use("ror"):
+        script = build_script({"build_order": [{"train": "CAVALRY", "count": 20}]}, "ror")
+    assert f"sn-gold-gatherer-percentage {army['gold']})" in script
+
+
+def test_steps_wait_for_resources_and_skip_only_the_impossible():
+    with games.use("ror"):
+        script = build_script({"build_order": [{"train": "HOPLITE", "count": 5}]}, "ror")
+    skip = script[script.index("; step 1: affordable"):]
+    assert "(food-amount >= 60)" in skip and "(gold-amount >= 40)" in skip    # only skipped when it could be paid for
+    assert "; step waiting for resources" in script and "(up-modify-goal 3 c:+ 1)" in script
+    assert "; step waited too long: skip it" in script and per.check(script) == []

@@ -13,14 +13,17 @@ the script from a readable **AI spec**, checks it, and embeds it:
 
 ```yaml
 name: Raiders                       # shown in the editor's player AI box
-gatherers: {food: 45, wood: 35, gold: 15, stone: 5}   # villager split in percent, sums to 100 (default 50/30/15/5)
+gatherers: auto                     # villager split: auto (default) follows what the build order and keep list
+                                    # cost (data/costs.json, from the game data), blended with AIBuilder's
+                                    # 45/30/15/10; or {food: 45, wood: 35, gold: 15, stone: 5} in percent
 villagers: 25                       # keep training villagers up to this many (default: off)
 houses: true                        # build a house when housing is nearly full (default: true)
 build_order:                        # done in order; a step is done once its count is reached
   - {build: BARRACKS}               # count: how many in total, built or being built (default 1)
   - {train: CLUBMAN, count: 5}      # count: how many alive in total
   - {research: TOOL_AGE}            # techs and ages
-step_timeout: 180                   # seconds before a step that can't happen (no resources, disabled) is skipped; 0 = never
+step_timeout: 180                   # seconds before a stalled step is checked: skipped if it's affordable (so it's
+                                    # disabled or impossible), else waited for, up to 4 times; 0 = never skip
 keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order, keep these topped up / rebuilt
 transports: 2                       # water maps: keep this many transport ships from the start (needs a dock)
 transport_unit: LIGHT_TRANSPORT     # default: LIGHT_TRANSPORT (ror), TRANSPORT_SHIP (aoe2)

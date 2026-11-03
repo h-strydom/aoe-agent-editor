@@ -2,6 +2,10 @@
 
 ## 0.4.1
 
+- Unit, building and tech costs for RoR and AoE2 (`data/costs.json`, from both games' data;
+  `scripts/gen_ror_dataset.py`). AI specs use them: `gatherers: auto` (the default) splits villagers by what the
+  build order and keep list cost, blended with AIBuilder's 45/30/15/10; a stalled step is only skipped when it's
+  affordable (so it can't be made), and waited for while it isn't. Default split is now AIBuilder's.
 - AI specs attack the way DE's AIBuilder (RoR's scenario AI framework) does: target the closest enemy, set the
   share of soldiers that go (`attack.percent`, default 80), attack-now; `attack.naval` sends warships too. The
   setup always enables DE's building system and full response to sighted enemies. `debug: true` announces each

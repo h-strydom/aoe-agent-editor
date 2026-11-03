@@ -3,14 +3,16 @@
 Spec (YAML/JSON; every key optional):
 
   name: Troy                         # shown in the editor's player AI box
-  gatherers: {food: 45, wood: 35, gold: 15, stone: 5}   # villager split, percent (sums to 100)
+  gatherers: auto                    # villager split: auto (default) follows what the build order and keep list
+                                     #   cost, blended with AIBuilder's 45/30/15/10; or {food, wood, gold, stone} %
   villagers: 25                      # keep training villagers up to this many (default: off)
   houses: true                       # build a house whenever housing is nearly full (default true)
   build_order:                       # worked through in order; a step is done when its count is reached
     - {build: BARRACKS}              #   count = how many in total (built or being built), default 1
     - {train: CLUBMAN, count: 5}     #   count = how many alive in total
     - {research: TOOL_AGE}           #   techs and ages
-  step_timeout: 180                  # seconds before a stuck step (can't afford, disabled) is skipped; 0 = never
+  step_timeout: 180                  # seconds before a step that can't happen is checked: skipped if it's affordable
+                                     #   (so it's disabled or impossible); waited for up to 4 times while it isn't
   keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order: keep these topped up / rebuilt
   transports: 2                      # water maps: keep this many transport ships from the start, so attacks can
   transport_unit: LIGHT_TRANSPORT    #   cross water (the engine ferries attack groups); default per game
@@ -34,7 +36,10 @@ response to sighted enemies, as AIBuilder does.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from functools import cache
+from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug"}
@@ -46,7 +51,9 @@ STEP_GOAL, STEP_TIMER, ATTACK_TIMER, TARGET_GOAL, NAVAL_TIMER = 1, 1, 2, 2, 3
 ENEMY_STANCE, FIND_CLOSEST = 3, 2
 # Always set, as AIBuilder's setup does: DE's building placement, answer every sighted enemy.
 BASE_SNS = {"sn-enable-new-building-system": 1, "sn-percent-enemy-sighted-response": 100}
-DEFAULT_GATHERERS = {"food": 50, "wood": 30, "gold": 15, "stone": 5}
+DEFAULT_GATHERERS = {"food": 45, "wood": 30, "gold": 15, "stone": 10}   # DE's AIBuilder
+RESOURCES = ("food", "wood", "gold", "stone")
+WAIT_GOAL, MAX_WAITS = 3, 4
 HOUSE_HEADROOM = 4
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
@@ -88,6 +95,32 @@ def resolve(name: str, kind: str, game: str) -> int:
     raise SpecError(f"unknown {kind} '{name}' for {game} (find names with lookup)")
 
 
+@cache
+def _costs() -> dict:
+    data = resources.files("aoe2ed").joinpath("data/costs.json").read_text(encoding="utf-8")
+    return json.loads(data)
+
+
+def cost(kind: str, oid: int, game: str) -> dict[str, int]:
+    """What an object (kind "object") or tech costs in the game: {food: .., gold: ..}; {} if free or unknown."""
+    return _costs().get(game, {}).get("techs" if kind == "tech" else "objects", {}).get(str(oid), {})
+
+
+def auto_gatherers(items: list[tuple[str, int, int]], game: str) -> dict[str, int]:
+    """A villager split from what (kind, id, count) items cost, blended half and half with AIBuilder's split."""
+    need = dict.fromkeys(RESOURCES, 0.0)
+    for kind, oid, count in items:
+        for res, amount in cost(kind, oid, game).items():
+            need[res] += amount * max(count, 1)
+    total = sum(need.values())
+    share = {r: (need[r] / total if total else DEFAULT_GATHERERS[r] / 100) for r in RESOURCES}
+    raw = {r: 50 * share[r] + DEFAULT_GATHERERS[r] / 2 for r in RESOURCES}
+    out = {r: int(raw[r]) for r in RESOURCES}
+    for r in sorted(RESOURCES, key=lambda r: raw[r] - out[r], reverse=True)[:100 - sum(out.values())]:
+        out[r] += 1
+    return out
+
+
 def _step(step: dict) -> tuple[str, str, int]:
     kinds = [k for k in STEP_KINDS if k in step]
     if len(kinds) != 1 or set(step) - {*STEP_KINDS, "count"}:
@@ -119,7 +152,19 @@ def build_script(spec: dict, game: str = "ror") -> str:
     names = Names(game)
     steps = [_step(s) for s in spec.get("build_order") or []]
     timeout = int(spec.get("step_timeout", 180))
-    gatherers = {**DEFAULT_GATHERERS, **(spec.get("gatherers") or {})}
+    keep = [_step(s) for s in spec.get("keep") or []]
+
+    def item(kind: str, name: str, count: int) -> tuple[str, int, int]:
+        k = "tech" if kind == "research" else "object"
+        return k, resolve(name, k, game), count
+
+    if spec.get("gatherers", "auto") == "auto":
+        demand = [item(*s) for s in steps + keep]
+        if spec.get("villagers"):
+            demand.append(item("train", "VILLAGER", int(spec["villagers"])))
+        gatherers = auto_gatherers(demand, game)
+    else:
+        gatherers = {**DEFAULT_GATHERERS, **spec["gatherers"]}
     if set(gatherers) != set(DEFAULT_GATHERERS) or sum(gatherers.values()) != 100:
         raise SpecError(f"gatherers needs food, wood, gold and stone summing to 100, got {gatherers}")
     attack = spec.get("attack")
@@ -149,17 +194,27 @@ def build_script(spec: dict, game: str = "ror") -> str:
         return [f'(chat-to-all "{who}: {text}")'] if debug else []
 
     restart = [f"(disable-timer {STEP_TIMER})", f"(enable-timer {STEP_TIMER} {timeout})"] if timeout else []
+    advance = [*restart, f"(set-goal {WAIT_GOAL} 0)"]
     for i, (kind, name, count) in enumerate(steps, start=1):
         const = names.const(name, "tech" if kind == "research" else "object")
         todo, actions, done = _do(kind, const, count)
         label = f"step {i}: {kind} {name}" + (f" x{count}" if kind != "research" else "")
         body.append(_rule([f"(goal my-step {i})", *todo], actions, label))
         body.append(_rule([f"(goal my-step {i})", done],
-                          [f"(set-goal my-step {i + 1})", *restart, *say(f"{label} done")]))
+                          [f"(set-goal my-step {i + 1})", *advance, *say(f"{label} done")]))
         if timeout:
-            body.append(_rule([f"(goal my-step {i})", f"(timer-triggered {STEP_TIMER})"],
-                              [f"(set-goal my-step {i + 1})", *restart, *say(f"{label} skipped (stuck)")],
-                              f"step {i} stuck: skip it"))
+            k, oid, _ = item(kind, name, count)
+            afford = [f"({r}-amount >= {a})" for r, a in cost(k, oid, game).items()]
+            body.append(_rule([f"(goal my-step {i})", f"(timer-triggered {STEP_TIMER})", *afford],
+                              [f"(set-goal my-step {i + 1})", *advance, *say(f"{label} skipped (can't be made)")],
+                              f"step {i}: affordable but still not made, so it can't be: skip it"))
+    if steps and timeout:                                 # not affordable yet: wait, up to MAX_WAITS timeouts
+        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(goal {WAIT_GOAL} < {MAX_WAITS})"],
+                          [f"(up-modify-goal {WAIT_GOAL} c:+ 1)", *restart, *say("waiting for resources")],
+                          "step waiting for resources"))
+        body.append(_rule([f"(timer-triggered {STEP_TIMER})", f"(goal {WAIT_GOAL} >= {MAX_WAITS})"],
+                          ["(up-modify-goal my-step c:+ 1)", *advance, *say("gave up on a step")],
+                          "step waited too long: skip it"))
 
     if spec.get("villagers"):
         v = names.const("VILLAGER", "object")
@@ -173,8 +228,7 @@ def build_script(spec: dict, game: str = "ror") -> str:
         h = names.const("HOUSE", "object")
         body.append(_rule([f"(housing-headroom < {HOUSE_HEADROOM})", "(population-headroom > 0)", f"(can-build {h})"],
                           [f"(build {h})"], "houses"))
-    for item in spec.get("keep") or []:
-        kind, name, count = _step(item)
+    for kind, name, count in keep:
         const = names.const(name, "tech" if kind == "research" else "object")
         todo, actions, _ = _do(kind, const, count)
         body.append(_rule([f"(goal my-step {len(steps) + 1})", *todo], actions, f"keep {name} x{count}"))
