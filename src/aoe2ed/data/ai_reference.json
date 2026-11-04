@@ -1,6 +1,6 @@
 {
  "source": "airef.github.io (AI Scripting Encyclopedia), js/commands.js; structural facts only",
- "commit": "local file",
+ "commit": "16b6b78a6d9eb0b2d23e48ffd0b261212cf3a8bd",
  "commands": {
   "#else": {
    "kind": "other",
