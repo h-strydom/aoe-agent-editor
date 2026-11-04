@@ -22,6 +22,16 @@ vocabulary of the game's own scripts, and embeds them in the scenario, so nothin
 4. `ai_set(handle, player, spec)` embeds it (or `ai: {name, spec}` under the player in a campaign spec).
 5. Playtest: does it build in order, attack when expected? Adjust `step_timeout` if steps stall.
 
+## When an AI misbehaves
+Don't guess: measure. `guide("ai-behaviour")` has the full method and everything learned so far.
+1. `ai_lint(spec, game, have=[what the scenario gives the player])`.
+2. `ai_probe(handle, out, specs={player: spec}, stop_after=900)`: a copy that records every player's economy,
+   army and buildings, and stops itself. Ask the user to start it (Skirmish > Scenario, + to 8x with
+   DEBUGSPEEDS) and leave player 1 idle. 15 game minutes take about 2 real minutes.
+3. `ai_probe_report(manifest)`: findings per player (stalled step, never built, hoarding, no attack...).
+   Fix the spec, probe again.
+4. New failure mode? Tell the user, so it gets added to the ai-behaviour guide and, if detectable, a check.
+
 ## Hand-written scripts
 `ai_check(script_or_path)` checks any `.per`. Generated scripts use goal 1 and timers 1-2; extra `rules` should
 use other numbers.

@@ -106,3 +106,59 @@ def _command(name: str, v: dict) -> dict:
     if name in v["arity"]:
         entry["argument_counts_in_game_scripts"] = sorted(v["arity"][name])
     return entry
+
+
+@tool
+def ai_lint(spec: dict, game: str = "ror", have: list[str] | None = None) -> dict:
+    """Problems visible in an AI spec before playing: units whose building the AI never builds, later-age
+    building looks instead of the buildable base, attacks with no army, naval attacks with no ships.
+    have: objects the scenario already gives the player (names or ids)."""
+    from ..ai import checks
+    from ..ai.spec import resolve
+    game = games.normalize(game)
+    with games.use(game):
+        ids = [resolve(h, "object", game) for h in have or []]
+        return {"findings": checks.lint(spec, game, have=ids)}
+
+
+@tool
+def ai_probe(handle: str, out: str, specs: dict | None = None, stop_after: int = 900, interval: int = 15,
+             human: str = "idle", track: list[str] | None = None, install: bool = True) -> dict:
+    """Make an AI probe of an open scenario: a copy that records what every computer player does (stockpile,
+    gathering, population, villagers, army, kills, idle time, and counts of everything its AI builds or trains)
+    and stops itself after `stop_after` game seconds. Start it in game (Skirmish > Game Mode: Scenario; press +
+    up to 8x with the DEBUGSPEEDS launch option), leave player 1 alone, then call ai_probe_report.
+    specs: {player: AI spec} of the AIs under investigation, for the checks. human: "idle" (player 1 is whoever
+    starts it and does nothing) or "computer" (every slot a computer player). track: extra objects to count."""
+    from .. import game as game_mod
+    from ..ai.probe import probe
+    s = SESSIONS.get(handle)
+    g = games.scenario_game(s.scenario)
+    with games.use(g):
+        res = probe(s.scenario, Path(out), specs={int(k): v for k, v in (specs or {}).items()}, game=g,
+                    stop_after=stop_after, interval=interval, human=human, track=track or [])
+    if install:
+        res["installed"] = game_mod.install(res["scenario"], game=g)
+    return res
+
+
+@tool
+def ai_probe_report(manifest: str, record: str | None = None) -> dict:
+    """What the computer players did in an AI probe, and what looks wrong: a summary per player at the last
+    sample and findings from every check (docs: guide("ai-behaviour")). manifest: the .probe.json ai_probe wrote.
+    record: the .xsdat the game wrote (default: <probe name>.xsdat in the profile)."""
+    import json
+
+    from .. import game as game_mod
+    from ..ai import checks
+    from ..ai.probe import decode
+    m = json.loads(Path(manifest).read_text(encoding="utf-8"))
+    path = Path(record) if record else Path(game_mod.read_xsdat(m["record"])["path"])
+    with games.use(m.get("game", "ror")):
+        rec = decode(path.read_bytes(), m)
+        out = checks.run(rec, m)
+    out["record"] = str(path)
+    out["samples"] = len(rec["samples"])
+    if rec["ended"] is None:
+        out["note"] = "the probe hadn't reached its stop time yet: this is what happened so far"
+    return out

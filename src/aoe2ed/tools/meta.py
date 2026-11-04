@@ -120,7 +120,7 @@ def examples() -> list[dict]:
 @tool
 def guide(topic: str = "index") -> str:
     """Reference docs shipped with aoe2ed. Topics: campaign-spec (spec format for
-    compile_campaign), ai-spec (computer player AI specs and scripts), engine-facts (game behaviour verified in playtests, read before relying on
+    compile_campaign), ai-spec (computer player AI specs and scripts), ai-behaviour (how AIs fail, the checks, probing an AI in game), engine-facts (game behaviour verified in playtests, read before relying on
     any mechanic), coverage (every editor feature and how an agent does it), index (this list)."""
     from importlib.resources import files
     docs = files("aoe2ed") / "docs"

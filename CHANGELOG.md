@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- AI investigation. `ai_lint` finds problems in an AI spec before playing: units whose building is never
+  built, later-age building looks, attacks without an army, naval attacks without ships. `ai_probe` writes an
+  instrumented copy of a scenario that records every player's stockpile, gathering, population, villagers,
+  army, kills, idle time and object counts, and stops itself after a set time (15 game minutes is about 2 real
+  minutes at 8x with the DEBUGSPEEDS launch option). `ai_probe_report` decodes the record and runs the checks
+  (stalled build order, never made, hoarding, too few villagers, housed, no income, no attack, idle villagers).
+- Guide `ai-behaviour`: how to investigate an AI, every check, and what's known about AI behaviour and the test
+  setup, each with how it was found; the aoe2-ai skill points to it.
 ## 0.4.1
 
 - AI scripts know the AI Scripting Encyclopedia (airef.github.io): every command's signature and parameter
