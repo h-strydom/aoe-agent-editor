@@ -64,10 +64,45 @@ def ai_set(handle: str, player: int, ai: str | dict, name: str | None = None) ->
 
 
 @tool
-def ai_lookup(query: str, kind: str = "all", limit: int = 40) -> dict:
-    """Search the AI script vocabulary (what the game's own scripts use): kind = facts | actions |
-    strategic_numbers | symbols | all. Example: ai_lookup("attack", "strategic_numbers")."""
+def ai_lookup(query: str, kind: str = "all", limit: int = 40, describe: bool = False) -> dict:
+    """Search the AI script language: what the game's own scripts use plus the AI Scripting Encyclopedia
+    (airef.github.io). kind = facts | actions | strategic_numbers | symbols | all.
+    Commands come with their signature ("(up-compare-goal GoalId compareOp Value)"), the version that added
+    them (AoC, UP, DE: all work in DE and RoR), whether the game's own scripts use them, and an airef link;
+    strategic numbers with their id, default, valid range and whether DE uses them.
+    An exact name with describe=True adds airef's description (downloaded into your cache on first use).
+    Example: ai_lookup("attack", "strategic_numbers"), ai_lookup("up-find-player", describe=True)."""
     v = per.vocab()
     kinds = ["facts", "actions", "strategic_numbers", "symbols"] if kind == "all" else [kind]
     q = query.lower()
-    return {k: sorted(x for x in v[k] if q in x)[:limit] for k in kinds}
+    out: dict = {}
+    for k in kinds:
+        if k in ("facts", "actions"):
+            want = k[:-1]
+            names = {x for x in v[k] if q in x} | {n for n, c in v["ref_commands"].items()
+                                                   if q in n and want in c["kind"]}
+            out[k] = [_command(n, v) for n in sorted(names, key=lambda n: (n != q, len(n), n))[:limit]]
+        elif k == "strategic_numbers":
+            names = {x for x in v[k] if q in x} | {n for n in v["ref_sns"] if q in n}
+            out[k] = [{"name": n, "used_by_game": n in v[k], **v["ref_sns"].get(n, {})}
+                      for n in sorted(names, key=lambda n: (n != q, len(n), n))[:limit]]
+        else:
+            out[k] = sorted(x for x in v[k] | v["ref_symbols"] if q in x)[:limit]
+    if describe:
+        from ..ai.reference import describe as airef_describe
+        try:
+            out["description"] = airef_describe(query)
+        except OSError as e:
+            out["description"] = {"error": f"couldn't fetch airef's descriptions: {e}"}
+    return out
+
+
+def _command(name: str, v: dict) -> dict:
+    ref = v["ref_commands"].get(name)
+    entry = {"name": name, "used_by_game": name in v["facts"] or name in v["actions"]}
+    if ref:
+        entry.update(signature=per._signature(name, ref), version=ref["version"], link=ref["link"],
+                     parameters=ref["parameters"])
+    if name in v["arity"]:
+        entry["argument_counts_in_game_scripts"] = sorted(v["arity"][name])
+    return entry

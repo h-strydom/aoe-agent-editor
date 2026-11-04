@@ -16,7 +16,9 @@ vocabulary of the game's own scripts, and embeds them in the scenario, so nothin
    `gatherers`, `attack: {first, every, min_group, max_group}`, raw `strategic_numbers`.
    Names are the game's: for Return of Rome use RoR names (`lookup("clubman", game="ror")`).
 3. `ai_build(spec, game)` and read `problems`: errors must be fixed; warnings name things the game's own
-   scripts never use (`ai_lookup` finds the right name).
+   scripts never use (`ai_lookup` finds the right name). For raw `rules`, `ai_lookup(name, describe=True)` gives a
+   command's signature, parameter types and airef's description; the checker flags wrong operators,
+   argument counts, facts used as actions, out-of-range goals and strategic numbers DE ignores.
 4. `ai_set(handle, player, spec)` embeds it (or `ai: {name, spec}` under the player in a campaign spec).
 5. Playtest: does it build in order, attack when expected? Adjust `step_timeout` if steps stall.
 

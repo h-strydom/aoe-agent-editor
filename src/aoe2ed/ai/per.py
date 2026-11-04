@@ -7,6 +7,11 @@ first symbol is the command; facts can nest in (not ...), (or ...), (and ...), (
 The vocabulary (data/ai_vocab.json) is everything the game's own scripts use: every fact, action, strategic
 number and built-in symbol in the .per files shipped with AoE2 DE and Return of Rome
 (scripts/gen_ai_vocab.py). A script using only that vocabulary uses only what the engine is known to accept.
+
+The AI Scripting Encyclopedia (airef.github.io, data/ai_reference.json) adds what the game's scripts don't
+show: commands they never use, each parameter's type (so operators are checked: compareOp, mathOp, typeOp), the
+named values of parameter types (castle-age, find-closest...), and each strategic number's valid range and
+whether DE uses it.
 """
 from __future__ import annotations
 
@@ -16,11 +21,16 @@ from dataclasses import dataclass
 from functools import cache
 from importlib import resources
 
+from .reference import reference
+
 _TOKEN = re.compile(r'"[^"]*"|\(|\)|[^\s()]+')
 LOGIC = {"not", "or", "and", "nand", "nor"}
 COMPARISON = {"<", "<=", ">", ">=", "==", "!=", "less-than", "less-or-equal", "greater-than",
               "greater-or-equal", "equal", "not-equal"}
 RULE_LIMIT = 10000
+OPERATOR_TYPES = ("compareOp", "mathOp", "typeOp")
+SN_SETTERS = {"set-strategic-number": 1}                # command -> position of the value, after the SN
+MAX_GOAL, MAX_TIMER = 16000, 100                       # the game's own scripts also use goal 0 and -1
 # Longest rules in the game's own scripts: 16 facts, 32 facts and actions together. A longer rule fails to
 # load with "ERR6002: Rule too long" (seen in RoR with ~40 actions).
 MAX_FACTS, MAX_RULE_SIZE = 16, 32
@@ -114,6 +124,12 @@ def vocab() -> dict:
     v = json.loads(data)
     out = {k: set(v[k]) if isinstance(v[k], list) else v[k] for k in v}
     out["arity"] = {k: set(n) for k, n in v.get("arity", {}).items()}
+    ref = reference()
+    out["ref_commands"] = ref["commands"]
+    out["ref_sns"] = ref["strategic_numbers"]
+    out["ref_symbols"] = {name for p in ref["parameters"].values() for name in p.get("values", {})}
+    out["operators"] = {t: set(ref["parameters"][t]["operators"]) for t in OPERATOR_TYPES}
+    out["any_operator"] = set().union(*out["operators"].values())
     return out
 
 
@@ -125,12 +141,50 @@ def _number(tok: str) -> bool:
     return bool(re.fullmatch(r"-?\d+", tok))
 
 
+def _signature(cmd: str, ref: dict) -> str:
+    return "(" + " ".join([cmd, *(p.get("type") or p["name"] for p in ref["parameters"])]) + ")"
+
+
+def _check_args(node: Node, cmd: str, ref: dict | None, v: dict, defined: set[str]) -> list[Diagnostic]:
+    """Argument checks from airef's parameter types: an operator where a compareOp/mathOp/typeOp goes, goal and
+    timer ids in range, and strategic numbers DE ignores or that are set outside their range."""
+    out = []
+    args = node.items[1:]
+    if ref and len(args) == len(ref["parameters"]):
+        for arg, p in zip(args, ref["parameters"], strict=True):
+            ptype = p.get("type", "")
+            if not isinstance(arg, str) or arg in defined:
+                continue
+            # Operators are plain numbers to the engine, and the game's own scripts pass a typeOp where airef says
+            # compareOp (c: for "c:<" ...), so only a token that is no operator at all is an error.
+            if ptype in OPERATOR_TYPES and arg not in v["any_operator"] and not _number(arg):
+                sample = ", ".join(sorted(v["operators"][ptype], key=len)[:8])
+                out.append(Diagnostic("error", node.line, f"({cmd} ...) expects a {ptype} where '{arg}' is "
+                                                          f"({sample}, ...): {_signature(cmd, ref)}"))
+            elif ptype in ("GoalId", "OutputGoalId", "OptionGoalId") and _number(arg) and int(arg) > MAX_GOAL:
+                out.append(Diagnostic("error", node.line, f"goal {arg} is out of range (DE has 1 to {MAX_GOAL})"))
+            elif ptype == "TimerId" and _number(arg) and int(arg) > MAX_TIMER:
+                out.append(Diagnostic("error", node.line, f"timer {arg} is out of range (DE has 1 to {MAX_TIMER})"))
+    for i, arg in enumerate(args):
+        sn = v["ref_sns"].get(arg) if isinstance(arg, str) else None
+        if sn is None:
+            continue
+        if not sn["de"]:
+            out.append(Diagnostic("warning", node.line, f"'{arg}' has no effect in DE ({sn['link']})"))
+        at = SN_SETTERS.get(cmd)
+        if at is not None and i == at - 1 and len(args) > at and isinstance(args[at], str) and _number(args[at]):
+            value, lo, hi = int(args[at]), sn["min"], sn["max"]
+            if lo is not None and hi is not None and not lo <= value <= hi:
+                out.append(Diagnostic("warning", node.line, f"{arg} {value} is outside its range {lo} to {hi}"))
+    return out
+
+
 def check(text: str) -> list[Diagnostic]:
     """Errors (the game would reject the script) and warnings (names the game's own scripts never use)."""
     forms, problems = parse(text)
     v = vocab()
     defined = set(constants(forms))
-    known = v["symbols"] | v["strategic_numbers"] | defined | COMPARISON
+    known = v["symbols"] | v["strategic_numbers"] | defined | COMPARISON | v["ref_symbols"] | set(v["ref_sns"])
     count = 0
     for f in forms:
         head = _head(f)
@@ -159,12 +213,20 @@ def check(text: str) -> list[Diagnostic]:
                     problems.append(Diagnostic("error", rule.line, f"{kind} '{node}' isn't in brackets"))
                     continue
                 cmd = _head(node)
-                if cmd not in names:
+                ref = v["ref_commands"].get(cmd)
+                if ref and ref["kind"] in ("fact", "action") and ref["kind"] != kind:
+                    problems.append(Diagnostic("error", node.line, f"'{cmd}' is a {ref['kind']}, used as a {kind}"))
+                elif cmd not in names and not ref:
                     problems.append(Diagnostic("warning", node.line, f"unknown {kind} '{cmd}'"))
                 elif cmd in v["arity"] and len(node.items) - 1 not in v["arity"][cmd]:
                     seen = "/".join(map(str, sorted(v["arity"][cmd])))
                     problems.append(Diagnostic("error", node.line, f"({cmd} ...) takes {seen} arguments in the game's "
                                                                    f"own scripts, not {len(node.items) - 1}"))
+                elif cmd not in v["arity"] and ref and len(node.items) - 1 != len(ref["parameters"]):
+                    problems.append(Diagnostic("warning", node.line, f"({cmd} ...) takes {len(ref['parameters'])} "
+                                                                     f"arguments per airef, not {len(node.items) - 1}: "
+                                                                     f"{_signature(cmd, ref)}"))
+                problems += _check_args(node, cmd, ref, v, defined)
                 for arg in node.items[1:]:
                     if isinstance(arg, Node):
                         continue

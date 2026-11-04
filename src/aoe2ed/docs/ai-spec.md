@@ -6,7 +6,10 @@ the script from a readable **AI spec**, checks it, and embeds it:
 - `ai_build(spec, game)`: the script for a spec, with its check
 - `ai_set(handle, player, spec | .per path | script text | "none" | "immobile" | "default")`: embed it
 - `ai_check(script)`: check a hand-written script
-- `ai_lookup("attack", "strategic_numbers")`: search the script vocabulary
+- `ai_lookup("attack", "strategic_numbers")`: search the script language: what the game's own scripts use plus
+  the AI Scripting Encyclopedia ([airef.github.io](https://airef.github.io)): command signatures, the version
+  that added each (AoC, UP and DE commands all work in DE and RoR), strategic number ranges and defaults, and a
+  link to airef's page; `describe=True` on an exact name adds airef's description
 - in campaign specs and `player_set`: `ai: {name: Raiders, spec: {...}}`
 
 ## Spec

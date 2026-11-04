@@ -2,6 +2,14 @@
 
 ## 0.4.1
 
+- AI scripts know the AI Scripting Encyclopedia (airef.github.io): every command's signature and parameter
+  types, the version that added it, parameter value names, and each strategic number's id, default, range and
+  whether DE uses it (`data/ai_reference.json`, `scripts/gen_ai_reference.py`; structural facts only, since airef
+  has no license: descriptions are fetched into the user's cache on request). The checker now accepts commands
+  the game's own scripts never use but airef documents, and reports facts used as actions, non-operators where a
+  compareOp/mathOp/typeOp goes, goals above 16000 and timers above 100 (errors), plus strategic numbers set
+  outside their range or that DE ignores (warnings). The game's 87 shipped scripts check without errors.
+  `ai_lookup` returns signatures, ranges and airef links; `describe=True` adds airef's description.
 - Full unit, building and tech tables for Return of Rome and AoE2 (`data/tables/{ror,aoe2}.json`, from the
   game's own data: `scripts/gen_unit_tables.py`): every object id with its display and internal name, kind,
   class, hit points, cost and where it's made; buildings that exist once per age look know their age and the

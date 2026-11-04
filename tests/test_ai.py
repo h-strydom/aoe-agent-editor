@@ -66,7 +66,7 @@ def test_tools_build_check_lookup():
     res = ai_build(SPEC, game="ror")
     assert res["problems"] == [] and res["rules"] > 5
     assert ai_check("(defrule (true) => (disable-self)")["ok"] is False
-    assert "sn-minimum-attack-group-size" in ai_lookup("attack-group", "strategic_numbers")["strategic_numbers"]
+    assert "sn-minimum-attack-group-size" in [s["name"] for s in ai_lookup("attack-group", "strategic_numbers")["strategic_numbers"]]
 
 
 def test_ai_set_embeds_the_script():
