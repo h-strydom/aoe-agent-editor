@@ -105,6 +105,23 @@ says how it was found. When a probe or playtest shows something new, add it here
 - **Population headroom:** `cAttributePopulationCap` (4) is the room left under the cap; population plus it
   stays constant.
 
+### Second probe: Trojan War with step reporting, 2026-11-05
+- **The signal channel works:** values set with `fe-set-signal` reach scenario XS through
+  `xsGetAiSignal(id, false)` every sample.
+- **The build order isn't stuck, it's slow** (the first probe's "stalled at step 28" was wrong):
+  - Troy starts with its buildings, so steps 1-13 are done by 0:15.
+  - Then: step 15 (5 cavalry) 1:15-5:00, step 16 (5 hoplites) 5:00-10:31, research steps 10:31-14:16.
+  - It's still on step 21 of 43 at 15:00.
+  - Every train step makes one unit at a time while food sits at 0-50, so 5 hoplites take 5.5 minutes.
+- **The plan runs one step at a time,** and the keep list only starts once the whole build order is done.
+  Military stayed flat at 20 from 11:00, with nothing reinforcing it.
+- **Attacks wait for a known enemy building:**
+  - The attack rule needs `(players-building-count any-enemy >= 1)`.
+  - Troy's first attack came at 14:01, right after its first scout ship (step 20). That was 12 minutes after the
+    attack was due, with 10+ soldiers ready the whole time.
+  - On a water map the AI learns of the enemy only once a ship explores. This is inferred from the timing.
+- **Army-only players publish too:** the Trojan Defenders (step 1 forever, 0 attacks).
+
 ### XS: scenario scripts vs AI scripts
 - **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the
   current AI" and only exist in an AI script's XS. In a scenario's XS, the whole file fails to load with
@@ -123,9 +140,8 @@ says how it was found. When a probe or playtest shows something new, add it here
   Rome uses the same folder.
 
 ## Open questions
-- Do `fe-set-signal` values reach scenario XS's `xsGetAiSignal` (with `useLegacyAi` false)? Probes rely on it.
-  If the step stays 0 or -1 in game, try `useLegacyAi` true, or trigger "AI Signal" conditions. Those carry no
-  player, though, and there are only 256 ids. To be confirmed on the next Trojan War probe.
+- Is `players-building-count any-enemy` really limited to buildings the AI has seen? The timing says so;
+  confirm with a probe where the AI gets an early scout ship.
 - Should `gatherers: auto` favour what's spent continuously (food for villagers and units), or rebalance at
   run time when a resource piles up?
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log
