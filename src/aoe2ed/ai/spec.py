@@ -486,7 +486,7 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
                         continue
                     body.append(_rule(
                         [f"(timer-triggered {REBALANCE_TIMER})", f"({poor}-amount < {POOR})",
-                         f"({rich}-amount > {tier})", f"(strategic-number sn-{rich}-gatherer-percentage > {MIN_SHARE})"],
+                         f"({rich}-amount > {tier})", f"(strategic-number sn-{rich}-gatherer-percentage >= {MIN_SHARE + REBALANCE_STEP})"],
                         [f"(up-modify-sn sn-{rich}-gatherer-percentage c:- {REBALANCE_STEP})",
                          f"(up-modify-sn sn-{poor}-gatherer-percentage c:+ {REBALANCE_STEP})",
                          f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})",

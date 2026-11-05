@@ -223,3 +223,12 @@ def test_civ_army_favours_the_civs_bonus_units():
     assert stone_age["keep"] == spec["keep"]                                           # no academy in the Stone Age
     with games.use("ror"), pytest.raises(SpecError, match="unknown RoR civ"):
         build_script({"army": {"civ": "ATLANTEAN"}, "keep": [{"train": "CLUBMAN"}]}, "ror")
+
+
+def test_rebalancing_never_takes_a_share_below_its_floor():
+    from aoe2ed.ai.spec import MIN_SHARE, REBALANCE_STEP
+    with games.use("ror"):
+        script = build_script({"build_order": [{"train": "CAVALRY", "count": 5}]}, "ror")
+    # a share must hold floor + step before 5% leaves it (Trojan War probe: gold went 9% -> 4% with "> 5")
+    assert f"gatherer-percentage >= {MIN_SHARE + REBALANCE_STEP})" in script
+    assert f"gatherer-percentage > {MIN_SHARE})" not in script

@@ -212,7 +212,22 @@ Troy's spec: `levels: auto`, `army: {civ: HITTITE}`, and map revealers over play
   - So the rest of the build order (techs, more ships) never came.
   - Train steps that count living units stall under constant attacks.
 - **Fix:** a train step now moves on after one step timeout (180 s), affordable or not. Its units keep training
-  while it's in the window, and the keep list tops the army up. Not yet probed.
+  while it's in the window, and the keep list tops the army up.
+
+### Sixth probe: Trojan War on Hard with train steps moving on, 2026-11-05
+- **The plan moves again:**
+  - Steps advanced 15 → 16 → 18 → 19 → 21 → 22, at 2:30, 5:31, 8:31, 12:47, 13:32 and 13:47.
+  - Troy researched Medium War Ship, Metalworking and Wheel; in the fifth probe it researched nothing past its
+    starting techs.
+- **Hard feels right:**
+  - About 42 attack orders in 15 minutes, from about 1:50.
+  - The idle player 1 was down to 10 by 5:00 and held there in its buildings; the game ran the full 15 minutes.
+  - The user's playtest: "it did trickle in a bit more ... it felt good".
+- **Rebalancing went under its floor:**
+  - Food stayed short, so villagers moved from gold to food every minute: 19 → 14 → 9 → 4%.
+  - The rule allowed a move from any share above 5%. Gold dropped to 31 by 14:00, which stopped cavalry (step 15
+    reached 1 of 5, short of gold).
+  - Fixed: a share needs 10% (floor plus one step) before 5% leaves it.
 - **Large scripts load:** Troy's script with three levels has about 580 rules, and the Trojan Defenders' about
   1,500. Both ran.
 
