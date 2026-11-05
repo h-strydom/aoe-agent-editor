@@ -170,3 +170,29 @@ def test_window_keep_rebalance_and_scout():
     assert "rebalance: stone runs out" not in script and "rebalance: food runs out, stone over 800" in script
     assert "(train my-o-scout-ship)" in script and "sn-number-boat-explore-groups 1" in script
     assert "scout-ship" not in serial
+
+
+def test_levels_follow_the_difficulty_and_start_waits_for_the_scenario():
+    from aoe2ed.ai.spec import level_specs
+    spec = {**SPEC, "keep": [{"train": "CLUBMAN", "count": 10}], "levels": "auto", "start": {"trigger": 3}}
+    lv = level_specs(spec)
+    assert lv["normal"]["villagers"] == 20 and lv["easy"]["villagers"] == 14 and lv["hard"]["villagers"] == 24
+    assert lv["easy"]["attack"]["first"] == 450 and lv["hard"]["attack"]["first"] == 225
+    assert lv["easy"]["keep"][0]["count"] == 6 and lv["hard"]["keep"][0]["count"] == 13
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+        plain = build_script({k: v for k, v in spec.items() if k not in ("levels", "start")}, "ror")
+    assert per.check(script) == []
+    assert "(or (difficulty == easiest) (difficulty == easy))" in script and "(difficulty == moderate)" in script
+    assert "(event-detected trigger 3)" in script and "(acknowledge-event trigger 3)" in script
+    # every generated rule after the level and start rules is gated on both
+    rules = script.split("(defrule")[1:]
+    gated = [r for r in rules if "(goal 5 " in r.split("=>")[0]]
+    assert len(gated) == len(rules) - 5 == 3 * plain.count("(defrule")
+    assert all("(goal 6 1)" in r.split("=>")[0] for r in gated)
+    override = level_specs({**SPEC, "levels": {"easy": {"attack": {"first": 900}}}})
+    assert override["easy"]["attack"] == {**SPEC["attack"], "first": 900} and override["hard"] == override["normal"]
+    with pytest.raises(SpecError, match="levels is auto"):
+        level_specs({"levels": {"brutal": {}}})
+    with games.use("ror"), pytest.raises(SpecError, match="start is"):
+        build_script({"start": 5}, "ror")

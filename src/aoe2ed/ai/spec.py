@@ -24,6 +24,10 @@ Spec (YAML/JSON; every key optional):
   transport_unit: LIGHT_TRANSPORT    #   cross water (the engine ferries attack groups); default per game
   scout: auto                        # a ship that explores, so attacks across water find a target: auto (default:
                                      #   with naval attacks or transports), false, or a unit name
+  levels: auto                       # play by the game's difficulty: auto scales this spec (as normal) for easy
+                                     #   and hard; or {easy: {...}, normal: {...}, hard: {...}} overriding keys
+  start: {trigger: 1}                # do nothing until the scenario's AI Script Goal effect sends 1; timers
+                                     #   (attack first, step timeout) count from then
   attack:                            # omit or null = never attacks
     first: 600                       #   seconds into the game
     every: 240                       #   seconds between attacks
@@ -51,7 +55,15 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout"}
+            "rebalance", "scout", "levels", "start"}
+# Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
+# rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
+# Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
+LEVELS = ("easy", "normal", "hard")
+LEVEL_GOAL, ACTIVE_GOAL = 5, 6
+LEVEL_FACTS = {1: ["(difficulty == easiest)", "(difficulty == easy)"], 2: ["(difficulty == moderate)"]}
+AUTO_LEVELS = {"easy": {"villagers": 0.7, "first": 1.5, "every": 1.5, "group": 0.6, "keep": 0.6},
+               "hard": {"villagers": 1.2, "first": 0.75, "every": 0.75, "group": 1.3, "keep": 1.3}}
 TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
 SCOUT_SHIPS = {"ror": "SCOUT_SHIP", "aoe2": "GALLEY"}
 # The attack rule needs a known enemy building ((players-building-count any-enemy >= 1)); across water nothing
@@ -169,12 +181,95 @@ def _do(kind: str, const: str, count: int) -> tuple[list[str], list[str], str]:
     return [f"(can-research {const})"], [f"(research {const})"], f"(research-completed {const})"
 
 
+def _merge(base: dict, over: dict) -> dict:
+    out = {**base, **over}
+    if isinstance(base.get("attack"), dict) and isinstance(over.get("attack"), dict):
+        out["attack"] = {**base["attack"], **over["attack"]}
+    return out
+
+
+def _scaled(spec: dict, f: dict) -> dict:
+    """The spec made easier or harder by AUTO_LEVELS factors."""
+    out = dict(spec)
+    if spec.get("villagers"):
+        out["villagers"] = max(1, round(int(spec["villagers"]) * f["villagers"]))
+    if spec.get("attack"):
+        a = dict(spec["attack"])
+        a["first"] = round(int(a.get("first", 600)) * f["first"])
+        a["every"] = round(int(a.get("every", 240)) * f["every"])
+        a["min_group"] = max(1, round(int(a.get("min_group", 4)) * f["group"]))
+        a["max_group"] = max(a["min_group"], round(int(a.get("max_group", 12)) * f["group"]))
+        out["attack"] = a
+    if spec.get("keep"):
+        out["keep"] = [{**k, "count": max(1, round(int(k.get("count", 1)) * f["keep"]))} if "train" in k else k
+                       for k in spec["keep"]]
+    return out
+
+
+def level_specs(spec: dict) -> dict[str, dict]:
+    """The spec for each difficulty level: `levels: auto` scales the spec (it is normal), a dict overrides keys per
+    level ({easy: {villagers: 15, attack: {first: 900}}}); a level left out plays as normal."""
+    levels = spec.get("levels")
+    base = {k: v for k, v in spec.items() if k not in ("levels", "start")}
+    if levels == "auto":
+        return {"easy": _scaled(base, AUTO_LEVELS["easy"]), "normal": base, "hard": _scaled(base, AUTO_LEVELS["hard"])}
+    if not isinstance(levels, dict) or set(levels) - set(LEVELS):
+        raise SpecError(f"levels is auto or a dict with keys from {LEVELS}, got {levels!r}")
+    out = {}
+    for lvl in LEVELS:
+        over = levels.get(lvl) or {}
+        if set(over) & {"levels", "start", "name"}:
+            raise SpecError(f"levels.{lvl} can't set levels, start or name")
+        out[lvl] = _merge(base, over)
+    return out
+
+
+def _gated(rule: str, facts: list[str]) -> str:
+    if not facts:
+        return rule
+    head, rest = rule.split("\n", 1)
+    return head + "\n" + "".join(f"\t{f}\n" for f in facts) + rest
+
+
 def build_script(spec: dict, game: str = "ror") -> str:
     """The .per script for an AI spec."""
     unknown = set(spec) - TOP_KEYS
     if unknown:
         raise SpecError(f"unknown AI spec keys {sorted(unknown)}; allowed {sorted(TOP_KEYS)}")
     names = Names(game)
+    pre, active = [], []
+    start = spec.get("start")
+    if start is not None:
+        if not isinstance(start, dict) or set(start) != {"trigger"} or not 0 <= int(start["trigger"]) <= 255:
+            raise SpecError(f"start is {{trigger: N}} (0-255, sent with the AI Script Goal effect), got {start!r}")
+        n = int(start["trigger"])
+        pre.append(_rule(["(true)"], [f"(set-goal {ACTIVE_GOAL} 0)", "(disable-self)"], "not started yet"))
+        pre.append(_rule([f"(event-detected trigger {n})"],
+                         [f"(acknowledge-event trigger {n})", f"(set-goal {ACTIVE_GOAL} 1)", "(disable-self)"],
+                         f"start: the scenario sends AI Script Goal {n}"))
+        active = [f"(goal {ACTIVE_GOAL} 1)"]
+    if spec.get("levels"):
+        pre.append(_rule(["(true)"], [f"(set-goal {LEVEL_GOAL} 3)", "(disable-self)"],
+                         "difficulty: hard, hardest and extreme play hard"))
+        for lvl, facts in LEVEL_FACTS.items():
+            fact = facts[0] if len(facts) == 1 else "(or " + " ".join(facts) + ")"
+            pre.append(_rule([fact], [f"(set-goal {LEVEL_GOAL} {lvl})", "(disable-self)"],
+                             f"difficulty: {LEVELS[lvl - 1]}"))
+        body = []
+        for i, (lvl, s) in enumerate(level_specs(spec).items(), start=1):
+            body += [_gated(r, [f"(goal {LEVEL_GOAL} {i})", *active]) for r in _body(s, game, names)]
+    else:
+        body = [_gated(r, active) for r in _body(spec, game, names)]
+    head = [f"; {spec.get('name', 'AI')}: generated by aoe-agent-editor from an AI spec ({game})",
+            f"(defconst my-step {STEP_GOAL})", f"(defconst my-enemy {ENEMY_STANCE})",
+            f"(defconst my-find-closest {FIND_CLOSEST})"]
+    head += [f"(defconst {c} {i})" for c, i in names.ids.values()]
+    extra = spec.get("rules") or ""
+    return "\n".join(head) + "\n\n" + "\n".join(pre + body) + (f"\n{extra.strip()}\n" if extra else "")
+
+
+def _body(spec: dict, game: str, names: Names) -> list[str]:
+    """The rules for one spec (one difficulty level)."""
     steps = [_step(s) for s in spec.get("build_order") or []]
     timeout = int(spec.get("step_timeout", 180))
     keep = [_step(s) for s in spec.get("keep") or []]
@@ -329,10 +424,4 @@ def build_script(spec: dict, game: str = "ror") -> str:
                                "(set-strategic-number sn-percent-attack-soldiers 0)", "(attack-now)", f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)",
                                f"(disable-timer {NAVAL_TIMER})", f"(enable-timer {NAVAL_TIMER} {every})",
                                *say("naval attack")], "naval attack"))
-
-    head = [f"; {spec.get('name', 'AI')}: generated by aoe-agent-editor from an AI spec ({game})",
-            f"(defconst my-step {STEP_GOAL})", f"(defconst my-enemy {ENEMY_STANCE})",
-            f"(defconst my-find-closest {FIND_CLOSEST})"]
-    head += [f"(defconst {c} {i})" for c, i in names.ids.values()]
-    extra = spec.get("rules") or ""
-    return "\n".join(head) + "\n\n" + "\n".join(body) + (f"\n{extra.strip()}\n" if extra else "")
+    return body

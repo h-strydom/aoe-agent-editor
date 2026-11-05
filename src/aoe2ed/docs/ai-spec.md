@@ -37,6 +37,11 @@ transports: 2                       # water maps: keep this many transport ships
 transport_unit: LIGHT_TRANSPORT     # default: LIGHT_TRANSPORT (ror), TRANSPORT_SHIP (aoe2)
 scout: auto                         # an exploring ship, so attacks across water find a target: auto (with naval
                                     # attacks or transports), false, or a unit name (SCOUT_SHIP ror, GALLEY aoe2)
+levels: auto                        # follow the game's difficulty: auto scales this spec (played as normal) to an
+                                    # easy and a hard version; or {easy: {...}, normal: {...}, hard: {...}} to
+                                    # override keys per level (a level left out plays as normal)
+start: {trigger: 1}                 # do nothing until the scenario's AI Script Goal effect sends 1 (blocks
+                                    # start_ai, claim_base); timers such as attack.first count from then
 attack:                             # leave out to never attack
   first: 600                        # seconds into the game
   every: 240                        # seconds between attacks
@@ -48,8 +53,30 @@ rules: "(defrule ...)"              # extra raw .per, appended
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
 step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times
-rebalancing. Goals 3-4 count waits and attacks, and goals 10-16 hold the probe report's signal ids. Extra `rules`
+rebalancing. Goals 3-4 count waits and attacks, goal 5 holds the difficulty level, goal 6 whether the AI has
+started, and goals 10-16 hold the probe report's signal ids. Extra `rules`
 can read `(goal my-step N)` but should use other goal and timer numbers.
+
+## Difficulty levels
+
+The game's difficulty picks the level: Easiest and Standard play easy, Moderate plays normal, and Hard, Hardest and
+Extreme play hard. The script holds one copy of its rules per level, and its first rules test
+`(difficulty == moderate)` and so on, as the game's own scripts do, and set goal 5 to 1-3. Every other rule checks
+goal 5. `levels: auto` makes the easy and hard versions from the spec:
+
+| | easy | hard |
+|---|---|---|
+| villagers | x0.7 | x1.2 |
+| first attack, time between attacks | x1.5 | x0.75 |
+| attack group sizes | x0.6 | x1.3 |
+| soldiers in the keep list | x0.6 | x1.3 |
+
+## Starting later
+
+With `start: {trigger: N}`, every rule waits for goal 6, which turns on when the scenario's **AI Script Goal** effect
+sends N (`(event-detected trigger N)` in the script). That effect reaches every computer player, so AIs that should
+start at different moments need different numbers. Blocks: `start_ai(signal, conditions)` sends it when its
+conditions hold; `claim_base(area, signal)` sends it when the player's units reach their base.
 
 ## The checker
 

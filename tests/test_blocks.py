@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from aoe2ed import blocks as B
-from aoe2ed import telemetry
+from aoe2ed import games, telemetry
 from aoe2ed import triggers as T
 from aoe2ed.session import SESSIONS
 from aoe2ed.xs import check
@@ -108,3 +108,29 @@ def test_spawn_distinct_tiles():
     locs = [tuple(e["location"]) for e in effs]
     assert len(locs) == 8 and len(set(locs)) == 8
     assert all(((x - 30) ** 2 + (y - 30) ** 2) ** 0.5 >= 4 for x, y in locs)
+
+
+def test_start_ai_claim_base_and_reveal(tmp_path):
+    o = SESSIONS.new(80, game="ror")
+    try:
+        ctx = B.Ctx(o.scenario, areas={"base": (50, 50, 70, 70)})
+        with games.use("ror"):
+            B.start_ai(ctx, signal=2, conditions=[{"type": "timer", "timer": 30}])
+            B.claim_base(ctx, area="base", signal=3)
+            r = B.reveal(ctx, area=(0, 0, 59, 39))
+            kept = B.reveal(ctx, area=(70, 70, 75, 75), player=2, keep=True)
+        s = _reload(o, tmp_path, "ai_blocks.aoe2scenario")
+        start = T.trigger_to_dict(T.find_trigger(s, "Start AI 2"))
+        assert start["effects"][-1]["type"] == "ai_script_goal" and start["effects"][-1]["ai_script_goal"] == 2
+        claim = T.trigger_to_dict(T.find_trigger(s, "Claim base P1"))
+        owned = [e for e in claim["effects"] if e["type"] == "change_ownership"]
+        assert len(owned) == 3 and all(e["source_player"] == 0 and e["target_player"] == 1 for e in owned)
+        assert claim["effects"][-1]["ai_script_goal"] == 3
+        # 60x40 with giant revealers (sight 20, spaced 28): 3 x 2
+        assert r["unit"] == "MAP_REVEALER_GIANT" and r["revealers"] == 6
+        assert len(s.unit_manager.get_player_units(1)) == 6
+        gone = T.trigger_to_dict(T.find_trigger(s, "Reveal P1 0,0"))["effects"][0]
+        assert gone["type"] == "remove_object" and len(gone["selected_object_ids"]) == 6
+        assert kept["unit"] == "MAP_REVEALER" and kept["triggers"] == []
+    finally:
+        SESSIONS.close(o.handle)

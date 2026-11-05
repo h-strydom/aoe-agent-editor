@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- AI specs: `levels` plays an easy, normal or hard version by the game's difficulty (`auto` scales villagers,
+  attack timing and size, and the keep list's soldiers; or override keys per level). `start: {trigger: N}` makes
+  the AI wait until the scenario's AI Script Goal effect sends N.
+- Blocks: `start_ai` sends that signal when its conditions hold; `claim_base` hands the Gaia buildings, villagers
+  and soldiers in an area to the player when their units arrive, optionally starting the AIs; `reveal` starts a
+  player with an area explored (map revealers, removed after a second, or kept for permanent sight).
+
 ## 0.5.0
 
 - AI specs, from the Trojan War probes. `window` (default 3): the AI works on the next steps at once instead of

@@ -24,7 +24,8 @@ Restate the idea in 3–5 lines before designing.
 Call `blocks_list()` and `guide("engine-facts")`. Express each mechanic as:
 1. **a block**: survive, objective, lose_if_destroyed, waves (+ escalating, `chase`), anchor,
    escort, choice, random_faction, bank_load, bank_store, pad_shop, perk_effects, boon_offers, run_end,
-   telemetry.
+   telemetry, start_ai and claim_base (computer players that start later, "find your base"), reveal (start with
+   an area explored). Computer players are AI specs (`guide("ai-spec")`): `levels: auto` follows the difficulty.
    Any block can be switched on a variable with `when:`;
 2. **raw triggers** (`skills/aoe2-triggers`) when no block fits;
 3. **XS** (`skills/aoe2-xs`) for loops, math, randomness or state that triggers can't express.
