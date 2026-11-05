@@ -21,7 +21,7 @@ from pathlib import Path
 from .. import tables
 
 MAGIC = 412320003                      # XS int literals are limited to 9 digits
-VERSION = 2
+VERSION = 3
 # cAttributePopulationCap (4) is the room left under the cap, not the cap: population + it stays constant
 # (Trojan War probe, 2026-11-05).
 STATS = ("food", "wood", "gold", "stone", "food_total", "wood_total", "gold_total", "stone_total",
@@ -32,17 +32,33 @@ ATTRIBUTES = ("cAttributeFood", "cAttributeWood", "cAttributeGold", "cAttributeS
               "cAttributeMilitaryPopulation", "cAttributeKills", "cAttributeVillagersIdleSecondsTotal")
 TAG_SAMPLE, TAG_END = 1, 9
 TECH_DONE = 3                          # cTechStateDone; also 0 not ready, 1 ready, 2 researching, 4 queued, -1 disabled
+# What an aoe2ed AI spec keeps in its own goals and strategic numbers, read in the AI player's XS context
+# (xsSetContextPlayer + xsGetGoal / xsGetStrategicNumber): the build-order step it's on, how many times it has
+# waited for resources on that step, and its villager split. -1 for players without a spec AI.
+AI_FIELDS = (("ai_step", "goal", 1), ("ai_waits", "goal", 3), ("ai_food_pct", "sn", 117),
+             ("ai_wood_pct", "sn", 120), ("ai_gold_pct", "sn", 118), ("ai_stone_pct", "sn", 119))
 
 
 def xs_code(players: list[int], tracked: list[int], interval: int = 15, stop_after: int = 900,
-            techs: list[int] = ()) -> str:
+            techs: list[int] = (), ai_players: list[int] = ()) -> str:
     """The recorder: a header, a sample every `interval` seconds, an end marker at `stop_after`."""
     header = "".join(f"    xsWriteInt({v});\n" for v in [MAGIC, VERSION, len(players), *players, len(tracked),
-                                                           *tracked, len(techs), *techs, interval, stop_after])
+                                                           *tracked, len(techs), *techs, len(ai_players),
+                                                           *ai_players, interval, stop_after])
     stats = "".join(f"        aoe2edProbeAttr(p, {a});\n" for a in ATTRIBUTES)
     objects = "".join(f"        xsWriteInt(xsGetObjectCountTotal(p, {o}));\n"
                       f"        xsWriteInt(xsGetObjectCount(p, {o}));\n" for o in tracked)
     objects += "".join(f"        xsWriteInt(xsGetTechState({tech}, p));\n" for tech in techs)
+    reads = "".join(f"            xsWriteInt({'xsGetGoal' if kind == 'goal' else 'xsGetStrategicNumber'}({i}));\n"
+                    for _, kind, i in AI_FIELDS)
+    is_ai = " || ".join(f"p == {p}" for p in ai_players) or "false"
+    objects += f"""        if ({is_ai}) {{
+            int context = xsGetContextPlayer();
+            xsSetContextPlayer(p);
+{reads}            xsSetContextPlayer(context);
+        }} else {{
+{"".join("            xsWriteInt(-1);" + chr(10) for _ in AI_FIELDS)}        }}
+"""
     plist = ", ".join(map(str, players))
     return f"""// ---- aoe2ed AI probe v{VERSION} ----
 int aoe2edProbePlayers = -1;
@@ -170,7 +186,8 @@ def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: st
     elif human != "idle":
         raise ValueError("human is 'idle' or 'computer'")
     ctx = Ctx(scenario)
-    ctx.xs(xs_code(players, tracked, interval, stop_after, sorted(techs)))
+    ai_players = sorted(p for p in specs if p in players)
+    ctx.xs(xs_code(players, tracked, interval, stop_after, sorted(techs), ai_players))
     if end_game:
         ctx.trigger("aoe2ed probe: stop", [{"type": "timer", "timer": stop_after + 2}],
                     [{"type": "declare_victory", "source_player": players[0], "enabled": True}])
@@ -213,11 +230,15 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
         nk = vals[i]
         techs = vals[i + 1:i + 1 + nk]
         i += 1 + nk
+    ai_fields = AI_FIELDS if version >= 3 else ()
+    if version >= 3:
+        na = vals[i]
+        i += 1 + na
     interval, stop_after = vals[i:i + 2]
     i += 2
     names = {int(k): v for k, v in (manifest or {}).get("objects", {}).items()}
     tech_names = {int(k): v for k, v in (manifest or {}).get("techs", {}).items()}
-    width = len(STATS) + 2 * nt + len(techs)
+    width = len(STATS) + 2 * nt + len(techs) + len(ai_fields)
     samples, ended = [], None
     while i < len(vals):
         tag = vals[i]
@@ -230,8 +251,11 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
                 counts = row[len(STATS):len(STATS) + 2 * nt]
                 entry["objects"] = {names.get(o, str(o)): [counts[2 * k], counts[2 * k + 1]]
                                     for k, o in enumerate(tracked)}
-                states = row[len(STATS) + 2 * nt:]
-                entry["techs"] = {tech_names.get(k, str(k)): v for k, v in zip(techs, states, strict=True)}
+                at = len(STATS) + 2 * nt
+                entry["techs"] = {tech_names.get(k, str(k)): v
+                                  for k, v in zip(techs, row[at:at + len(techs)], strict=True)}
+                for (name, _, _), v in zip(ai_fields, row[at + len(techs):], strict=True):
+                    entry[name] = v
                 s["players"][p] = entry
                 j += width
             samples.append(s)

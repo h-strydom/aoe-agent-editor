@@ -201,6 +201,52 @@ def stalled_build_order(c: Context) -> Iterator[Finding]:
         return
 
 
+def step_label(spec: dict, step: int) -> str:
+    """What build-order step n (1-based, as the AI counts) is."""
+    order = spec.get("build_order") or []
+    if step < 1:
+        return "not started"
+    if step > len(order):
+        return "build order done (keep list only)"
+    kind, name, count = _step(order[step - 1])
+    return f"{kind} {name}" + ("" if kind == "research" or count == 1 else f" x{count}")
+
+
+def step_history(record: dict, player: int, spec: dict) -> list[dict]:
+    """When the AI moved to each build-order step, read from its own step goal (probe version 3)."""
+    out = []
+    for t, v in timeline(record, player, "ai_step"):
+        if v is None or v < 0:
+            return []
+        if not out or out[-1]["step"] != v:
+            out.append({"t": t, "step": v, "what": step_label(spec, v)})
+    return out
+
+
+@check
+def stuck_step(c: Context) -> Iterator[Finding]:
+    """The step the AI ended on, when it sat there for 3+ minutes: the exact place its plan stopped."""
+    from .spec import cost
+    hist = step_history(c.record, c.player, c.spec) if c.record else []
+    if not hist or not _builders(c):
+        return
+    last, end = hist[-1], c.record["samples"][-1]["t"]
+    order = c.spec.get("build_order") or []
+    if last["step"] > len(order) or end - last["t"] < 180:
+        return
+    kind, name, _ = _step(order[last["step"] - 1])
+    now = c.record["samples"][-1]["players"][c.player]
+    oid = _oid(name, kind, c.game)
+    price = cost("tech" if kind == "research" else "object", oid, c.game) if oid is not None else {}
+    short = {r: a for r, a in price.items() if now.get(r, 0) < a}
+    yield Finding("stuck_step", c.player, "problem",
+                  f"on step {last['step']} ({last['what']}) since {last['t'] // 60}:{last['t'] % 60:02d}, "
+                  f"{(end - last['t']) // 60} min, waited {now.get('ai_waits', 0)} times; " +
+                  (f"short of {short}" if short else f"affordable (costs {price})"), t=last["t"],
+                  fix="short: income or gatherer split; affordable: where it's made, its age, a disabled unit, or "
+                      "a count the AI can't reach (it counts what it has, not what it made)")
+
+
 @check
 def first_engagement(c: Context) -> Iterator[Finding]:
     """When the AI first killed something, against when its first attack was due."""
@@ -357,8 +403,14 @@ def run(record: dict, manifest: dict) -> dict:
         summary["gathered_per_minute"] = _income(record, p)
         summary["objects"] = {n: v[0] for n, v in last.get("objects", {}).items() if v[0]}
         summary["researched"] = [n for n, s in last.get("techs", {}).items() if s == TECH_DONE]
+        if last.get("ai_step", -1) >= 0:
+            summary["gatherer_split"] = {r: last[f"ai_{r}_pct"] for r in ("food", "wood", "gold", "stone")}
         findings = []
         if spec:
+            history = step_history(record, p, spec)
+            if history:
+                summary["steps"] = [f"{h['t'] // 60}:{h['t'] % 60:02d} step {h['step']}: {h['what']}"
+                                    for h in history]
             c = Context(game, spec, p, record, [q for q in record["players"] if q != p],
                         set(manifest.get("start_objects", {}).get(str(p), [])))
             for f in (f.as_dict() for _, fn in [*LINTS, *CHECKS] for f in fn(c)):

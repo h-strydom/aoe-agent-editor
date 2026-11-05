@@ -14,7 +14,9 @@ says how it was found. When a probe or playtest shows something new, add it here
      - stockpile, everything gathered so far, population and the room left under its cap;
      - villagers, military, kills, villager idle time;
      - a count of everything the AI builds or trains, plus the buildings those come from, and the research
-       state of every tech it researches.
+       state of every tech it researches;
+     - for players running an AI spec, read from the AI itself (XS `xsSetContextPlayer` + `xsGetGoal`): the
+       build-order step it's on, how often it has waited for resources there, and its live villager split.
    - It stops itself after `stop_after` game seconds. There's no need to play to the end: 10-15 game minutes shows
      whether an AI builds, trains and attacks.
    - Start the copy in game: Skirmish, Game Mode: Scenario. Leave player 1 alone; an idle player 1 is also
@@ -36,6 +38,7 @@ says how it was found. When a probe or playtest shows something new, add it here
 | `attack_without_army` | lint | `attack` is set but nothing in the build order or keep list is a soldier. |
 | `naval_without_ships` | lint | `attack.naval` with no dock and no transports. |
 | `no_builders` | probe | Never had a villager: the build order can't run. This is info, since army-only players are normal. |
+| `stuck_step` | probe | The AI's own step goal shows where its plan stopped: the step, since when, waits, and whether it was affordable. The report's summary lists every step change. |
 | `first_engagement` | probe | First kill against the first attack time; a warning when it's 5+ minutes late. |
 | `never_made` | probe | Something in the build order or keep list never existed, not even under construction. |
 | `stalled_build_order` | probe | The first step never completed (research counts once done), and whether it was affordable at the end. |
@@ -110,8 +113,9 @@ says how it was found. When a probe or playtest shows something new, add it here
   Rome uses the same folder.
 
 ## Open questions
-- Where exactly does an AI's build order stop? AI specs could send their step number to the probe with
-  `(set-signal n)`, and triggers on "AI Signal" could copy it into a recorded variable. Untested.
+- Does scenario XS really read an AI's goals after `xsSetContextPlayer(p)`? Probes from version 3 rely on it to
+  see the AI's step. If the step stays -1 or 0 in game, fall back to `(set-signal n)` plus "AI Signal" triggers,
+  although those carry no player and only 256 ids. To be confirmed on the next Trojan War probe.
 - Should `gatherers: auto` favour what's spent continuously (food for villagers and units), or rebalance at
   run time when a resource piles up?
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log

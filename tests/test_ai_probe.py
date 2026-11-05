@@ -116,6 +116,28 @@ def test_v2_research_steps_and_army_only_players():
     assert report["players"][2]["summary"]["gathered_per_minute"]["food"] == 60
 
 
+def test_v3_reads_the_ai_step_and_finds_where_it_stops():
+    spec = {"build_order": [{"build": "BARRACKS"}, {"train": "CLUBMAN", "count": 8}, {"build": "DOCK"}]}
+    vals = [MAGIC, 3, 2, 1, 2, 0, 0, 1, 2, 15, 900]           # players 1, 2; nothing tracked; AI player 2
+    for t in range(0, 601, 60):
+        vals += [TAG_SAMPLE, t]
+        for p in (1, 2):
+            stats = {"villagers": 10} if p == 2 else {}
+            vals += [stats.get(k, 0) for k in STATS]
+            vals += [-1] * 6 if p == 1 else [1 if t < 120 else 2, min(t // 120, 4), 50, 30, 15, 5]
+    record = decode(struct.pack(f"<{len(vals)}i", *vals), {"specs": {"2": spec}})
+    assert record["samples"][-1]["players"][2]["ai_step"] == 2
+    manifest = {"game": "ror", "specs": {"2": spec}, "start_objects": {"2": [109, 12]}}
+    with games.use("ror"):
+        report = checks.run(record, manifest)
+    p2 = report["players"][2]
+    assert p2["summary"]["steps"] == ["0:00 step 1: build BARRACKS", "2:00 step 2: train CLUBMAN x8"]
+    assert p2["summary"]["gatherer_split"] == {"food": 50, "wood": 30, "gold": 15, "stone": 5}
+    stuck = [f for f in p2["findings"] if f["check"] == "stuck_step"]
+    assert stuck and "on step 2 (train CLUBMAN x8) since 2:00, 8 min, waited 4 times" in stuck[0]["message"]
+    assert "short of {'food'" in stuck[0]["message"]
+
+
 def test_ai_probe_writes_copy_and_manifest(tmp_path):
     h = scenario_new(map_size=60, game="ror")["handle"]
     res = ai_probe(h, str(tmp_path / "probe.aoe2scenario"), specs={"2": SPEC}, stop_after=600, install=False)
