@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
 - AI specs: `levels` plays an easy, normal or hard version by the game's difficulty (`auto`: easy barely attacks,
   hard attacks often and in bigger groups from a bigger economy; no level cheats; or override keys per level).

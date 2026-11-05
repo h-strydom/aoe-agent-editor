@@ -183,6 +183,14 @@ says how it was found. When a probe or playtest shows something new, add it here
 - **How it was found:** probe v3, 2026-11-05. xs-check accepts these calls, so `xs_check` now reports them for
   scenario code (`context="ai"` allows them), and probes check their own XS before saving.
 
+### Difficulty
+- **Campaigns offer three difficulties, scenarios six:** the campaign screen lists Standard, Moderate and Hard;
+  a scenario or skirmish lists Easiest, Standard, Moderate, Hard, Hardest and Extreme.
+  - AI specs with `levels` map Standard to easy, Moderate to normal and Hard to hard, so a campaign gets all three
+    levels. Easiest plays easy and Hardest and Extreme play hard.
+  - In the script, Standard is `(difficulty == easy)`.
+  - *User's screenshots and the Trojan War probes, 2026-11-05.*
+
 ### Testing setup
 - **Speed:** the `DEBUGSPEEDS` launch option lets + raise the speed to 8.0, about 8x real time; it works in
   Return of Rome. `UNCAPPED_SIMULATION_SPEED` does nothing. Set launch options in Steam's game properties:

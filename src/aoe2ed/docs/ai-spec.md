@@ -63,7 +63,9 @@ can read `(goal my-step N)` but should use other goal and timer numbers.
 ## Difficulty levels
 
 The game's difficulty picks the level: Easiest and Standard play easy, Moderate plays normal, and Hard, Hardest and
-Extreme play hard. The script holds one copy of its rules per level, and its first rules test
+Extreme play hard. Campaigns only offer Standard, Moderate and Hard, one per level; scenarios and skirmishes offer
+all six, and the extra three fold into the nearest level. *Verified in the Trojan War probes, 2026-11-05: Standard
+attacked first at about 6:00 (easy), Hard at 1:15.* The script holds one copy of its rules per level, and its first rules test
 `(difficulty == moderate)` and so on, as the game's own scripts do, and set goal 5 to 1-3. Every other rule checks
 goal 5. `levels: auto` makes the easy and hard versions from the spec:
 
