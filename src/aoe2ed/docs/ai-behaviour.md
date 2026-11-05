@@ -193,6 +193,27 @@ says how it was found. When a probe or playtest shows something new, add it here
 - **Record file:** a probe's record is `<probe file name>.xsdat` in the profile's `profile/` folder; Return of
   Rome uses the same folder.
 
+### Fifth probe: Trojan War with difficulty levels, civ army and the base revealed, 2026-11-05
+Troy's spec: `levels: auto`, `army: {civ: HITTITE}`, and map revealers over player 1's town for one second.
+- **A one-second reveal is enough:**
+  - On Hard, the first attack launched at 1:15, as soon as hard's timer allowed (72 s). That is, Troy knew a
+    target building with no scouting.
+  - The AI keeps buildings it glimpsed once. The first kill came at 3:00, after the crossing.
+  - Before the reveal, the first attack waited for a scout ship (14:01 in the second probe).
+- **The levels show:**
+  - Standard (the easy level) attacked first at about 6:00 and didn't beat the idle player 1 in 15 minutes.
+  - Hard attacked from 1:15 and every 20 s after, about 30 attacks by 12:00, and won.
+  - *Standard from the user's playtest; no record kept.*
+- **Civ army:** Troy (Hittite) trained Bowmen (7 by 12:00, +1 attack) and kept 5 Stone Throwers (+50% hit
+  points), both from its civ bonuses.
+- **Same weak spot as before:**
+  - Food 0-50 for 10 minutes; step 15 ("5 cavalry") never completed, because the attacks kept killing the
+    cavalry, and it was too poor at each step timeout to skip it.
+  - So the rest of the build order (techs, more ships) never came.
+  - Train steps that count living units stall under constant attacks.
+- **Large scripts load:** Troy's script with three levels has about 580 rules, and the Trojan Defenders' about
+  1,500. Both ran.
+
 ## Open questions
 - Is `players-building-count any-enemy` really limited to buildings the AI has seen? The timing says so;
   confirm with a probe where the AI gets an early scout ship.
