@@ -6,7 +6,7 @@ import struct
 
 from aoe2ed import games, xs
 from aoe2ed.ai import checks
-from aoe2ed.ai.probe import MAGIC, STATS, TAG_END, TAG_SAMPLE, decode, tracked_objects, xs_code
+from aoe2ed.ai.probe import MAGIC, STATS, TAG_END, TAG_SAMPLE, decode, tracked_objects, tracked_techs, xs_code
 from aoe2ed.session import SESSIONS
 from aoe2ed.tools.ai import ai_lint, ai_probe, ai_probe_report
 from aoe2ed.tools.scenario import scenario_new
@@ -77,6 +77,43 @@ def test_checks_on_a_stuck_ai(tmp_path):
     mpath.write_text(json.dumps(manifest), encoding="utf-8")
     out = ai_probe_report(str(mpath), str(path))
     assert out["note"] and out["samples"] == 17
+
+
+def _record_v2(players, tracked, techs, rows):
+    """rows = [(t, {player: (stats, {oid: (total, done)}, {tech: state})})]."""
+    vals = [MAGIC, 2, len(players), *players, len(tracked), *tracked, len(techs), *techs, 15, 900]
+    for t, per in rows:
+        vals += [TAG_SAMPLE, t]
+        for p in players:
+            stats, objs, states = per[p]
+            vals += [stats.get(k, 0) for k in STATS]
+            for o in tracked:
+                vals += list(objs.get(o, (0, 0)))
+            vals += [states.get(k, 0) for k in techs]
+    return struct.pack(f"<{len(vals)}i", *vals)
+
+
+def test_v2_research_steps_and_army_only_players():
+    spec = {"build_order": [{"build": "BARRACKS"}, {"research": "TOOL_AGE"}, {"train": "CLUBMAN", "count": 3}]}
+    with games.use("ror"):
+        names = tracked_objects({2: spec, 3: spec}, "ror")
+        techs = tracked_techs({2: spec}, "ror")
+    ids = {v: k for k, v in names.items()}
+    tool = next(iter(techs))
+    rows = [(t, {2: ({"villagers": 12, "headroom": 8, "food_total": t, "wood_total": t},
+                     {ids["BARRACKS"]: (1, 1)}, {tool: 1}),
+                 3: ({"military": 20, "headroom": -20}, {}, {})}) for t in range(0, 601, 60)]
+    manifest = {"game": "ror", "objects": {str(k): v for k, v in names.items()},
+                "techs": {str(k): v for k, v in techs.items()}, "specs": {"2": spec, "3": spec},
+                "start_objects": {"2": [109], "3": [109]}}
+    record = decode(_record_v2([2, 3], sorted(names), [tool], rows), manifest)
+    assert record["version"] == 2 and record["samples"][0]["players"][2]["techs"] == {"TOOL_AGE": 1}
+    with games.use("ror"):
+        report = checks.run(record, manifest)
+    stalled = [f for f in report["players"][2]["findings"] if f["check"] == "stalled_build_order"]
+    assert len(stalled) == 1 and "step 2 (research TOOL_AGE)" in stalled[0]["message"]
+    assert [f["check"] for f in report["players"][3]["findings"]] == ["no_builders"]
+    assert report["players"][2]["summary"]["gathered_per_minute"]["food"] == 60
 
 
 def test_ai_probe_writes_copy_and_manifest(tmp_path):

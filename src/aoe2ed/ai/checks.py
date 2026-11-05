@@ -12,8 +12,10 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 
 from .. import tables
-from .probe import timeline
+from .probe import TECH_DONE, timeline
 from .spec import _step, resolve
+
+VILLAGER_NAMES = {"VILLAGER", "VILLAGER_MALE", "VILLAGER_FEMALE"}
 
 LINTS: list[tuple[str, Callable]] = []
 CHECKS: list[tuple[str, Callable]] = []
@@ -133,31 +135,84 @@ def _first(series, pred) -> int | None:
     return next((t for t, v in series if pred(v)), None)
 
 
+def _progress(c: Context, kind: str, name: str) -> list[tuple[int, int]]:
+    """How far the player got with a step over time: villagers from the villager count (a villager's object
+    changes with its task: lumberjack, miner...), techs as 1 once researched, anything else its object count."""
+    if kind == "research":
+        return [(t, int(v == TECH_DONE)) for t, v in c.series(name)] if c.record and name in c.record["techs"] else []
+    if name.upper() in VILLAGER_NAMES:
+        return c.series("villagers")
+    return c.series(_label(c, name))
+
+
+def _builders(c: Context) -> bool:
+    return max((v for _, v in c.series("villagers")), default=0) > 0
+
+
+@check
+def no_builders(c: Context) -> Iterator[Finding]:
+    """No villagers at any point: nothing in the build order can be built, whatever it says."""
+    if c.record and c.record["samples"] and not _builders(c) and any(k == "build" for k, _, _ in c.items()):
+        yield Finding("no_builders", c.player, "info",
+                      "never had a villager, so its build order can't run; it only commands the units it starts "
+                      "with", fix="intended for an army-only player; otherwise give it villagers or a town center")
+
+
 @check
 def never_made(c: Context) -> Iterator[Finding]:
     """Things in the build order or keep list the AI never had, not even under construction."""
+    if not _builders(c):
+        return
+    seen = set()
     for kind, name, _ in c.items():
-        if kind == "research":
+        if kind == "research" or name in seen:
             continue
-        s = c.series(_label(c, name))
+        seen.add(name)
+        s = _progress(c, kind, name)
         if s and max(v for _, v in s) == 0:
             yield Finding("never_made", c.player, "problem", f"{kind} {name}: never had one",
-                          fix="see the lint findings; otherwise the AI can't afford it or a step before it stalls")
+                          fix="see the lint findings (where it's made, which age); or a step before it stalls")
 
 
 @check
 def stalled_build_order(c: Context) -> Iterator[Finding]:
-    """The first build-order step whose count is never reached; everything after it waits."""
+    """The first build-order step never completed. Steps after it only move on through the step timeout, so this
+    is usually where the AI's plan stops."""
+    from .spec import cost
+    if not _builders(c):
+        return
     for i, (kind, name, count) in enumerate(_step(s) for s in c.spec.get("build_order") or []):
-        if kind == "research":
+        s = _progress(c, kind, name)
+        target = 1 if kind == "research" else count
+        if not s or max(v for _, v in s) >= target:
             continue
-        s = c.series(_label(c, name))
-        if s and max(v for _, v in s) < count:
-            yield Finding("stalled_build_order", c.player, "problem",
-                          f"build order step {i + 1} ({kind} {name} x{count}) never completed: "
-                          f"reached {max(v for _, v in s)}; steps after it are skipped only by the step timeout",
-                          fix="check what the step costs against the stockpile timeline, and its building")
-            return
+        last = c.record["samples"][-1]["players"][c.player]
+        oid = _oid(name, kind, c.game)
+        price = cost("tech" if kind == "research" else "object", oid, c.game) if oid is not None else {}
+        short = {r: a for r, a in price.items() if last.get(r, 0) < a}
+        state = f"; tech state {s and c.series(name)[-1][1]}" if kind == "research" else \
+            f"; reached {max(v for _, v in s)}"
+        yield Finding("stalled_build_order", c.player, "problem",
+                      f"build order step {i + 1} ({kind} {name}" + ("" if kind == "research" else f" x{count}") +
+                      f") never completed{state}" + (f"; short of {short} at the end" if short else
+                                                     "; affordable at the end"),
+                      fix="affordable but not made: its building, age or a disabled tech (lint); not affordable: "
+                          "the gatherer split or income")
+        return
+
+
+@check
+def first_engagement(c: Context) -> Iterator[Finding]:
+    """When the AI first killed something, against when its first attack was due."""
+    attack = c.spec.get("attack")
+    if not attack or not c.record:
+        return
+    t = _first(c.series("kills"), lambda v: v > 0)
+    if t is not None:
+        due = int(attack.get("first", 0))
+        yield Finding("first_engagement", c.player, "info" if t - due < 300 else "warning",
+                      f"first kill at {t // 60}:{t % 60:02d}, first attack due at {due // 60}:{due % 60:02d}", t=t,
+                      fix="" if t - due < 300 else "attacks start late: group size, transports, or the path")
 
 
 @check
@@ -182,7 +237,7 @@ def villagers(c: Context) -> Iterator[Finding]:
     """Fewer villagers than the spec asks for, well into the game."""
     want = int(c.spec.get("villagers") or 0)
     s = c.series("villagers")
-    if not want or not s:
+    if not want or not s or not _builders(c):
         return
     late = [(t, v) for t, v in s if t >= 480]
     if late and max(v for _, v in late) < want * 0.6:
@@ -194,13 +249,14 @@ def villagers(c: Context) -> Iterator[Finding]:
 @check
 def housed(c: Context) -> Iterator[Finding]:
     """Population at its cap for minutes: no houses."""
-    pop, cap = c.series("population"), dict(c.series("population_cap"))
+    if not _builders(c):
+        return
     start = None
-    for t, v in pop:
-        if cap.get(t) and v >= cap[t] - 1:
+    for t, room in c.series("headroom"):
+        if room <= 1:
             start = t if start is None else start
             if t - start >= 120:
-                yield Finding("housed", c.player, "problem", f"population {v}/{cap[t]} for 2+ minutes", t=start,
+                yield Finding("housed", c.player, "problem", "population at its cap for 2+ minutes", t=start,
                               fix="houses: true, and wood income")
                 return
         else:
@@ -211,6 +267,8 @@ def housed(c: Context) -> Iterator[Finding]:
 def no_income(c: Context) -> Iterator[Finding]:
     """A resource the plan needs that nobody gathers."""
     from .spec import cost
+    if not _builders(c):
+        return
     need = set()
     for kind, name, _ in c.items():
         oid = _oid(name, kind, c.game)
@@ -267,6 +325,19 @@ def _label(c: Context, name: str) -> str:
     return tables.load(c.game)["objects"].get(str(oid), {}).get("name", name)
 
 
+def _income(record: dict, player: int, window: int = 300) -> dict[str, int]:
+    """Gathered per minute over the last `window` seconds."""
+    out = {}
+    for res in ("food", "wood", "gold", "stone"):
+        s = timeline(record, player, f"{res}_total")
+        if len(s) < 2:
+            return {}
+        t1, b = s[-1]
+        t0, a = next(((t, v) for t, v in s if t >= t1 - window), s[0])
+        out[res] = round((b - a) * 60 / (t1 - t0)) if t1 > t0 else 0
+    return out
+
+
 def lint(spec: dict, game: str = "ror", player: int | None = None, have: list[int] = ()) -> list[dict]:
     """Problems visible in an AI spec without playing. have: object ids the scenario starts the player with."""
     c = Context(game, spec, player, have=set(have))
@@ -281,13 +352,17 @@ def run(record: dict, manifest: dict) -> dict:
     for p in record["players"]:
         spec = manifest.get("specs", {}).get(str(p))
         last = record["samples"][-1]["players"][p] if record["samples"] else {}
-        summary = {k: last.get(k) for k in ("villagers", "military", "population", "population_cap", "kills",
+        summary = {k: last.get(k) for k in ("villagers", "military", "population", "headroom", "kills",
                                             "food", "wood", "gold", "stone")}
+        summary["gathered_per_minute"] = _income(record, p)
         summary["objects"] = {n: v[0] for n, v in last.get("objects", {}).items() if v[0]}
+        summary["researched"] = [n for n, s in last.get("techs", {}).items() if s == TECH_DONE]
         findings = []
         if spec:
             c = Context(game, spec, p, record, [q for q in record["players"] if q != p],
                         set(manifest.get("start_objects", {}).get(str(p), [])))
-            findings = [f.as_dict() for _, fn in [*LINTS, *CHECKS] for f in fn(c)]
+            for f in (f.as_dict() for _, fn in [*LINTS, *CHECKS] for f in fn(c)):
+                if f not in findings:
+                    findings.append(f)
         out["players"][p] = {"summary": summary, "findings": findings, "has_spec": bool(spec)}
     return out

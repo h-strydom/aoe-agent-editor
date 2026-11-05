@@ -21,23 +21,28 @@ from pathlib import Path
 from .. import tables
 
 MAGIC = 412320003                      # XS int literals are limited to 9 digits
-VERSION = 1
+VERSION = 2
+# cAttributePopulationCap (4) is the room left under the cap, not the cap: population + it stays constant
+# (Trojan War probe, 2026-11-05).
 STATS = ("food", "wood", "gold", "stone", "food_total", "wood_total", "gold_total", "stone_total",
-         "population", "population_cap", "villagers", "military", "kills", "idle_seconds")
+         "population", "headroom", "villagers", "military", "kills", "idle_seconds")
 ATTRIBUTES = ("cAttributeFood", "cAttributeWood", "cAttributeGold", "cAttributeStone",
               "cAttributeFoodTotal", "cAttributeWoodTotal", "cAttributeGoldTotal", "cAttributeStoneTotal",
               "cAttributePopulation", "cAttributePopulationCap", "cAttributeCivilianPopulation",
               "cAttributeMilitaryPopulation", "cAttributeKills", "cAttributeVillagersIdleSecondsTotal")
 TAG_SAMPLE, TAG_END = 1, 9
+TECH_DONE = 3                          # cTechStateDone; also 0 not ready, 1 ready, 2 researching, 4 queued, -1 disabled
 
 
-def xs_code(players: list[int], tracked: list[int], interval: int = 15, stop_after: int = 900) -> str:
+def xs_code(players: list[int], tracked: list[int], interval: int = 15, stop_after: int = 900,
+            techs: list[int] = ()) -> str:
     """The recorder: a header, a sample every `interval` seconds, an end marker at `stop_after`."""
     header = "".join(f"    xsWriteInt({v});\n" for v in [MAGIC, VERSION, len(players), *players, len(tracked),
-                                                           *tracked, interval, stop_after])
+                                                           *tracked, len(techs), *techs, interval, stop_after])
     stats = "".join(f"        aoe2edProbeAttr(p, {a});\n" for a in ATTRIBUTES)
     objects = "".join(f"        xsWriteInt(xsGetObjectCountTotal(p, {o}));\n"
                       f"        xsWriteInt(xsGetObjectCount(p, {o}));\n" for o in tracked)
+    objects += "".join(f"        xsWriteInt(xsGetTechState({tech}, p));\n" for tech in techs)
     plist = ", ".join(map(str, players))
     return f"""// ---- aoe2ed AI probe v{VERSION} ----
 int aoe2edProbePlayers = -1;
@@ -127,6 +132,24 @@ def tracked_objects(specs: dict[int, dict], game: str, extra: list[str] = ()) ->
     return out
 
 
+def tracked_techs(specs: dict[int, dict], game: str) -> dict[int, str]:
+    """Tech ids the AI specs research; id -> name."""
+    from .spec import _step, resolve
+    t = tables.load(game)
+    out: dict[int, str] = {}
+    for spec in specs.values():
+        for item in [*(spec.get("build_order") or []), *(spec.get("keep") or [])]:
+            kind, name, _ = _step(item)
+            if kind != "research":
+                continue
+            try:
+                tid = resolve(name, "tech", game)
+            except (KeyError, ValueError):
+                continue
+            out.setdefault(tid, t["techs"].get(str(tid), {}).get("name", str(name)))
+    return out
+
+
 def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: str = "ror", stop_after: int = 900,
           interval: int = 15, human: str = "idle", track: list[str] = (), end_game: bool = True) -> dict:
     """Instrument an open scenario (AoE2ScenarioParser object) as a probe and save it to `out` with its manifest.
@@ -140,13 +163,14 @@ def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: st
     players = [int(p.player_id) for p in scenario.player_manager.players[1:] if p.active]
     objects = tracked_objects(specs, game, list(track))
     tracked = sorted(objects)
+    techs = tracked_techs(specs, game)
     if human == "computer":
         for p in scenario.sections["DataHeader"].player_data_1:
             p.human = 0
     elif human != "idle":
         raise ValueError("human is 'idle' or 'computer'")
     ctx = Ctx(scenario)
-    ctx.xs(xs_code(players, tracked, interval, stop_after))
+    ctx.xs(xs_code(players, tracked, interval, stop_after, sorted(techs)))
     if end_game:
         ctx.trigger("aoe2ed probe: stop", [{"type": "timer", "timer": stop_after + 2}],
                     [{"type": "declare_victory", "source_player": players[0], "enabled": True}])
@@ -158,7 +182,8 @@ def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: st
     for u in scenario.unit_manager.get_all_units():
         start.setdefault(str(int(u.player)), set()).add(int(u.unit_const))
     manifest = {"scenario": out.name, "record": out.stem + ".xsdat", "game": game, "players": players,
-                "objects": {str(k): v for k, v in objects.items()}, "specs": {str(k): v for k, v in specs.items()},
+                "objects": {str(k): v for k, v in objects.items()},
+                "techs": {str(k): v for k, v in techs.items()}, "specs": {str(k): v for k, v in specs.items()},
                 "start_objects": {p: sorted(ids) for p, ids in start.items()},
                 "stop_after": stop_after, "interval": interval, "human": human,
                 "tables_build": tables.load(game)["build"]}
@@ -169,11 +194,13 @@ def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: st
 
 
 def decode(data: bytes, manifest: dict | None = None) -> dict:
-    """A probe record -> {"players", "objects", "samples": [{"t", "players": {p: {stat: v, "objects": {name:
-    [total, done]}}}}], "ended"}."""
+    """A probe record -> {"players", "objects", "techs", "samples": [{"t", "players": {p: {stat: v, "objects":
+    {name: [total, done]}, "techs": {name: state}}}}], "ended"}. Reads version 1 records too (no techs, and
+    "population_cap" for what is really the headroom)."""
     vals = list(struct.unpack_from(f"<{len(data) // 4}i", data))
     if len(vals) < 3 or vals[0] != MAGIC:
         raise ValueError("not an aoe2ed AI probe record")
+    version = vals[1]
     i = 2
     np_ = vals[i]
     players = vals[i + 1:i + 1 + np_]
@@ -181,10 +208,16 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
     nt = vals[i]
     tracked = vals[i + 1:i + 1 + nt]
     i += 1 + nt
+    techs: list[int] = []
+    if version >= 2:
+        nk = vals[i]
+        techs = vals[i + 1:i + 1 + nk]
+        i += 1 + nk
     interval, stop_after = vals[i:i + 2]
     i += 2
     names = {int(k): v for k, v in (manifest or {}).get("objects", {}).items()}
-    width = len(STATS) + 2 * nt
+    tech_names = {int(k): v for k, v in (manifest or {}).get("techs", {}).items()}
+    width = len(STATS) + 2 * nt + len(techs)
     samples, ended = [], None
     while i < len(vals):
         tag = vals[i]
@@ -194,9 +227,11 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
             for p in players:
                 row = vals[j:j + width]
                 entry = dict(zip(STATS, row[:len(STATS)]))
-                counts = row[len(STATS):]
+                counts = row[len(STATS):len(STATS) + 2 * nt]
                 entry["objects"] = {names.get(o, str(o)): [counts[2 * k], counts[2 * k + 1]]
                                     for k, o in enumerate(tracked)}
+                states = row[len(STATS) + 2 * nt:]
+                entry["techs"] = {tech_names.get(k, str(k)): v for k, v in zip(techs, states, strict=True)}
                 s["players"][p] = entry
                 j += width
             samples.append(s)
@@ -206,16 +241,24 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
             i += 2
         else:
             raise ValueError(f"probe record damaged at value {i} (tag {tag})")
-    return {"players": players, "objects": [names.get(o, str(o)) for o in tracked], "interval": interval,
-            "stop_after": stop_after, "samples": samples, "ended": ended}
+    return {"version": version, "players": players, "objects": [names.get(o, str(o)) for o in tracked],
+            "techs": [tech_names.get(k, str(k)) for k in techs], "interval": interval, "stop_after": stop_after,
+            "samples": samples, "ended": ended}
 
 
 def timeline(record: dict, player: int, stat: str) -> list[tuple[int, int]]:
-    """(time, value) for one player's stat, or for an object name (its total count)."""
+    """(time, value) for one player's stat, an object name (its total count, counting ones being made) or a tech
+    name (its research state; TECH_DONE once researched)."""
     out = []
     for s in record["samples"]:
         e = s["players"].get(player)
         if e is None:
             continue
-        out.append((s["t"], e[stat] if stat in e else e["objects"].get(stat, [0, 0])[0]))
+        if stat in e:
+            v = e[stat]
+        elif stat in e.get("techs", {}):
+            v = e["techs"][stat]
+        else:
+            v = e["objects"].get(stat, [0, 0])[0]
+        out.append((s["t"], v))
     return out
