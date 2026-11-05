@@ -11,11 +11,19 @@ Spec (YAML/JSON; every key optional):
     - {build: BARRACKS}              #   count = how many in total (built or being built), default 1
     - {train: CLUBMAN, count: 5}     #   count = how many alive in total
     - {research: TOOL_AGE}           #   techs and ages
+  window: 3                          # how many steps it works on at once, from the current one (default 3; 1 = one
+                                     #   at a time, which leaves training one unit at a time behind everything else)
   step_timeout: 180                  # seconds before a step that can't happen is checked: skipped if it's affordable
                                      #   (so it's disabled or impossible); waited for up to 4 times while it isn't
-  keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order: keep these topped up / rebuilt
+  keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
+  keep_from: start                   # start (default): the keep list works from the beginning; end: only once the
+                                     #   build order is done
+  rebalance: true                    # every minute, move 5% of villagers from a resource piling up (800+) to one
+                                     #   running out (under 200) (default true)
   transports: 2                      # water maps: keep this many transport ships from the start, so attacks can
   transport_unit: LIGHT_TRANSPORT    #   cross water (the engine ferries attack groups); default per game
+  scout: auto                        # a ship that explores, so attacks across water find a target: auto (default:
+                                     #   with naval attacks or transports), false, or a unit name
   attack:                            # omit or null = never attacks
     first: 600                       #   seconds into the game
     every: 240                       #   seconds between attacks
@@ -42,8 +50,16 @@ from functools import cache
 from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
-            "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report"}
+            "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
+            "rebalance", "scout"}
 TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
+SCOUT_SHIPS = {"ror": "SCOUT_SHIP", "aoe2": "GALLEY"}
+# The attack rule needs a known enemy building ((players-building-count any-enemy >= 1)); across water nothing
+# finds one until a ship explores (Trojan War probe, 2026-11-05: first attack right after the first scout ship).
+SCOUT_SNS = {"sn-number-boat-explore-groups": 1, "sn-minimum-boat-explore-group-size": 1,
+             "sn-maximum-boat-explore-group-size": 1}
+REBALANCE_TIMER, REBALANCE_EVERY, REBALANCE_STEP = 4, 60, 5
+RICH, POOR, MIN_SHARE = 800, 200, 10
 ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval"}
 STEP_KINDS = ("build", "train", "research")
 STEP_GOAL, STEP_TIMER, ATTACK_TIMER, TARGET_GOAL, NAVAL_TIMER = 1, 1, 2, 2, 3
@@ -176,10 +192,19 @@ def build_script(spec: dict, game: str = "ror") -> str:
     attack = spec.get("attack")
     if attack is not None and set(attack) - ATTACK_KEYS:
         raise SpecError(f"unknown attack keys {sorted(set(attack) - ATTACK_KEYS)}")
+    window = max(1, int(spec.get("window", 3)))
+    keep_from = spec.get("keep_from", "start")
+    if keep_from not in ("start", "end"):
+        raise SpecError(f"keep_from is start or end, got {keep_from!r}")
+    scout = spec.get("scout", "auto")
+    if scout == "auto":
+        scout = SCOUT_SHIPS.get(game) if (attack or {}).get("naval") or spec.get("transports") else None
+    elif scout is True:
+        scout = SCOUT_SHIPS.get(game)
 
     body = []
     init = [f"(set-strategic-number sn-{k}-gatherer-percentage {v})" for k, v in gatherers.items()]
-    sns = {**BASE_SNS, **(spec.get("strategic_numbers") or {})}
+    sns = {**BASE_SNS, **(SCOUT_SNS if scout else {}), **(spec.get("strategic_numbers") or {})}
     init += [f"(set-strategic-number {k} {int(v)})" for k, v in sns.items()]
     if attack:
         init += [f"(set-strategic-number sn-minimum-attack-group-size {int(attack.get('min_group', 4))})",
@@ -190,6 +215,9 @@ def build_script(spec: dict, game: str = "ror") -> str:
     init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)"]
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
+    rebalance = spec.get("rebalance", True)
+    if rebalance:
+        init.append(f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})")
     report = bool(spec.get("report"))
     if report:                                   # this player's signal ids, from my-player-number
         g = list(REPORT_GOALS)
@@ -221,7 +249,10 @@ def build_script(spec: dict, game: str = "ror") -> str:
         const = names.const(name, "tech" if kind == "research" else "object")
         todo, actions, done = _do(kind, const, count)
         label = f"step {i}: {kind} {name}" + (f" x{count}" if kind != "research" else "")
-        body.append(_rule([f"(goal my-step {i})", *todo], actions, label))
+        # Worked on while it's among the next `window` steps; only the current step advances my-step.
+        active = [f"(goal my-step {i})"] if window == 1 else \
+            [f"(up-compare-goal my-step <= {i})", f"(up-compare-goal my-step > {i - window})"]
+        body.append(_rule([*active, *todo], actions, label))
         body.append(_rule([f"(goal my-step {i})", done],
                           [f"(set-goal my-step {i + 1})", *advance, *say(f"{label} done")]))
         if timeout:
@@ -250,10 +281,30 @@ def build_script(spec: dict, game: str = "ror") -> str:
         h = names.const("HOUSE", "object")
         body.append(_rule([f"(housing-headroom < {HOUSE_HEADROOM})", "(population-headroom > 0)", f"(can-build {h})"],
                           [f"(build {h})"], "houses"))
+    if scout:
+        sc = names.const(scout, "object")
+        body.append(_rule([f"(unit-type-count-total {sc} < 1)", f"(can-train {sc})"], [f"(train {sc})"],
+                          "scout ship: explores, so attacks across water find a target"))
     for kind, name, count in keep:
         const = names.const(name, "tech" if kind == "research" else "object")
         todo, actions, _ = _do(kind, const, count)
-        body.append(_rule([f"(goal my-step {len(steps) + 1})", *todo], actions, f"keep {name} x{count}"))
+        when = [f"(goal my-step {len(steps) + 1})"] if keep_from == "end" else []
+        body.append(_rule([*when, *todo], actions, f"keep {name} x{count}"))
+    if rebalance:                                  # one 5% move a minute, from a pile to a shortage
+        for rich in RESOURCES:
+            for poor in RESOURCES:
+                if rich == poor:
+                    continue
+                body.append(_rule(
+                    [f"(timer-triggered {REBALANCE_TIMER})", f"({rich}-amount > {RICH})", f"({poor}-amount < {POOR})",
+                     f"(strategic-number sn-{rich}-gatherer-percentage > {MIN_SHARE})"],
+                    [f"(up-modify-sn sn-{rich}-gatherer-percentage c:- {REBALANCE_STEP})",
+                     f"(up-modify-sn sn-{poor}-gatherer-percentage c:+ {REBALANCE_STEP})",
+                     f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})",
+                     *say(f"villagers: {rich} to {poor}")], f"rebalance: {rich} piles up, {poor} runs out"))
+        body.append(_rule([f"(timer-triggered {REBALANCE_TIMER})"],
+                          [f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})"],
+                          "rebalance: nothing to move"))
     if attack:
         every, percent = int(attack.get("every", 240)), int(attack.get("percent", 80))
         target = [f"(up-find-player my-enemy my-find-closest {TARGET_GOAL})",

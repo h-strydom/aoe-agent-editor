@@ -121,6 +121,13 @@ says how it was found. When a probe or playtest shows something new, add it here
     attack was due, with 10+ soldiers ready the whole time.
   - On a water map the AI learns of the enemy only once a ship explores. This is inferred from the timing.
 - **Army-only players publish too:** the Trojan Defenders (step 1 forever, 0 attacks).
+- **Fixes in AI specs, from this probe** (all defaults, so every spec gets them):
+  - `window: 3` works on the next three steps at once;
+  - `keep_from: start` runs the keep list from the beginning;
+  - `rebalance: true` moves villagers from a pile to a shortage every minute;
+  - `scout: auto` keeps a scout ship exploring on water maps.
+
+  Not yet probed.
 
 ### XS: scenario scripts vs AI scripts
 - **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the

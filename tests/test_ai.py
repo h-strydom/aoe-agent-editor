@@ -35,7 +35,8 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert "(defconst my-o-barracks 12)" in script and "(defconst my-o-clubman 281)" in script
     assert "(defconst my-t-tool-age 101)" in script and "(attack-now)" in script
     assert per.check(script) == []
-    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1      # setup, 3 steps, 2 waiting, villagers + houses, attack
+    # setup, 3 steps, 2 waiting, villagers + houses, attack, rebalance (12 resource pairs + an idle tick)
+    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1 + 13
     assert "(set-strategic-number sn-percent-attack-soldiers 80)" in script     # AIBuilder's attack
     assert "(up-find-player my-enemy my-find-closest 2)" in script
 
@@ -145,3 +146,21 @@ def test_argument_counts_follow_the_games_own_scripts():
     assert ("error", "(goal ...) takes 2 arguments in the game's own scripts, not 3") in _severities(
         "(defrule (goal 3 < 4) => (disable-self))")
     assert _severities("(defrule (up-compare-goal 3 < 4) => (disable-self))") == []
+
+
+def test_window_keep_rebalance_and_scout():
+    spec = {"build_order": [{"build": "BARRACKS"}, {"train": "CLUBMAN", "count": 5}, {"build": "DOCK"}],
+            "keep": [{"train": "CLUBMAN", "count": 8}], "attack": {"first": 300, "naval": True}}
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+        serial = build_script({**spec, "window": 1, "keep_from": "end", "rebalance": False, "scout": False}, "ror")
+    assert per.check(script) == [] and per.check(serial) == []
+    # step 3 is worked on from step 1 with the default window of 3; serially only on its own turn
+    assert "(up-compare-goal my-step <= 3)\n\t(up-compare-goal my-step > 0)" in script
+    assert "(goal my-step 3)\n\t(building-type-count-total" in serial
+    keep = script[script.index("; keep CLUBMAN"):]
+    assert "my-step" not in keep.split("=>")[0]                    # keep list from the start
+    assert "(goal my-step 4)" in serial[serial.index("; keep CLUBMAN"):]
+    assert "rebalance: wood piles up, food runs out" in script and "rebalance" not in serial
+    assert "(train my-o-scout-ship)" in script and "sn-number-boat-explore-groups 1" in script
+    assert "scout-ship" not in serial

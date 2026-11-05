@@ -25,11 +25,18 @@ build_order:                        # done in order; a step is done once its cou
   - {build: BARRACKS}               # count: how many in total, built or being built (default 1)
   - {train: CLUBMAN, count: 5}      # count: how many alive in total
   - {research: TOOL_AGE}            # techs and ages
+window: 3                           # steps worked on at once, from the current one (default 3; 1 = strictly one
+                                    # at a time, which trains one unit at a time behind everything else)
 step_timeout: 180                   # seconds before a stalled step is checked: skipped if it's affordable (so it's
                                     # disabled or impossible), else waited for, up to 4 times; 0 = never skip
-keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # after the build order, keep these topped up / rebuilt
+keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
+keep_from: start                    # start (default) or end: only once the build order is done
+rebalance: true                     # every minute, move 5% of villagers from a resource piling up (800+) to one
+                                    # running out (under 200); default true
 transports: 2                       # water maps: keep this many transport ships from the start (needs a dock)
 transport_unit: LIGHT_TRANSPORT     # default: LIGHT_TRANSPORT (ror), TRANSPORT_SHIP (aoe2)
+scout: auto                         # an exploring ship, so attacks across water find a target: auto (with naval
+                                    # attacks or transports), false, or a unit name (SCOUT_SHIP ror, GALLEY aoe2)
 attack:                             # leave out to never attack
   first: 600                        # seconds into the game
   every: 240                        # seconds between attacks
@@ -40,8 +47,9 @@ rules: "(defrule ...)"              # extra raw .per, appended
 ```
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
-step counter (goal 1), with timer 1 skipping stuck steps and timer 2 timing attacks; extra `rules` can read
-`(goal my-step N)` but should use other goal and timer numbers.
+step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times
+rebalancing. Goals 3-4 count waits and attacks, and goals 10-16 hold the probe report's signal ids. Extra `rules`
+can read `(goal my-step N)` but should use other goal and timer numbers.
 
 ## The checker
 
