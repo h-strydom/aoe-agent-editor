@@ -176,9 +176,11 @@ def test_levels_follow_the_difficulty_and_start_waits_for_the_scenario():
     from aoe2ed.ai.spec import level_specs
     spec = {**SPEC, "keep": [{"train": "CLUBMAN", "count": 10}], "levels": "auto", "start": {"trigger": 3}}
     lv = level_specs(spec)
-    assert lv["normal"]["villagers"] == 20 and lv["easy"]["villagers"] == 14 and lv["hard"]["villagers"] == 24
-    assert lv["easy"]["attack"]["first"] == 450 and lv["hard"]["attack"]["first"] == 225
-    assert lv["easy"]["keep"][0]["count"] == 6 and lv["hard"]["keep"][0]["count"] == 13
+    assert lv["normal"]["villagers"] == 20 and lv["easy"]["villagers"] == 14 and lv["hard"]["villagers"] == 26
+    # easy barely attacks, hard keeps up the pressure
+    assert lv["easy"]["attack"]["first"] == 750 and lv["easy"]["attack"]["every"] == 800
+    assert lv["hard"]["attack"]["first"] == 180 and lv["hard"]["attack"]["every"] == 80
+    assert lv["easy"]["keep"][0]["count"] == 6 and lv["hard"]["keep"][0]["count"] == 15
     with games.use("ror"):
         script = build_script(spec, "ror")
         plain = build_script({k: v for k, v in spec.items() if k not in ("levels", "start")}, "ror")
@@ -196,3 +198,25 @@ def test_levels_follow_the_difficulty_and_start_waits_for_the_scenario():
         level_specs({"levels": {"brutal": {}}})
     with games.use("ror"), pytest.raises(SpecError, match="start is"):
         build_script({"start": 5}, "ror")
+
+
+def test_civ_army_favours_the_civs_bonus_units():
+    from aoe2ed import civs
+    from aoe2ed.ai.spec import civ_army
+    greek = [f["unit"] for f in civs.favoured("GREEK")]
+    assert greek[0] == "HOPLITE" and "SCOUT_SHIP" not in greek                       # land only by default
+    assert [f["unit"] for f in civs.favoured("EGYPTIAN", max_age=2)] == []            # chariots need Bronze
+    spec = {"build_order": [{"research": "TOOL_AGE"}, {"research": "BRONZE_AGE"}],
+            "keep": [{"train": "CLUBMAN", "count": 10}, {"train": "BOWMAN", "count": 6},
+                     {"train": "FISHING_BOAT", "count": 3}], "attack": {"first": 300}, "army": {"civ": "GREEK"}}
+    with games.use("ror"):
+        out, notes = civ_army(spec, "ror")
+        script = build_script(spec, "ror")
+        stone_age, _ = civ_army({**spec, "build_order": []}, "ror")
+    keep = {k.get("train") or k.get("build"): k.get("count") for k in out["keep"]}
+    assert keep["HOPLITE"] == 8 and "ACADEMY" in keep and keep["FISHING_BOAT"] == 3    # boats untouched
+    assert keep["CLUBMAN"] + keep["BOWMAN"] + keep["HOPLITE"] == 16                    # same army size
+    assert notes[0].startswith("keep HOPLITE x8 (speed +0.27") and per.check(script) == []
+    assert stone_age["keep"] == spec["keep"]                                           # no academy in the Stone Age
+    with games.use("ror"), pytest.raises(SpecError, match="unknown RoR civ"):
+        build_script({"army": {"civ": "ATLANTEAN"}, "keep": [{"train": "CLUBMAN"}]}, "ror")

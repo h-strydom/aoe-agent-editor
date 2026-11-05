@@ -1,0 +1,992 @@
+{
+ "game": "ror",
+ "exe": "101.103.57257.0",
+ "data": {
+  "modes/Pompeii/resources/_common/dat/empires2_x2_p1.dat": "fe4d566b98b0e40b05af749fc61c48b3317194d5cefd2ed5d40b80cefbd4b00d"
+ },
+ "civs": {
+  "EGYPTIAN": {
+   "favoured": [
+    {
+     "unit": "CHARIOT",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp x1.33",
+      "hp x1.33 (SCYTHE_CHARIOT)"
+     ]
+    },
+    {
+     "unit": "CHARIOT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp x1.33"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "BALLISTA",
+    "BROAD_SWORDSMAN",
+    "CATAPHRACT",
+    "CATAPULT",
+    "CAVALRY",
+    "CENTURION",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HEAVY_CAVALRY",
+    "HEAVY_HORSE_ARCHER",
+    "HELEPOLIS",
+    "HORSE_ARCHER",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "PHALANGITE"
+   ]
+  },
+  "GREEK": {
+   "favoured": [
+    {
+     "unit": "HOPLITE",
+     "made_at": "ACADEMY",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "speed +0.27",
+      "speed +0.27 (PHALANGITE)",
+      "speed +0.27 (CENTURION)",
+      "cost x0.8",
+      "cost x0.8 (PHALANGITE)",
+      "cost x0.8 (CENTURION)"
+     ]
+    },
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "speed x1.2 (WAR_GALLEY)",
+      "speed x1.2 (TRIREME)",
+      "speed x1.2"
+     ]
+    },
+    {
+     "unit": "CATAPULT_TRIREME",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "speed x1.2",
+      "speed x1.2 (JUGGERNAUT)"
+     ]
+    },
+    {
+     "unit": "FIRE_GALLEY",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "speed x1.2"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "BROAD_SWORDSMAN",
+    "CAMEL_RIDER",
+    "CATAPHRACT",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "COMPOSITE_BOWMAN",
+    "ELEPHANT_ARCHER",
+    "HEAVY_HORSE_ARCHER",
+    "HORSE_ARCHER",
+    "IMPROVED_BOWMAN",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "SCYTHE_CHARIOT",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "BABYLONIAN": {
+   "favoured": [
+    {
+     "unit": "CHARIOT",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "armour +1",
+      "armour +1 (SCYTHE_CHARIOT)"
+     ]
+    },
+    {
+     "unit": "CHARIOT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "armour +1"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "BALLISTA",
+    "CATAPHRACT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "ELEPHANT_ARCHER",
+    "HEAVY_CAVALRY",
+    "HEAVY_HORSE_ARCHER",
+    "HELEPOLIS",
+    "JUGGERNAUT",
+    "PHALANGITE",
+    "TRIREME",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "ASSYRIAN": {
+   "favoured": [
+    {
+     "unit": "BOWMAN",
+     "made_at": "ARCHERY_RANGE",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "fire rate x0.9",
+      "fire rate x0.911",
+      "fire rate x0.915"
+     ]
+    },
+    {
+     "unit": "CHARIOT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "fire rate x0.9",
+      "fire rate x0.911",
+      "fire rate x0.915"
+     ]
+    },
+    {
+     "unit": "HORSE_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "fire rate x0.9",
+      "fire rate x0.911",
+      "fire rate x0.915"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "COMPOSITE_BOWMAN",
+    "ELEPHANT_ARCHER",
+    "HEAVY_HORSE_ARCHER",
+    "IMPROVED_BOWMAN",
+    "JUGGERNAUT",
+    "PHALANGITE",
+    "SCYTHE_CHARIOT",
+    "SLINGER",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "MINOAN": {
+   "favoured": [
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "cost x0.85 (WAR_GALLEY)",
+      "cost x0.85 (TRIREME)",
+      "cost x0.85",
+      "cost x0.941 (WAR_GALLEY)",
+      "cost x0.941 (TRIREME)",
+      "cost x0.941",
+      "cost x0.938 (WAR_GALLEY)",
+      "cost x0.938 (TRIREME)",
+      "cost x0.938",
+      "cost x0.933 (WAR_GALLEY)",
+      "cost x0.933 (TRIREME)",
+      "cost x0.933"
+     ]
+    },
+    {
+     "unit": "CATAPULT_TRIREME",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "cost x0.85",
+      "cost x0.85 (JUGGERNAUT)",
+      "cost x0.941",
+      "cost x0.941 (JUGGERNAUT)",
+      "cost x0.938",
+      "cost x0.938 (JUGGERNAUT)",
+      "cost x0.933",
+      "cost x0.933 (JUGGERNAUT)"
+     ]
+    },
+    {
+     "unit": "IMPROVED_BOWMAN",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "range +1",
+      "range +1 (COMPOSITE_BOWMAN)"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "CATAPHRACT",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "ELEPHANT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CAVALRY",
+    "HEAVY_HORSE_ARCHER",
+    "HORSE_ARCHER",
+    "LEGIONARY",
+    "SCYTHE_CHARIOT",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "HITTITE": {
+   "favoured": [
+    {
+     "unit": "STONE_THROWER",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp x1.5",
+      "hp x1.5 (CATAPULT)",
+      "hp x1.5 (HEAVY_CATAPULT)"
+     ]
+    },
+    {
+     "unit": "HORSE_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "attack +1",
+      "attack +1 (HEAVY_HORSE_ARCHER)"
+     ]
+    },
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "range +1",
+      "range +1 (WAR_GALLEY)"
+     ]
+    },
+    {
+     "unit": "BOWMAN",
+     "made_at": "ARCHERY_RANGE",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "attack +1"
+     ]
+    },
+    {
+     "unit": "CHARIOT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "attack +1"
+     ]
+    },
+    {
+     "unit": "ELEPHANT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "attack +1"
+     ]
+    }
+   ],
+   "unavailable": [
+    "BALLISTA",
+    "CATAPHRACT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "COMPOSITE_BOWMAN",
+    "HEAVY_CAVALRY",
+    "HELEPOLIS",
+    "IMPROVED_BOWMAN",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "SLINGER",
+    "TRIREME"
+   ]
+  },
+  "PHOENICIAN": {
+   "favoured": [
+    {
+     "unit": "CATAPULT_TRIREME",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "fire rate x0.75",
+      "fire rate x0.75 (JUGGERNAUT)"
+     ]
+    },
+    {
+     "unit": "WAR_ELEPHANT",
+     "made_at": "STABLE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "cost x0.75",
+      "cost x0.75 (ARMORED_ELEPHANT)"
+     ]
+    },
+    {
+     "unit": "ELEPHANT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "cost x0.75"
+     ]
+    }
+   ],
+   "unavailable": [
+    "BALLISTA",
+    "CATAPHRACT",
+    "CATAPULT",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HEAVY_CAVALRY",
+    "HEAVY_HORSE_ARCHER",
+    "HELEPOLIS",
+    "HORSE_ARCHER"
+   ]
+  },
+  "SUMERIAN": {
+   "favoured": [
+    {
+     "unit": "STONE_THROWER",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "fire rate x0.69",
+      "fire rate x0.69 (CATAPULT)",
+      "fire rate x0.69 (HEAVY_CATAPULT)"
+     ]
+    },
+    {
+     "unit": "CAMEL_RIDER",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "armour +1"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "BALLISTA",
+    "CATAPHRACT",
+    "CATAPULT_TRIREME",
+    "CAVALRY",
+    "COMPOSITE_BOWMAN",
+    "ELEPHANT_ARCHER",
+    "HEAVY_CAVALRY",
+    "HELEPOLIS",
+    "IMPROVED_BOWMAN",
+    "JUGGERNAUT",
+    "LEGIONARY"
+   ]
+  },
+  "PERSIAN": {
+   "favoured": [
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "fire rate x0.85",
+      "fire rate x0.85 (WAR_GALLEY)",
+      "fire rate x0.85 (TRIREME)",
+      "fire rate x0.941",
+      "fire rate x0.941 (WAR_GALLEY)",
+      "fire rate x0.941 (TRIREME)",
+      "fire rate x0.938",
+      "fire rate x0.938 (WAR_GALLEY)",
+      "fire rate x0.938 (TRIREME)"
+     ]
+    },
+    {
+     "unit": "WAR_ELEPHANT",
+     "made_at": "STABLE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "speed x1.25",
+      "speed x1.25 (ARMORED_ELEPHANT)"
+     ]
+    },
+    {
+     "unit": "ELEPHANT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "speed x1.25"
+     ]
+    }
+   ],
+   "unavailable": [
+    "BALLISTA",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HELEPOLIS",
+    "HOPLITE",
+    "PHALANGITE",
+    "SCYTHE_CHARIOT"
+   ]
+  },
+  "SHANG": {
+   "favoured": [
+    {
+     "unit": "CAVALRY",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "fire rate x0.909",
+      "fire rate x0.909 (HEAVY_CAVALRY)",
+      "fire rate x0.909 (CATAPHRACT)"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "ELEPHANT_ARCHER",
+    "HEAVY_CATAPULT",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "PHALANGITE",
+    "TRIREME",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "YAMATO": {
+   "favoured": [
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "hp x1.1 (WAR_GALLEY)",
+      "hp x1.1 (TRIREME)",
+      "hp x1.1",
+      "hp x1.05 (WAR_GALLEY)",
+      "hp x1.05 (TRIREME)",
+      "hp x1.05",
+      "hp x1.04 (WAR_GALLEY)",
+      "hp x1.04 (TRIREME)",
+      "hp x1.04"
+     ]
+    },
+    {
+     "unit": "CATAPULT_TRIREME",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "hp x1.1",
+      "hp x1.1 (JUGGERNAUT)",
+      "hp x1.05",
+      "hp x1.05 (JUGGERNAUT)",
+      "hp x1.04",
+      "hp x1.04 (JUGGERNAUT)"
+     ]
+    },
+    {
+     "unit": "CAVALRY",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "cost x0.85",
+      "cost x0.85 (HEAVY_CAVALRY)",
+      "cost x0.85 (CATAPHRACT)"
+     ]
+    },
+    {
+     "unit": "HORSE_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "cost x0.85",
+      "cost x0.85 (HEAVY_HORSE_ARCHER)"
+     ]
+    },
+    {
+     "unit": "SCOUT",
+     "made_at": "STABLE",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "cost x0.85"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "BALLISTA",
+    "BROAD_SWORDSMAN",
+    "CAMEL_RIDER",
+    "CATAPULT",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "ELEPHANT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HELEPOLIS",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "SCYTHE_CHARIOT",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "CHOSON": {
+   "favoured": [
+    {
+     "unit": "SHORT_SWORDSMAN",
+     "made_at": "BARRACKS",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp 100 -> 160 (LONG_SWORDSMAN)",
+      "hp 140 -> 220 (LEGIONARY)",
+      "hp 80 -> 100 (BROAD_SWORDSMAN)",
+      "hp 60 -> 75"
+     ]
+    },
+    {
+     "unit": "CLUBMAN",
+     "made_at": "BARRACKS",
+     "age": 1,
+     "naval": false,
+     "bonuses": [
+      "hp 50 -> 55 (AXEMAN)"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "CAMEL_RIDER",
+    "CATAPULT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "COMPOSITE_BOWMAN",
+    "ELEPHANT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HEAVY_HORSE_ARCHER",
+    "JUGGERNAUT",
+    "PHALANGITE",
+    "SCYTHE_CHARIOT",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "ROMAN": {
+   "favoured": [
+    {
+     "unit": "SHORT_SWORDSMAN",
+     "made_at": "BARRACKS",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "fire rate 1.5s -> 1s",
+      "fire rate 1.5s -> 1s (BROAD_SWORDSMAN)",
+      "fire rate 1.5s -> 1s (LONG_SWORDSMAN)",
+      "fire rate 1.5s -> 1s (LEGIONARY)"
+     ]
+    },
+    {
+     "unit": "BALLISTA",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "range +1",
+      "range +1 (HELEPOLIS)"
+     ]
+    }
+   ],
+   "unavailable": [
+    "ARMORED_ELEPHANT",
+    "CAMEL_RIDER",
+    "CATAPHRACT",
+    "CHARIOT_ARCHER",
+    "COMPOSITE_BOWMAN",
+    "ELEPHANT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CAVALRY",
+    "HEAVY_HORSE_ARCHER",
+    "HORSE_ARCHER",
+    "WAR_ELEPHANT"
+   ]
+  },
+  "CARTHAGE": {
+   "favoured": [
+    {
+     "unit": "HOPLITE",
+     "made_at": "ACADEMY",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp x1.25",
+      "hp x1.25 (PHALANGITE)",
+      "hp x1.25 (CENTURION)"
+     ]
+    },
+    {
+     "unit": "WAR_ELEPHANT",
+     "made_at": "STABLE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "hp x1.25",
+      "hp x1.25 (ARMORED_ELEPHANT)"
+     ]
+    },
+    {
+     "unit": "CAMEL_RIDER",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "hp x1.15"
+     ]
+    },
+    {
+     "unit": "ELEPHANT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "hp x1.25"
+     ]
+    },
+    {
+     "unit": "FIRE_GALLEY",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "attack +6"
+     ]
+    }
+   ],
+   "unavailable": [
+    "CATAPHRACT",
+    "CATAPULT",
+    "CATAPULT_TRIREME",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "COMPOSITE_BOWMAN",
+    "HEAVY_CATAPULT",
+    "HEAVY_HORSE_ARCHER",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "SCYTHE_CHARIOT"
+   ]
+  },
+  "PALMYRA": {
+   "favoured": [
+    {
+     "unit": "CAMEL_RIDER",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "speed x1.25"
+     ]
+    }
+   ],
+   "unavailable": [
+    "CATAPHRACT",
+    "CATAPULT_TRIREME",
+    "CENTURION",
+    "ELEPHANT_ARCHER",
+    "HELEPOLIS",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "LONG_SWORDSMAN"
+   ]
+  },
+  "MACEDONIAN": {
+   "favoured": [
+    {
+     "unit": "HOPLITE",
+     "made_at": "ACADEMY",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "armour +1",
+      "armour +1 (PHALANGITE)",
+      "armour +1 (CENTURION)"
+     ]
+    },
+    {
+     "unit": "STONE_THROWER",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "cost x0.75",
+      "cost x0.75 (CATAPULT)"
+     ]
+    },
+    {
+     "unit": "BALLISTA",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "cost x0.75"
+     ]
+    }
+   ],
+   "unavailable": [
+    "CAMEL_RIDER",
+    "CHARIOT",
+    "CHARIOT_ARCHER",
+    "ELEPHANT_ARCHER",
+    "FIRE_GALLEY",
+    "HEAVY_CATAPULT",
+    "HELEPOLIS",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "LONG_SWORDSMAN",
+    "SCYTHE_CHARIOT"
+   ]
+  },
+  "LAC VIET": {
+   "favoured": [
+    {
+     "unit": "HORSE_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (HEAVY_HORSE_ARCHER)",
+      "armour +2",
+      "armour +2 (HEAVY_HORSE_ARCHER)"
+     ]
+    },
+    {
+     "unit": "IMPROVED_BOWMAN",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (COMPOSITE_BOWMAN)",
+      "armour +2",
+      "armour +2 (COMPOSITE_BOWMAN)"
+     ]
+    },
+    {
+     "unit": "SCOUT_SHIP",
+     "made_at": "DOCK",
+     "age": 2,
+     "naval": true,
+     "bonuses": [
+      "train time x0.8 (WAR_GALLEY)",
+      "train time x0.8 (TRIREME)",
+      "train time x0.8"
+     ]
+    },
+    {
+     "unit": "SHORT_SWORDSMAN",
+     "made_at": "BARRACKS",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (BROAD_SWORDSMAN)",
+      "train time x0.8 (LONG_SWORDSMAN)"
+     ]
+    },
+    {
+     "unit": "STONE_THROWER",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (CATAPULT)",
+      "train time x0.8 (HEAVY_CATAPULT)"
+     ]
+    },
+    {
+     "unit": "BALLISTA",
+     "made_at": "SIEGE_WORKSHOP",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "armour +2"
+     ]
+    },
+    {
+     "unit": "BOWMAN",
+     "made_at": "ARCHERY_RANGE",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "armour +2"
+     ]
+    },
+    {
+     "unit": "CAVALRY",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (HEAVY_CAVALRY)"
+     ]
+    },
+    {
+     "unit": "CHARIOT",
+     "made_at": "STABLE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (SCYTHE_CHARIOT)"
+     ]
+    },
+    {
+     "unit": "CHARIOT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "armour +2"
+     ]
+    },
+    {
+     "unit": "CLUBMAN",
+     "made_at": "BARRACKS",
+     "age": 1,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (AXEMAN)"
+     ]
+    },
+    {
+     "unit": "ELEPHANT_ARCHER",
+     "made_at": "ARCHERY_RANGE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "armour +2"
+     ]
+    },
+    {
+     "unit": "WAR_ELEPHANT",
+     "made_at": "STABLE",
+     "age": 4,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8",
+      "train time x0.8 (ARMORED_ELEPHANT)"
+     ]
+    },
+    {
+     "unit": "CATAPULT_TRIREME",
+     "made_at": "DOCK",
+     "age": 4,
+     "naval": true,
+     "bonuses": [
+      "train time x0.8"
+     ]
+    },
+    {
+     "unit": "HOPLITE",
+     "made_at": "ACADEMY",
+     "age": 3,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8"
+     ]
+    },
+    {
+     "unit": "SCOUT",
+     "made_at": "STABLE",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8"
+     ]
+    },
+    {
+     "unit": "SLINGER",
+     "made_at": "BARRACKS",
+     "age": 2,
+     "naval": false,
+     "bonuses": [
+      "train time x0.8"
+     ]
+    }
+   ],
+   "unavailable": [
+    "CAMEL_RIDER",
+    "CATAPHRACT",
+    "CENTURION",
+    "FIRE_GALLEY",
+    "HELEPOLIS",
+    "JUGGERNAUT",
+    "LEGIONARY",
+    "PHALANGITE"
+   ]
+  }
+ }
+}

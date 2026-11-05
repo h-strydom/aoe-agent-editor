@@ -26,6 +26,9 @@ Spec (YAML/JSON; every key optional):
                                      #   with naval attacks or transports), false, or a unit name
   levels: auto                       # play by the game's difficulty: auto scales this spec (as normal) for easy
                                      #   and hard; or {easy: {...}, normal: {...}, hard: {...}} overriding keys
+  army: {civ: GREEK, share: 50}      # shift the keep list's soldiers toward the civ's bonus units (aoe2ed.civs):
+                                     #   share % of them, its best `units` (2) reachable by max_age (else the
+                                     #   build order's highest age, or `age`); exclude: units or buildings
   start: {trigger: 1}                # do nothing until the scenario's AI Script Goal effect sends 1; timers
                                      #   (attack first, step timeout) count from then
   attack:                            # omit or null = never attacks
@@ -55,15 +58,23 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start"}
+            "rebalance", "scout", "levels", "start", "army"}
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
 LEVELS = ("easy", "normal", "hard")
 LEVEL_GOAL, ACTIVE_GOAL = 5, 6
 LEVEL_FACTS = {1: ["(difficulty == easiest)", "(difficulty == easy)"], 2: ["(difficulty == moderate)"]}
-AUTO_LEVELS = {"easy": {"villagers": 0.7, "first": 1.5, "every": 1.5, "group": 0.6, "keep": 0.6},
-               "hard": {"villagers": 1.2, "first": 0.75, "every": 0.75, "group": 1.3, "keep": 1.3}}
+# Easy barely attacks; hard keeps up the pressure. Nothing is free at any level: the AI gathers and pays for
+# everything, sees only what it explores, and gets no extra resources or spawned units.
+AUTO_LEVELS = {"easy": {"villagers": 0.7, "first": 2.5, "every": 4.0, "group": 0.5, "keep": 0.6},
+               "hard": {"villagers": 1.3, "first": 0.6, "every": 0.4, "group": 1.5, "keep": 1.5}}
+MIN_ATTACK_EVERY = 20                # seconds; hard's scaling never goes below this
+# army: shift the keep list's soldiers toward the units the civ's bonuses favour (aoe2ed.civs).
+ARMY_KEYS = {"civ", "share", "age", "max_age", "naval", "exclude", "units"}
+AGE_TECHS = {"ror": {"TOOL_AGE": 2, "BRONZE_AGE": 3, "IRON_AGE": 4}}
+NOT_SOLDIERS = {2, 4, 18, 20, 21}    # unit classes: trade boat, villager, priest, transport, fishing boat
+NAVAL_CLASS = 22
 TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
 SCOUT_SHIPS = {"ror": "SCOUT_SHIP", "aoe2": "GALLEY"}
 # The attack rule needs a known enemy building ((players-building-count any-enemy >= 1)); across water nothing
@@ -188,31 +199,99 @@ def _merge(base: dict, over: dict) -> dict:
     return out
 
 
-def _scaled(spec: dict, f: dict) -> dict:
-    """The spec made easier or harder by AUTO_LEVELS factors."""
+def _scaled(spec: dict, f: dict, game: str = "ror") -> dict:
+    """The spec made easier or harder by AUTO_LEVELS factors (soldiers only in the keep list)."""
     out = dict(spec)
     if spec.get("villagers"):
         out["villagers"] = max(1, round(int(spec["villagers"]) * f["villagers"]))
     if spec.get("attack"):
         a = dict(spec["attack"])
         a["first"] = round(int(a.get("first", 600)) * f["first"])
-        a["every"] = round(int(a.get("every", 240)) * f["every"])
+        a["every"] = max(MIN_ATTACK_EVERY, round(int(a.get("every", 240)) * f["every"]))
         a["min_group"] = max(1, round(int(a.get("min_group", 4)) * f["group"]))
         a["max_group"] = max(a["min_group"], round(int(a.get("max_group", 12)) * f["group"]))
         out["attack"] = a
     if spec.get("keep"):
-        out["keep"] = [{**k, "count": max(1, round(int(k.get("count", 1)) * f["keep"]))} if "train" in k else k
-                       for k in spec["keep"]]
+        out["keep"] = [{**k, "count": max(1, round(int(k.get("count", 1)) * f["keep"]))}
+                       if "train" in k and _soldier(k["train"], game) else k for k in spec["keep"]]
     return out
 
 
-def level_specs(spec: dict) -> dict[str, dict]:
+def _soldier(name: str, game: str) -> str | None:
+    """'land' or 'naval' for a fighting unit, None for anything else."""
+    from .. import tables
+    info = tables.info(name, game)
+    if not info or info.get("kind") != "unit" or info.get("class") in NOT_SOLDIERS:
+        return None
+    return "naval" if info.get("class") == NAVAL_CLASS else "land"
+
+
+def civ_army(spec: dict, game: str) -> tuple[dict, list[str]]:
+    """The spec with its keep list's soldiers shifted toward what the civ's bonuses favour (spec key `army`), and
+    what changed. `share`% of the land soldiers (default 50) become the civ's best `units` (default 2) favoured
+    units it can reach: by `max_age`, else the highest age the build order researches or `age` (the starting age).
+    Their buildings join the keep list. The army keeps its size, and nothing in the build order changes."""
+    from .. import civs
+    army = spec.get("army")
+    if not army:
+        return spec, []
+    if not isinstance(army, dict) or set(army) - ARMY_KEYS or "civ" not in army:
+        raise SpecError(f"army is {{civ: NAME, share: 50, age, max_age, naval, exclude, units}}, got {army!r}")
+    ages = AGE_TECHS.get(game, {})
+    reached = [ages[s["research"]] for s in spec.get("build_order") or [] if s.get("research") in ages]
+    max_age = int(army.get("max_age") or max([int(army.get("age", 1)), *reached]))
+    try:
+        picks = civs.favoured(army["civ"], game, max_age=max_age, exclude=set(army.get("exclude") or ()))
+    except KeyError as e:
+        raise SpecError(str(e)) from None
+    picks = picks[:int(army.get("units", 2))]
+    if not picks:
+        return spec, []
+    keep = [dict(k) for k in spec.get("keep") or []]
+    land = [k for k in keep if "train" in k and _soldier(k["train"], game) == "land"]
+    total = sum(int(k.get("count", 1)) for k in land) or (10 if spec.get("attack") else 0)
+    if not total:
+        return spec, []
+    names = [p["unit"] for p in picks]
+    want = max(len(picks), round(total * int(army.get("share", 50)) / 100))
+    have = {k["train"]: int(k.get("count", 1)) for k in land if k["train"] in names}
+    others = [k for k in land if k["train"] not in names]
+    add = max(0, want - sum(have.values()))
+    notes = []
+    for i, p in enumerate(picks):                                   # spread what's added over the picks
+        extra = add // len(picks) + (1 if i < add % len(picks) else 0)
+        if not extra:
+            continue
+        entry = next((k for k in keep if k.get("train") == p["unit"]), None)
+        if entry is None:
+            entry = {"train": p["unit"], "count": 0}
+            keep.append(entry)
+        entry["count"] = int(entry.get("count", 1) if entry.get("count") is not None else 1) + extra
+        own = [b for b in p["bonuses"] if "(" not in b] or p["bonuses"]
+        notes.append(f"keep {p['unit']} x{entry['count']} ({', '.join(own[:3])})")
+    rest = sum(int(k.get("count", 1)) for k in others)
+    if rest and add:                                                # the others give up as many as were added
+        cut = min(add, rest - len(others))
+        for k in others:
+            share = round(cut * int(k.get("count", 1)) / rest)
+            k["count"] = max(1, int(k.get("count", 1)) - share)
+    built = {s.get("build") for s in [*(spec.get("build_order") or []), *keep]}
+    for p in picks:
+        if p["made_at"] not in built:
+            keep.append({"build": p["made_at"]})
+            built.add(p["made_at"])
+            notes.append(f"keep {p['made_at']} (makes {p['unit']})")
+    return {**spec, "keep": keep}, notes
+
+
+def level_specs(spec: dict, game: str = "ror") -> dict[str, dict]:
     """The spec for each difficulty level: `levels: auto` scales the spec (it is normal), a dict overrides keys per
     level ({easy: {villagers: 15, attack: {first: 900}}}); a level left out plays as normal."""
     levels = spec.get("levels")
     base = {k: v for k, v in spec.items() if k not in ("levels", "start")}
     if levels == "auto":
-        return {"easy": _scaled(base, AUTO_LEVELS["easy"]), "normal": base, "hard": _scaled(base, AUTO_LEVELS["hard"])}
+        return {"easy": _scaled(base, AUTO_LEVELS["easy"], game), "normal": base,
+                "hard": _scaled(base, AUTO_LEVELS["hard"], game)}
     if not isinstance(levels, dict) or set(levels) - set(LEVELS):
         raise SpecError(f"levels is auto or a dict with keys from {LEVELS}, got {levels!r}")
     out = {}
@@ -236,6 +315,7 @@ def build_script(spec: dict, game: str = "ror") -> str:
     unknown = set(spec) - TOP_KEYS
     if unknown:
         raise SpecError(f"unknown AI spec keys {sorted(unknown)}; allowed {sorted(TOP_KEYS)}")
+    spec, _ = civ_army(spec, game)
     names = Names(game)
     pre, active = [], []
     start = spec.get("start")
@@ -256,7 +336,7 @@ def build_script(spec: dict, game: str = "ror") -> str:
             pre.append(_rule([fact], [f"(set-goal {LEVEL_GOAL} {lvl})", "(disable-self)"],
                              f"difficulty: {LEVELS[lvl - 1]}"))
         body = []
-        for i, (lvl, s) in enumerate(level_specs(spec).items(), start=1):
+        for i, (lvl, s) in enumerate(level_specs(spec, game).items(), start=1):
             body += [_gated(r, [f"(goal {LEVEL_GOAL} {i})", *active]) for r in _body(s, game, names)]
     else:
         body = [_gated(r, active) for r in _body(spec, game, names)]

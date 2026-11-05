@@ -40,6 +40,7 @@ scout: auto                         # an exploring ship, so attacks across water
 levels: auto                        # follow the game's difficulty: auto scales this spec (played as normal) to an
                                     # easy and a hard version; or {easy: {...}, normal: {...}, hard: {...}} to
                                     # override keys per level (a level left out plays as normal)
+army: {civ: GREEK, share: 50}       # lean the keep list's soldiers toward the civ's bonus units (see below)
 start: {trigger: 1}                 # do nothing until the scenario's AI Script Goal effect sends 1 (blocks
                                     # start_ai, claim_base); timers such as attack.first count from then
 attack:                             # leave out to never attack
@@ -66,10 +67,25 @@ goal 5. `levels: auto` makes the easy and hard versions from the spec:
 
 | | easy | hard |
 |---|---|---|
-| villagers | x0.7 | x1.2 |
-| first attack, time between attacks | x1.5 | x0.75 |
-| attack group sizes | x0.6 | x1.3 |
-| soldiers in the keep list | x0.6 | x1.3 |
+| villagers | x0.7 | x1.3 |
+| first attack | x2.5 | x0.6 |
+| time between attacks | x4 (rarely attacks) | x0.4, at least 20 s (constant pressure) |
+| attack group sizes | x0.5 | x1.5 |
+| soldiers in the keep list | x0.6 | x1.5 |
+
+No level cheats: the AI gathers and pays for everything it makes, sees only what it explores, and gets no extra
+resources or spawned units. A harder AI is a bigger economy and army that attacks more often.
+
+## Civilization armies
+
+`army: {civ: GREEK}` turns half the keep list's soldiers (`share`, default 50) into the units the civ's bonuses
+favour, best first (`units`, default 2), and adds the buildings that make them to the keep list. The army keeps its
+size, and the build order is left alone. Only units it can reach count: by `max_age`, else the highest age its
+build order researches, or `age` (its starting age). `exclude` leaves out units or buildings the scenario disables.
+
+The favoured units come from the game's data (`aoe2ed.civs`, `data/civ_bonuses.json`, `scripts/gen_civ_bonuses.py`),
+Return of Rome only so far: for example Greek Hoplites (faster, 20% cheaper), Egyptian Chariots and Chariot Archers
+(+33% hit points), Hittite Stone Throwers (+50% hit points) and archers (+1 attack), Shang Cavalry (fire faster).
 
 ## Starting later
 

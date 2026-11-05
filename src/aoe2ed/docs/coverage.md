@@ -43,6 +43,7 @@ dedicated MCP/CLI tool. **Block** means a building block in a campaign spec. **P
 | Unit data | Every unit, building and tech: names, cost, HP, where made, age looks; pinned game build | Tools `unit_info`, `game_build_check`, `lookup` |
 | AI scripts | Player AI: custom .per, None AI, immobile | Tools `ai_build`, `ai_set`, `ai_check`, `ai_lookup`; `player_set ai: {name, spec}`; guide `ai-spec` |
 | AI difficulty and timing | AI that follows the difficulty; AI that starts on a trigger (AI Script Goal) | AI spec `levels`, `start`; blocks `start_ai`, `claim_base` |
+| Civ bonuses | Which units each civ's bonuses favour (RoR) | `aoe2ed.civs`; AI spec `army` |
 | Fog of war | Start with an area explored (map revealers) | Block `reveal` |
 | Campaign screens | Map background, mission icons/flags, intro slideshows (no editor UI; JSON in a mod) | Tools `campaign_screens`, `campaign_install_mod`; spec `screen:`; `aoe2ed.screens.build_layout` |
 | | Persistent values between missions | Blocks `bank_load` / `bank_store`; tools `bank_show` / `bank_set` |
