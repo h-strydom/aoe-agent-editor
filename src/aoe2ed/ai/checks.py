@@ -181,7 +181,10 @@ def stalled_build_order(c: Context) -> Iterator[Finding]:
     from .spec import cost
     if not _builders(c):
         return
+    reported = [v for _, v in c.series("ai_step") if v > 0]
     for i, (kind, name, count) in enumerate(_step(s) for s in c.spec.get("build_order") or []):
+        if reported and i + 1 >= reported[-1]:
+            return                     # the AI says it hasn't moved past this step yet: stuck_step covers it
         s = _progress(c, kind, name)
         target = 1 if kind == "research" else count
         if not s or max(v for _, v in s) >= target:

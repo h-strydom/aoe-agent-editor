@@ -161,4 +161,13 @@ def ai_probe_report(manifest: str, record: str | None = None) -> dict:
     out["samples"] = len(rec["samples"])
     if rec["ended"] is None:
         out["note"] = "the probe hadn't reached its stop time yet: this is what happened so far"
+        last = rec["samples"][-1] if rec["samples"] else None
+        wiped = [p for p in rec["players"] if last and last["players"][p]["population"] == 0 and any(
+            s["players"][p]["population"] > 0 for s in rec["samples"])]
+        if wiped:
+            t = min(next(s["t"] for s in rec["samples"] if s["players"][p]["population"] == 0
+                         and s["t"] > max(x["t"] for x in rec["samples"] if x["players"][p]["population"] > 0))
+                    for p in wiped)
+            out["note"] = (f"player {', '.join(map(str, wiped))} lost every unit by {t // 60}:{t % 60:02}; the game "
+                           "probably ended there, before the probe's stop time")
     return out

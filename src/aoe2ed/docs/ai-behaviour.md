@@ -127,7 +127,30 @@ says how it was found. When a probe or playtest shows something new, add it here
   - `rebalance: true` moves villagers from a pile to a shortage every minute;
   - `scout: auto` keeps a scout ship exploring on water maps.
 
-  Not yet probed.
+### Third probe: Trojan War with the fixes, 2026-11-05 (player 1 idle)
+- **Attacks arrive on time now:**
+  - The attack counter starts at 6:00 and the first kill comes at 6:30, against 14:01 before. Troy had scout
+    ships from the start.
+  - That supports the open question below: attacks wait until the AI has seen an enemy building.
+  - The converted spec attacks every 45 s with groups of 4-8, so Troy launched 21 attacks by 13:00. It killed the
+    idle player 1 completely by 12:46, and the game ended there, before the probe's stop time.
+- **The army grows:** military rose to 25-26 by 8:00 and stayed there through the fighting, against flat at 20
+  before. The keep list now reinforces from the start.
+- **The build order is slower, not faster:**
+  - Step 15 (5 cavalry) lasted 2:00-11:01, and it reached step 16 at 15:00 before.
+  - The keep list's soldiers, the step window and the attacks all take from the same food. Cavalry kept dying
+    in attacks, and the step counts living units.
+  - Techs later in the plan (Metalworking and on) never came.
+- **Food is still the bottleneck, and rebalancing never moved anyone:**
+  - Food stayed between 0 and 200 until 11:00. The split stayed at 42/34/19/5 the whole game.
+  - The rule needs a resource above 800, but with the window, wood was spent as it came in. It stayed under 200
+    until 9:00, and nothing passed 800 until 12:00, by which point food was back over 200.
+  - Stone climbed to 650 with nothing to spend it on, but its 5% share is already under the 10% floor, so
+    rebalancing couldn't take from it anyway.
+- **Report fixes from this probe:**
+  - `stalled_build_order` now ignores steps the AI says it hasn't reached. It flagged step 19 while Troy was
+    on step 16.
+  - The report notes when a player lost everything, which explains a record that stops early.
 
 ### XS: scenario scripts vs AI scripts
 - **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the
@@ -149,8 +172,11 @@ says how it was found. When a probe or playtest shows something new, add it here
 ## Open questions
 - Is `players-building-count any-enemy` really limited to buildings the AI has seen? The timing says so;
   confirm with a probe where the AI gets an early scout ship.
-- Should `gatherers: auto` favour what's spent continuously (food for villagers and units), or rebalance at
-  run time when a resource piles up?
+- Should `gatherers: auto` favour what's spent continuously (food for villagers and units)? Rebalancing on a
+  fixed 800 pile never fired in the third probe. Alternatives: trigger on a shortage alone (food under 200 for a
+  minute, take from whichever resource is highest), or weight the starting split by the keep list's upkeep.
+- Should a train step count units ever made rather than units alive? With attacks from minute 2, "5 cavalry"
+  took 9 minutes because they kept dying.
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log
   their own build steps into the probe record. The game's own AIs only call functions from their bundled XS
   libraries.
