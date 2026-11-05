@@ -434,7 +434,14 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         body.append(_rule([*active, *todo], actions, label))
         body.append(_rule([f"(goal my-step {i})", done],
                           [f"(set-goal my-step {i + 1})", *advance, *say(f"{label} done")]))
-        if timeout:
+        if timeout and kind == "train":
+            # A train step counts living units, so losses in attacks can hold it back forever (Trojan War probe,
+            # 2026-11-05: "5 cavalry" stalled the plan for 10 minutes). The units keep training while it's in the
+            # window and the keep list tops the army up, so the plan moves on after one timeout.
+            body.append(_rule([f"(goal my-step {i})", f"(timer-triggered {STEP_TIMER})"],
+                              [f"(set-goal my-step {i + 1})", *advance, *say(f"{label}: moving on")],
+                              f"step {i}: training doesn't block the plan: move on"))
+        elif timeout:
             k, oid, _ = item(kind, name, count)
             afford = [f"({r}-amount >= {a})" for r, a in cost(k, oid, game).items()]
             body.append(_rule([f"(goal my-step {i})", f"(timer-triggered {STEP_TIMER})", *afford],

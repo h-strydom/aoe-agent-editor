@@ -4,7 +4,8 @@
 
 - AI specs: `levels` plays an easy, normal or hard version by the game's difficulty (`auto`: easy barely attacks,
   hard attacks often and in bigger groups from a bigger economy; no level cheats; or override keys per level).
-  `army: {civ}` leans the keep list's soldiers toward the units the civ's bonuses favour.
+  `army: {civ}` leans the keep list's soldiers toward the units the civ's bonuses favour. A build-order train
+  step moves on after one step timeout, so losses in attacks no longer stall the rest of the plan.
 - Civ bonuses for Return of Rome from the game's data (`aoe2ed.civs`, `scripts/gen_civ_bonuses.py`): each
   civ's favoured units with their bonuses, where they're made and their age, and the units it can't make. `start: {trigger: N}` makes
   the AI wait until the scenario's AI Script Goal effect sends N.

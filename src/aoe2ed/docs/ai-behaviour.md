@@ -211,6 +211,8 @@ Troy's spec: `levels: auto`, `army: {civ: HITTITE}`, and map revealers over play
     cavalry, and it was too poor at each step timeout to skip it.
   - So the rest of the build order (techs, more ships) never came.
   - Train steps that count living units stall under constant attacks.
+- **Fix:** a train step now moves on after one step timeout (180 s), affordable or not. Its units keep training
+  while it's in the window, and the keep list tops the army up. Not yet probed.
 - **Large scripts load:** Troy's script with three levels has about 580 rules, and the Trojan Defenders' about
   1,500. Both ran.
 

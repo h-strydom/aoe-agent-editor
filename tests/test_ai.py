@@ -135,9 +135,12 @@ def test_gatherers_follow_what_the_ai_builds():
 
 def test_steps_wait_for_resources_and_skip_only_the_impossible():
     with games.use("ror"):
-        script = build_script({"build_order": [{"train": "HOPLITE", "count": 5}]}, "ror")
+        script = build_script({"build_order": [{"build": "ACADEMY"}, {"train": "HOPLITE", "count": 5}]}, "ror")
     skip = script[script.index("; step 1: affordable"):]
-    assert "(food-amount >= 60)" in skip and "(gold-amount >= 40)" in skip    # only skipped when it could be paid for
+    assert "(wood-amount >= 150)" in skip.split("=>")[0]                    # only skipped when it could be paid for
+    # a train step counts living units, which attacks keep killing: it moves on after one timeout, paid or not
+    train = script[script.index("; step 2: training doesn't block"):].split("=>")[0]
+    assert "(timer-triggered 1)" in train and "-amount" not in train
     assert "; step waiting for resources" in script and "(up-modify-goal 3 c:+ 1)" in script
     assert "; step waited too long: skip it" in script and per.check(script) == []
 

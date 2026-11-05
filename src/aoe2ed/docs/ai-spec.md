@@ -27,8 +27,10 @@ build_order:                        # done in order; a step is done once its cou
   - {research: TOOL_AGE}            # techs and ages
 window: 3                           # steps worked on at once, from the current one (default 3; 1 = strictly one
                                     # at a time, which trains one unit at a time behind everything else)
-step_timeout: 180                   # seconds before a stalled step is checked: skipped if it's affordable (so it's
-                                    # disabled or impossible), else waited for, up to 4 times; 0 = never skip
+step_timeout: 180                   # seconds before a stalled step is checked. A train step moves on (its count is
+                                    # living units, which attacks keep killing; the keep list tops the army up).
+                                    # Build and research steps are skipped if affordable (so disabled or
+                                    # impossible), else waited for, up to 4 times. 0 = never skip
 keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
 keep_from: start                    # start (default) or end: only once the build order is done
 rebalance: true                     # every minute, move 5% of villagers to a resource the plan spends that's running
