@@ -158,7 +158,23 @@ says how it was found. When a probe or playtest shows something new, add it here
   - A share can drop to 5% (it was 10%).
   - Resources the plan never spends aren't fed.
 
-  Not yet probed.
+### Fourth probe: Trojan War with shortage rebalancing, 2026-11-05 (player 1 idle)
+- **Rebalancing works, and fired once:**
+  - At 11:00 it moved 5% from wood to food (42/34/19/5 became 47/29/19/5), when wood first passed 400.
+  - Before then nothing qualified. Wood and gold were spent as they came in, and stone (300-590) was already
+    at the 5% floor.
+- **Food isn't misallocated, it's all spent:**
+  - Every resource but stone stayed low the whole game: food 0-55, wood 60-580, gold 95-205.
+  - Troy turns all its income into soldiers and attacks; 25 villagers is simply its capacity. A different
+    split can't fix that; more villagers or fewer units could.
+  - The only waste is stone, about 600 by the end, which the 5% floor keeps from moving.
+- **It's stronger than before:** first kill at 5:30, and the idle player 1 was wiped out by 9:31 (12:46 in the
+  third probe). The game ended at 11:16.
+- **Train steps count living units:**
+  - Step 15 ("5 cavalry") never got past 4 alive, because cavalry kept dying in the 45-second attacks.
+  - The step timeout skipped it at 11:01, and steps 16-17 were already done through the window.
+- **Wrong scenario picked:** a leftover test scenario sorted above the probe in the Scenario list and was run
+  by mistake. Keep the profile's scenario folder down to the scenario under test.
 
 ### XS: scenario scripts vs AI scripts
 - **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the
@@ -180,8 +196,7 @@ says how it was found. When a probe or playtest shows something new, add it here
 ## Open questions
 - Is `players-building-count any-enemy` really limited to buildings the AI has seen? The timing says so;
   confirm with a probe where the AI gets an early scout ship.
-- Does shortage-driven rebalancing fix food for Troy, or does the split need weighting by the keep list's upkeep
-  from the start?
+- Should the share floor be 0 for a resource that piles up with nothing to spend it on, such as Troy's stone?
 - Should a train step count units ever made rather than units alive? With attacks from minute 2, "5 cavalry"
   took 9 minutes because they kept dying.
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log
