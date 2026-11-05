@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - AI specs, from the Trojan War probes. `window` (default 3): the AI works on the next steps at once instead of
   one at a time. `keep_from` (default start): the keep list reinforces from the beginning, not only after the
