@@ -18,8 +18,8 @@ Spec (YAML/JSON; every key optional):
   keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
   keep_from: start                   # start (default): the keep list works from the beginning; end: only once the
                                      #   build order is done
-  rebalance: true                    # every minute, move 5% of villagers from a resource piling up (800+) to one
-                                     #   running out (under 200) (default true)
+  rebalance: true                    # every minute, move 5% of villagers to a resource the plan spends that's
+                                     #   running out (under 200), from the biggest pile over 400 (default true)
   transports: 2                      # water maps: keep this many transport ships from the start, so attacks can
   transport_unit: LIGHT_TRANSPORT    #   cross water (the engine ferries attack groups); default per game
   scout: auto                        # a ship that explores, so attacks across water find a target: auto (default:
@@ -59,7 +59,10 @@ SCOUT_SHIPS = {"ror": "SCOUT_SHIP", "aoe2": "GALLEY"}
 SCOUT_SNS = {"sn-number-boat-explore-groups": 1, "sn-minimum-boat-explore-group-size": 1,
              "sn-maximum-boat-explore-group-size": 1}
 REBALANCE_TIMER, REBALANCE_EVERY, REBALANCE_STEP = 4, 60, 5
-RICH, POOR, MIN_SHARE = 800, 200, 10
+# Rebalancing reacts to a shortage (under POOR) of something the plan spends, taking from the biggest pile above
+# RICH_TIERS[-1]. A fixed 800 pile never fired in the third Trojan War probe (2026-11-05): with the step window
+# wood was spent as it came in, and food sat under 200 for 11 minutes. MIN_SHARE is the floor a share drops to.
+RICH_TIERS, POOR, MIN_SHARE = (1600, 800, 400), 200, 5
 ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval"}
 STEP_KINDS = ("build", "train", "research")
 STEP_GOAL, STEP_TIMER, ATTACK_TIMER, TARGET_GOAL, NAVAL_TIMER = 1, 1, 2, 2, 3
@@ -180,10 +183,11 @@ def build_script(spec: dict, game: str = "ror") -> str:
         k = "tech" if kind == "research" else "object"
         return k, resolve(name, k, game), count
 
+    demand = [item(*s) for s in steps + keep]
+    if spec.get("villagers"):
+        demand.append(item("train", "VILLAGER", int(spec["villagers"])))
+    spends = [r for r in RESOURCES if any(r in cost(k, oid, game) for k, oid, _ in demand)]
     if spec.get("gatherers", "auto") == "auto":
-        demand = [item(*s) for s in steps + keep]
-        if spec.get("villagers"):
-            demand.append(item("train", "VILLAGER", int(spec["villagers"])))
         gatherers = auto_gatherers(demand, game)
     else:
         gatherers = {**DEFAULT_GATHERERS, **spec["gatherers"]}
@@ -290,18 +294,21 @@ def build_script(spec: dict, game: str = "ror") -> str:
         todo, actions, _ = _do(kind, const, count)
         when = [f"(goal my-step {len(steps) + 1})"] if keep_from == "end" else []
         body.append(_rule([*when, *todo], actions, f"keep {name} x{count}"))
-    if rebalance:                                  # one 5% move a minute, from a pile to a shortage
-        for rich in RESOURCES:
-            for poor in RESOURCES:
-                if rich == poor:
-                    continue
-                body.append(_rule(
-                    [f"(timer-triggered {REBALANCE_TIMER})", f"({rich}-amount > {RICH})", f"({poor}-amount < {POOR})",
-                     f"(strategic-number sn-{rich}-gatherer-percentage > {MIN_SHARE})"],
-                    [f"(up-modify-sn sn-{rich}-gatherer-percentage c:- {REBALANCE_STEP})",
-                     f"(up-modify-sn sn-{poor}-gatherer-percentage c:+ {REBALANCE_STEP})",
-                     f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})",
-                     *say(f"villagers: {rich} to {poor}")], f"rebalance: {rich} piles up, {poor} runs out"))
+    if rebalance:
+        # One 5% move a minute, to a resource the plan spends that's running out, from whichever other resource has
+        # the most: the first rule that matches resets the timer, so the tiers go from the biggest pile down.
+        for tier in RICH_TIERS:
+            for poor in spends:
+                for rich in RESOURCES:
+                    if rich == poor:
+                        continue
+                    body.append(_rule(
+                        [f"(timer-triggered {REBALANCE_TIMER})", f"({poor}-amount < {POOR})",
+                         f"({rich}-amount > {tier})", f"(strategic-number sn-{rich}-gatherer-percentage > {MIN_SHARE})"],
+                        [f"(up-modify-sn sn-{rich}-gatherer-percentage c:- {REBALANCE_STEP})",
+                         f"(up-modify-sn sn-{poor}-gatherer-percentage c:+ {REBALANCE_STEP})",
+                         f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})",
+                         *say(f"villagers: {rich} to {poor}")], f"rebalance: {poor} runs out, {rich} over {tier}"))
         body.append(_rule([f"(timer-triggered {REBALANCE_TIMER})"],
                           [f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})"],
                           "rebalance: nothing to move"))

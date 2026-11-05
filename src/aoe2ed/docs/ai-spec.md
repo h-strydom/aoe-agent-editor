@@ -31,8 +31,8 @@ step_timeout: 180                   # seconds before a stalled step is checked: 
                                     # disabled or impossible), else waited for, up to 4 times; 0 = never skip
 keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
 keep_from: start                    # start (default) or end: only once the build order is done
-rebalance: true                     # every minute, move 5% of villagers from a resource piling up (800+) to one
-                                    # running out (under 200); default true
+rebalance: true                     # every minute, move 5% of villagers to a resource the plan spends that's running
+                                    # out (under 200), from the biggest pile over 400; a share stops at 5%; default true
 transports: 2                       # water maps: keep this many transport ships from the start (needs a dock)
 transport_unit: LIGHT_TRANSPORT     # default: LIGHT_TRANSPORT (ror), TRANSPORT_SHIP (aoe2)
 scout: auto                         # an exploring ship, so attacks across water find a target: auto (with naval

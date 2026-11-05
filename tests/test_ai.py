@@ -35,8 +35,9 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert "(defconst my-o-barracks 12)" in script and "(defconst my-o-clubman 281)" in script
     assert "(defconst my-t-tool-age 101)" in script and "(attack-now)" in script
     assert per.check(script) == []
-    # setup, 3 steps, 2 waiting, villagers + houses, attack, rebalance (12 resource pairs + an idle tick)
-    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1 + 13
+    # setup, 3 steps, 2 waiting, villagers + houses, attack, rebalance (3 pile sizes x 3 sources for each resource
+    # the plan spends: food and wood here, + an idle tick)
+    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1 + 3 * 2 * 3 + 1
     assert "(set-strategic-number sn-percent-attack-soldiers 80)" in script     # AIBuilder's attack
     assert "(up-find-player my-enemy my-find-closest 2)" in script
 
@@ -161,6 +162,11 @@ def test_window_keep_rebalance_and_scout():
     keep = script[script.index("; keep CLUBMAN"):]
     assert "my-step" not in keep.split("=>")[0]                    # keep list from the start
     assert "(goal my-step 4)" in serial[serial.index("; keep CLUBMAN"):]
-    assert "rebalance: wood piles up, food runs out" in script and "rebalance" not in serial
+    assert "rebalance" not in serial
+    # a shortage of something the plan spends takes from the biggest pile first; nothing feeds stone it never uses
+    rules = script.split("(defrule")
+    first = next(i for i, r in enumerate(rules) if "rebalance: food runs out, wood over 1600" in r)
+    assert first < next(i for i, r in enumerate(rules) if "rebalance: food runs out, wood over 400" in r)
+    assert "rebalance: stone runs out" not in script and "rebalance: food runs out, stone over 800" in script
     assert "(train my-o-scout-ship)" in script and "sn-number-boat-explore-groups 1" in script
     assert "scout-ship" not in serial

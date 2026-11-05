@@ -151,6 +151,14 @@ says how it was found. When a probe or playtest shows something new, add it here
   - `stalled_build_order` now ignores steps the AI says it hasn't reached. It flagged step 19 while Troy was
     on step 16.
   - The report notes when a player lost everything, which explains a record that stops early.
+- **Rebalancing changed after this probe:**
+  - It now reacts to a shortage: when a resource the plan spends is under 200 at the minute tick, 5% of
+    villagers move to it.
+  - They come from the biggest other pile, checked at over 1,600, then 800, then 400.
+  - A share can drop to 5% (it was 10%).
+  - Resources the plan never spends aren't fed.
+
+  Not yet probed.
 
 ### XS: scenario scripts vs AI scripts
 - **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the
@@ -172,9 +180,8 @@ says how it was found. When a probe or playtest shows something new, add it here
 ## Open questions
 - Is `players-building-count any-enemy` really limited to buildings the AI has seen? The timing says so;
   confirm with a probe where the AI gets an early scout ship.
-- Should `gatherers: auto` favour what's spent continuously (food for villagers and units)? Rebalancing on a
-  fixed 800 pile never fired in the third probe. Alternatives: trigger on a shortage alone (food under 200 for a
-  minute, take from whichever resource is highest), or weight the starting split by the keep list's upkeep.
+- Does shortage-driven rebalancing fix food for Troy, or does the split need weighting by the keep list's upkeep
+  from the start?
 - Should a train step count units ever made rather than units alive? With attacks from minute 2, "5 cavalry"
   took 9 minutes because they kept dying.
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log

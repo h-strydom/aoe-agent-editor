@@ -4,8 +4,8 @@
 
 - AI specs, from the Trojan War probes. `window` (default 3): the AI works on the next steps at once instead of
   one at a time. `keep_from` (default start): the keep list reinforces from the beginning, not only after the
-  whole build order. `rebalance` (default on): every minute 5% of villagers move from a resource piling up to
-  one running out. `scout` (default with naval attacks or transports): a scout ship explores, because the attack
+  whole build order. `rebalance` (default on): every minute 5% of villagers move to a resource the plan spends
+  that's running out, from the biggest pile. `scout` (default with naval attacks or transports): a scout ship explores, because the attack
   rule needs a known enemy building and across water nothing finds one. `report`: the AI publishes its step,
   waits, attacks and villager split on AI signals for probes.
 - AI investigation. `ai_lint` finds problems in an AI spec before playing: units whose building is never
