@@ -15,8 +15,11 @@ says how it was found. When a probe or playtest shows something new, add it here
      - villagers, military, kills, villager idle time;
      - a count of everything the AI builds or trains, plus the buildings those come from, and the research
        state of every tech it researches;
-     - for players running an AI spec, read from the AI itself (XS `xsSetContextPlayer` + `xsGetGoal`): the
-       build-order step it's on, how often it has waited for resources there, and its live villager split.
+     - for players running an AI spec, what the AI itself reports: the build-order step it's on, how often it
+       has waited for resources there, the attacks it has launched, and its live villager split.
+       - The probe re-embeds each spec AI with `report: true`. The AI publishes those values on AI signals with
+         `fe-set-signal`: step 192+p, waits 200+p, attacks 208+p, split 216+4p to 219+4p.
+       - The probe's XS reads them back with `xsGetAiSignal`.
    - It stops itself after `stop_after` game seconds. There's no need to play to the end: 10-15 game minutes shows
      whether an AI builds, trains and attacks.
    - Start the copy in game: Skirmish, Game Mode: Scenario. Leave player 1 alone; an idle player 1 is also
@@ -102,6 +105,13 @@ says how it was found. When a probe or playtest shows something new, add it here
 - **Population headroom:** `cAttributePopulationCap` (4) is the room left under the cap; population plus it
   stays constant.
 
+### XS: scenario scripts vs AI scripts
+- **AI-only calls:** `xsGetGoal`, `xsSetGoal`, `xsGetStrategicNumber` and `xsSetStrategicNumber` act on "the
+  current AI" and only exist in an AI script's XS. In a scenario's XS, the whole file fails to load with
+  "'xsGetGoal' is a bad syscall - unable to parse", even after `xsSetContextPlayer`.
+- **How it was found:** probe v3, 2026-11-05. xs-check accepts these calls, so `xs_check` now reports them for
+  scenario code (`context="ai"` allows them), and probes check their own XS before saving.
+
 ### Testing setup
 - **Speed:** the `DEBUGSPEEDS` launch option lets + raise the speed to 8.0, about 8x real time; it works in
   Return of Rome. `UNCAPPED_SIMULATION_SPEED` does nothing. Set launch options in Steam's game properties:
@@ -113,9 +123,9 @@ says how it was found. When a probe or playtest shows something new, add it here
   Rome uses the same folder.
 
 ## Open questions
-- Does scenario XS really read an AI's goals after `xsSetContextPlayer(p)`? Probes from version 3 rely on it to
-  see the AI's step. If the step stays -1 or 0 in game, fall back to `(set-signal n)` plus "AI Signal" triggers,
-  although those carry no player and only 256 ids. To be confirmed on the next Trojan War probe.
+- Do `fe-set-signal` values reach scenario XS's `xsGetAiSignal` (with `useLegacyAi` false)? Probes rely on it.
+  If the step stays 0 or -1 in game, try `useLegacyAi` true, or trigger "AI Signal" conditions. Those carry no
+  player, though, and there are only 256 ids. To be confirmed on the next Trojan War probe.
 - Should `gatherers: auto` favour what's spent continuously (food for villagers and units), or rebalance at
   run time when a resource piles up?
 - Can an AI script's `(xs-script-call "name")` call a function in the scenario's XS? If it can, AIs could log

@@ -32,11 +32,13 @@ ATTRIBUTES = ("cAttributeFood", "cAttributeWood", "cAttributeGold", "cAttributeS
               "cAttributeMilitaryPopulation", "cAttributeKills", "cAttributeVillagersIdleSecondsTotal")
 TAG_SAMPLE, TAG_END = 1, 9
 TECH_DONE = 3                          # cTechStateDone; also 0 not ready, 1 ready, 2 researching, 4 queued, -1 disabled
-# What an aoe2ed AI spec keeps in its own goals and strategic numbers, read in the AI player's XS context
-# (xsSetContextPlayer + xsGetGoal / xsGetStrategicNumber): the build-order step it's on, how many times it has
-# waited for resources on that step, and its villager split. -1 for players without a spec AI.
-AI_FIELDS = (("ai_step", "goal", 1), ("ai_waits", "goal", 3), ("ai_food_pct", "sn", 117),
-             ("ai_wood_pct", "sn", 120), ("ai_gold_pct", "sn", 118), ("ai_stone_pct", "sn", 119))
+# What an aoe2ed AI spec built with report: true publishes on AI signals (aoe2ed.ai.spec): the build-order step
+# it's on, how many times it has waited for resources there, attacks launched, and its villager split. Scenario
+# XS reads them with xsGetAiSignal; it can't read an AI's goals (xsGetGoal is AI-only: "'xsGetGoal' is a bad
+# syscall" in a scenario, 2026-11-05). -1 for players without a spec AI. (name, signal id = base + offset(p)).
+AI_FIELDS = (("ai_step", 192, 1, 0), ("ai_waits", 200, 1, 0), ("ai_attacks", 208, 1, 0),
+             ("ai_food_pct", 216, 4, 0), ("ai_wood_pct", 216, 4, 1), ("ai_gold_pct", 216, 4, 2),
+             ("ai_stone_pct", 216, 4, 3))       # signal = base + per_player * p + k
 
 
 def xs_code(players: list[int], tracked: list[int], interval: int = 15, stop_after: int = 900,
@@ -49,14 +51,11 @@ def xs_code(players: list[int], tracked: list[int], interval: int = 15, stop_aft
     objects = "".join(f"        xsWriteInt(xsGetObjectCountTotal(p, {o}));\n"
                       f"        xsWriteInt(xsGetObjectCount(p, {o}));\n" for o in tracked)
     objects += "".join(f"        xsWriteInt(xsGetTechState({tech}, p));\n" for tech in techs)
-    reads = "".join(f"            xsWriteInt({'xsGetGoal' if kind == 'goal' else 'xsGetStrategicNumber'}({i}));\n"
-                    for _, kind, i in AI_FIELDS)
+    reads = "".join(f"            xsWriteInt(xsGetAiSignal({base} + {per} * p + {k}, false));\n"
+                    for _, base, per, k in AI_FIELDS)
     is_ai = " || ".join(f"p == {p}" for p in ai_players) or "false"
     objects += f"""        if ({is_ai}) {{
-            int context = xsGetContextPlayer();
-            xsSetContextPlayer(p);
-{reads}            xsSetContextPlayer(context);
-        }} else {{
+{reads}        }} else {{
 {"".join("            xsWriteInt(-1);" + chr(10) for _ in AI_FIELDS)}        }}
 """
     plist = ", ".join(map(str, players))
@@ -187,7 +186,19 @@ def probe(scenario, out: Path, *, specs: dict[int, dict] | None = None, game: st
         raise ValueError("human is 'idle' or 'computer'")
     ctx = Ctx(scenario)
     ai_players = sorted(p for p in specs if p in players)
-    ctx.xs(xs_code(players, tracked, interval, stop_after, sorted(techs), ai_players))
+    from .. import games
+    from ..tools.world import set_ai
+    with games.use(game):
+        for p in ai_players:                     # re-embed each AI so it publishes its state for the probe
+            player = scenario.player_manager.players[p]
+            name = getattr(player, "ai_name", "") or specs[p].get("name") or f"Player {p} AI"
+            set_ai(player, {"name": name, "spec": {**specs[p], "report": True}})
+    code = xs_code(players, tracked, interval, stop_after, sorted(techs), ai_players)
+    from .. import xs
+    errors = [d for d in xs.check(code)["diagnostics"] if d["severity"] == "error"]
+    if errors:
+        raise ValueError(f"probe XS doesn't check: {errors[:3]}")
+    ctx.xs(code)
     if end_game:
         ctx.trigger("aoe2ed probe: stop", [{"type": "timer", "timer": stop_after + 2}],
                     [{"type": "declare_victory", "source_player": players[0], "enabled": True}])
@@ -254,7 +265,7 @@ def decode(data: bytes, manifest: dict | None = None) -> dict:
                 at = len(STATS) + 2 * nt
                 entry["techs"] = {tech_names.get(k, str(k)): v
                                   for k, v in zip(techs, row[at:at + len(techs)], strict=True)}
-                for (name, _, _), v in zip(ai_fields, row[at + len(techs):], strict=True):
+                for (name, *_), v in zip(ai_fields, row[at + len(techs):], strict=True):
                     entry[name] = v
                 s["players"][p] = entry
                 j += width

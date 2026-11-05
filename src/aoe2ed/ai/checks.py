@@ -405,6 +405,7 @@ def run(record: dict, manifest: dict) -> dict:
         summary["researched"] = [n for n, s in last.get("techs", {}).items() if s == TECH_DONE]
         if last.get("ai_step", -1) >= 0:
             summary["gatherer_split"] = {r: last[f"ai_{r}_pct"] for r in ("food", "wood", "gold", "stone")}
+            summary["attacks_launched"] = last.get("ai_attacks")
         findings = []
         if spec:
             history = step_history(record, p, spec)

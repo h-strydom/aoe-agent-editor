@@ -16,8 +16,24 @@ SPEC = {"villagers": 20, "build_order": [{"build": "BARRACKS"}, {"build": "ACADE
 
 
 def test_probe_xs_checks_clean():
-    result = xs.check(xs_code([1, 2], [83, 103], 15, 600))
+    result = xs.check(xs_code([1, 2, 3], [83, 103], 15, 600, [101], [2, 3]))
     assert result["ok"], result
+
+
+def test_xs_check_rejects_ai_only_calls_in_scenario_xs():
+    code = "void f() { int s = xsGetGoal(1); }"
+    found = [d for d in xs.check(code)["diagnostics"] if d["code"] == "AiOnlySyscall"]
+    assert found and found[0]["line"] == 1
+    assert xs.check(code, context="ai")["ok"]
+
+
+def test_report_spec_publishes_state_on_signals():
+    from aoe2ed.ai import per
+    from aoe2ed.ai.spec import build_script
+    with games.use("ror"):
+        script = build_script({**SPEC, "report": True}, "ror")
+    assert "(fe-set-signal g: 10 g: my-step)" in script and "(up-modify-goal 13 c:* 4)" in script
+    assert not [d for d in per.check(script) if d.severity == "error"]
 
 
 def test_tracked_objects_include_where_things_are_made():
@@ -124,7 +140,7 @@ def test_v3_reads_the_ai_step_and_finds_where_it_stops():
         for p in (1, 2):
             stats = {"villagers": 10} if p == 2 else {}
             vals += [stats.get(k, 0) for k in STATS]
-            vals += [-1] * 6 if p == 1 else [1 if t < 120 else 2, min(t // 120, 4), 50, 30, 15, 5]
+            vals += [-1] * 7 if p == 1 else [1 if t < 120 else 2, min(t // 120, 4), t // 240, 50, 30, 15, 5]
     record = decode(struct.pack(f"<{len(vals)}i", *vals), {"specs": {"2": spec}})
     assert record["samples"][-1]["players"][2]["ai_step"] == 2
     manifest = {"game": "ror", "specs": {"2": spec}, "start_objects": {"2": [109, 12]}}

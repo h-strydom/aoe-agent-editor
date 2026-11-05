@@ -169,13 +169,14 @@ def xs_set_script_name(handle: str, script_name: str) -> dict:
 
 
 @tool
-def xs_check(code: str | None = None, path: str | None = None) -> dict:
+def xs_check(code: str | None = None, path: str | None = None, context: str = "scenario") -> dict:
     """Lint XS with xs-check (static analysis: syntax, types, unknown functions).
-    Pass code or a file path. Returns ok + diagnostics."""
+    Pass code or a file path. context: "scenario" (default; calls that only exist in an AI script's XS, such
+    as xsGetGoal, are errors) or "ai". Returns ok + diagnostics."""
     from ..xs import check
     if code is None and path is None:
         raise ValueError("Pass code or path")
-    return check(code=code, path=Path(path) if path else None)
+    return check(code=code, path=Path(path) if path else None, context=context)
 
 
 @tool

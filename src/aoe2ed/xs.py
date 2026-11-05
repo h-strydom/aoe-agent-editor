@@ -48,7 +48,27 @@ def parse_output(text: str) -> list[dict]:
     return diags
 
 
-def check(code: str | None = None, path: Path | None = None, include_dirs: list[Path] | None = None) -> dict:
+# Calls documented as acting on "the current AI": they only exist in an AI script's XS. A scenario's XS fails to
+# load with "'xsGetGoal' is a bad syscall - unable to parse" (seen 2026-11-05; the other three are the same
+# family). xs-check accepts them, so check() reports them for scenario code.
+AI_ONLY = ("xsGetGoal", "xsSetGoal", "xsGetStrategicNumber", "xsSetStrategicNumber")
+_AI_ONLY = re.compile(r"\b(" + "|".join(AI_ONLY) + r")\s*\(")
+
+
+def _ai_only(text: str, file: str) -> list[dict]:
+    out = []
+    for n, line in enumerate(text.splitlines(), start=1):
+        code = line.split("//", 1)[0]
+        for m in _AI_ONLY.finditer(code):
+            out.append({"severity": "error", "code": "AiOnlySyscall", "file": file, "line": n, "col": m.start() + 1,
+                        "message": f"{m.group(1)} only works in an AI script's XS; a scenario's XS won't load "
+                                   f"('bad syscall'). Read AI state from AI signals instead (xsGetAiSignal)"})
+    return out
+
+
+def check(code: str | None = None, path: Path | None = None, include_dirs: list[Path] | None = None,
+          context: str = "scenario") -> dict:
+    """Check XS with xs-check. context: "scenario" (trigger/scenario XS: AI-only calls are errors) or "ai"."""
     tmp = None
     if code is not None:
         fd, tmp = tempfile.mkstemp(suffix=".xs")
@@ -74,6 +94,9 @@ def check(code: str | None = None, path: Path | None = None, include_dirs: list[
     if tmp:
         for d in diags:
             d["file"] = "<code>"
+    if context == "scenario":
+        text = code if code is not None else Path(path).read_text(encoding="utf-8", errors="replace")
+        diags += _ai_only(text, "<code>" if code is not None else str(path))
     return {"ok": not any(d["severity"] == "error" for d in diags), "diagnostics": diags}
 
 

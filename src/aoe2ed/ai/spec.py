@@ -42,7 +42,7 @@ from functools import cache
 from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
-            "strategic_numbers", "rules", "transports", "transport_unit", "debug"}
+            "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report"}
 TRANSPORT_UNITS = {"ror": "LIGHT_TRANSPORT", "aoe2": "TRANSPORT_SHIP"}
 ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval"}
 STEP_KINDS = ("build", "train", "research")
@@ -54,6 +54,12 @@ BASE_SNS = {"sn-enable-new-building-system": 1, "sn-percent-enemy-sighted-respon
 DEFAULT_GATHERERS = {"food": 45, "wood": 30, "gold": 15, "stone": 10}   # DE's AIBuilder
 RESOURCES = ("food", "wood", "gold", "stone")
 WAIT_GOAL, MAX_WAITS = 3, 4
+ATTACKS_GOAL = 4                     # attacks launched so far (land and naval)
+# report: true publishes the AI's state on AI signals, which scenario XS reads with xsGetAiSignal (scenario XS
+# can't read an AI's goals: xsGetGoal is AI-only). Signal ids per player p (1-8): step 192+p, waits 200+p,
+# attacks 208+p, villager split 216+4p .. 219+4p (food, wood, gold, stone). Goals 10-16 hold those ids.
+STEP_SIGNAL, WAIT_SIGNAL, ATTACK_SIGNAL, SPLIT_SIGNAL = 192, 200, 208, 216
+REPORT_GOALS = range(10, 17)
 HOUSE_HEADROOM = 4
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
@@ -181,11 +187,27 @@ def build_script(spec: dict, game: str = "ror") -> str:
                  f"(enable-timer {ATTACK_TIMER} {int(attack.get('first', 600))})"]
         if attack.get("naval"):
             init.append(f"(enable-timer {NAVAL_TIMER} {int(attack.get('first', 600))})")
-    init += ["(set-goal my-step 1)"]
+    init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)"]
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
+    report = bool(spec.get("report"))
+    if report:                                   # this player's signal ids, from my-player-number
+        g = list(REPORT_GOALS)
+        for goal, base in zip(g[:3], (STEP_SIGNAL, WAIT_SIGNAL, ATTACK_SIGNAL), strict=True):
+            init += [f"(up-modify-goal {goal} c:= my-player-number)", f"(up-modify-goal {goal} c:+ {base})"]
+        init += [f"(up-modify-goal {g[3]} c:= my-player-number)", f"(up-modify-goal {g[3]} c:* 4)",
+                 f"(up-modify-goal {g[3]} c:+ {SPLIT_SIGNAL})"]
+        for k in range(1, 4):
+            init += [f"(up-modify-goal {g[3] + k} g:= {g[3]})", f"(up-modify-goal {g[3] + k} c:+ {k})"]
     for n, start in enumerate(range(0, len(init), SETUP_CHUNK), start=1):   # the engine limits rule length
         body.append(_rule(["(true)"], [*init[start:start + SETUP_CHUNK], "(disable-self)"], f"setup {n}"))
+    if report:
+        g = list(REPORT_GOALS)
+        body.append(_rule(["(true)"], [
+            f"(fe-set-signal g: {g[0]} g: my-step)", f"(fe-set-signal g: {g[1]} g: {WAIT_GOAL})",
+            f"(fe-set-signal g: {g[2]} g: {ATTACKS_GOAL})",
+            *(f"(fe-set-signal g: {g[3] + k} s: sn-{r}-gatherer-percentage)" for k, r in enumerate(RESOURCES))],
+            "report state on AI signals (read by probes)"))
 
     debug = bool(spec.get("debug"))
     who = str(spec.get("name", "AI")).replace('"', "'")
@@ -239,14 +261,14 @@ def build_script(spec: dict, game: str = "ror") -> str:
         body.append(_rule([f"(timer-triggered {ATTACK_TIMER})", "(players-building-count any-enemy >= 1)",
                            f"(defend-soldier-count >= {int(attack.get('min_group', 4))})"],
                           [*target, f"(set-strategic-number sn-percent-attack-soldiers {percent})",
-                           "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)",
+                           "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)", f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)",
                            f"(disable-timer {ATTACK_TIMER})", f"(enable-timer {ATTACK_TIMER} {every})",
                            *say("attacking")], "attack"))
         if attack.get("naval"):
             body.append(_rule([f"(timer-triggered {NAVAL_TIMER})", "(players-building-count any-enemy >= 1)",
                                "(warboat-count > 0)"],
                               [*target, f"(set-strategic-number sn-percent-attack-boats {percent})",
-                               "(set-strategic-number sn-percent-attack-soldiers 0)", "(attack-now)",
+                               "(set-strategic-number sn-percent-attack-soldiers 0)", "(attack-now)", f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)",
                                f"(disable-timer {NAVAL_TIMER})", f"(enable-timer {NAVAL_TIMER} {every})",
                                *say("naval attack")], "naval attack"))
 
