@@ -232,3 +232,27 @@ def test_rebalancing_never_takes_a_share_below_its_floor():
     # a share must hold floor + step before 5% leaves it (Trojan War probe: gold went 9% -> 4% with "> 5")
     assert f"gatherer-percentage >= {MIN_SHARE + REBALANCE_STEP})" in script
     assert f"gatherer-percentage > {MIN_SHARE})" not in script
+
+
+def test_grow_macros_toward_the_population_over_time():
+    from aoe2ed.ai.spec import level_specs
+    spec = {**SPEC, "keep": [{"train": "BOWMAN", "count": 6}, {"train": "CLUBMAN", "count": 4}, {"build": "BARRACKS"}],
+            "grow": {"to": 200, "minutes": 40}}
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+    assert per.check(script) == []
+    assert "(enable-timer 5 300)" in script                              # 8 stages over 40 minutes
+    stage = lambda k: [r for r in script.split("(defrule")[1:] if f"(goal 7 {k})" in r.split("=>")[0]]
+    first, last = "".join(stage(1)), "".join(stage(8))
+    assert "(civilian-population < 28)" in first and "(civilian-population < 80)" in last   # 20 -> 40% of 200
+    # 10 soldiers grow to 200 - 80 - 10 spare = 110, kept in proportion; their buildings along (up to 4)
+    assert "(unit-type-count-total my-o-bowman < 66)" in last and "(unit-type-count-total my-o-clubman < 44)" in last
+    assert "(building-type-count-total my-o-archery-range < 4)" in last
+    assert "(building-type-count-total my-o-barracks < 4)" in last
+    assert "(building-type-count-total my-o-town-center < 3)" in last    # expansion
+    assert "(building-type-count-total my-o-storage-pit < 3)" in last and "my-o-granary" in last
+    assert "(goal 7 9)" not in script
+    lv = level_specs({**spec, "levels": "auto"})
+    assert [lv[k]["grow"]["minutes"] for k in ("easy", "normal", "hard")] == [120, 40, 20]
+    with pytest.raises(SpecError, match="grow is"):
+        build_script({**SPEC, "grow": {"speed": 2}}, "ror")

@@ -31,6 +31,12 @@ Spec (YAML/JSON; every key optional):
                                      #   build order's highest age, or `age`); exclude: units or buildings
   start: {trigger: 1}                # do nothing until the scenario's AI Script Goal effect sends 1; timers
                                      #   (attack first, step timeout) count from then
+  grow: {to: 200, minutes: 60}       # macro toward a population of `to` over `minutes`, in `stages` (default 8)
+                                     #   even steps: the villager target rises to `villagers` (default 40% of to),
+                                     #   the keep list's soldiers (in proportion) to the rest less 10 spare, the
+                                     #   buildings that make them along with the army (up to 4 each), town centers
+                                     #   to `town_centers` (default 3: expansion) and dropsites to 3. Houses follow
+                                     #   by themselves. levels: auto grows 3x slower on easy, 2x faster on hard
   attack:                            # omit or null = never attacks
     first: 600                       #   seconds into the game
     every: 240                       #   seconds between attacks
@@ -58,7 +64,7 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start", "army"}
+            "rebalance", "scout", "levels", "start", "army", "grow"}
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -67,8 +73,8 @@ LEVEL_GOAL, ACTIVE_GOAL = 5, 6
 LEVEL_FACTS = {1: ["(difficulty == easiest)", "(difficulty == easy)"], 2: ["(difficulty == moderate)"]}
 # Easy barely attacks; hard keeps up the pressure. Nothing is free at any level: the AI gathers and pays for
 # everything, sees only what it explores, and gets no extra resources or spawned units.
-AUTO_LEVELS = {"easy": {"villagers": 0.7, "first": 2.5, "every": 4.0, "group": 0.5, "keep": 0.6},
-               "hard": {"villagers": 1.3, "first": 0.6, "every": 0.4, "group": 1.5, "keep": 1.5}}
+AUTO_LEVELS = {"easy": {"villagers": 0.7, "first": 2.5, "every": 4.0, "group": 0.5, "keep": 0.6, "grow": 3.0},
+               "hard": {"villagers": 1.3, "first": 0.6, "every": 0.4, "group": 1.5, "keep": 1.5, "grow": 0.5}}
 MIN_ATTACK_EVERY = 20                # seconds; hard's scaling never goes below this
 # army: shift the keep list's soldiers toward the units the civ's bonuses favour (aoe2ed.civs).
 ARMY_KEYS = {"civ", "share", "age", "max_age", "naval", "exclude", "units"}
@@ -103,6 +109,14 @@ ATTACKS_GOAL = 4                     # attacks launched so far (land and naval)
 STEP_SIGNAL, WAIT_SIGNAL, ATTACK_SIGNAL, SPLIT_SIGNAL = 192, 200, 208, 216
 REPORT_GOALS = range(10, 17)
 HOUSE_HEADROOM = 4
+# grow: macro toward a population over time. The stage (goal GROW_GOAL, 0..stages) rises every minutes/stages on
+# timer GROW_TIMER; each stage's rules raise the targets. Dropsite and town center placement is the engine's
+# (the new building system puts dropsites by resources): unverified in game.
+GROW_KEYS = {"to", "minutes", "stages", "villagers", "town_centers"}
+GROW_GOAL, GROW_TIMER = 7, 5
+GROW_DEFAULTS = {"to": 200, "minutes": 60, "stages": 8, "town_centers": 3}
+GROW_VILLAGER_SHARE, GROW_SPARE, GROW_MAX_PRODUCTION, GROW_DROPSITES = 0.4, 10, 4, 3
+DROPSITES = {"ror": ("STORAGE_PIT", "GRANARY"), "aoe2": ("LUMBER_CAMP", "MINING_CAMP", "MILL")}
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
 
@@ -214,7 +228,64 @@ def _scaled(spec: dict, f: dict, game: str = "ror") -> dict:
     if spec.get("keep"):
         out["keep"] = [{**k, "count": max(1, round(int(k.get("count", 1)) * f["keep"]))}
                        if "train" in k and _soldier(k["train"], game) else k for k in spec["keep"]]
+    if spec.get("grow"):
+        g = dict(spec["grow"])
+        g["minutes"] = max(1, round(float(g.get("minutes", GROW_DEFAULTS["minutes"])) * f.get("grow", 1)))
+        out["grow"] = g
     return out
+
+
+def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
+    """(setup actions, rules) for `grow`: the stage timer and each stage's raised targets."""
+    from .. import tables
+    grow = spec["grow"]
+    if not isinstance(grow, dict) or set(grow) - GROW_KEYS:
+        raise SpecError(f"grow is {{to, minutes, stages, villagers, town_centers}}, got {grow!r}")
+    g = {**GROW_DEFAULTS, **grow}
+    to, stages = int(g["to"]), max(1, int(g["stages"]))
+    every = max(1, round(float(g["minutes"]) * 60 / stages))
+    v0 = int(spec.get("villagers") or 0)
+    vn = max(v0, int(g.get("villagers") or round(to * GROW_VILLAGER_SHARE)))
+    keep = [_step(k) for k in spec.get("keep") or []]
+    soldiers = [(n, c) for kind, n, c in keep if kind == "train" and _soldier(n, game)]
+    a0 = sum(c for _, c in soldiers)
+    an = max(a0, to - vn - GROW_SPARE - int(spec.get("transports") or 0))
+    kept = {n: c for kind, n, c in keep if kind == "build"}
+    makers: dict[str, int] = {}                  # building -> soldiers it makes, at the start
+    for n, c in soldiers:
+        made_at = [b for b in (tables.info(n, game) or {}).get("made_at") or [] if b != "BUILDER"]
+        if made_at:
+            makers[made_at[0]] = makers.get(made_at[0], 0) + c
+    setup = [f"(set-goal {GROW_GOAL} 0)", f"(enable-timer {GROW_TIMER} {every})"]
+    rules = [_rule([f"(timer-triggered {GROW_TIMER})", f"(up-compare-goal {GROW_GOAL} < {stages})"],
+                   [f"(up-modify-goal {GROW_GOAL} c:+ 1)", f"(disable-timer {GROW_TIMER})",
+                    f"(enable-timer {GROW_TIMER} {every})"], f"grow: next stage every {every} s")]
+    v, tc = names.const("VILLAGER", "object"), names.const("TOWN_CENTER", "object")
+    for k in range(1, stages + 1):
+        frac, stage = k / stages, [f"(goal {GROW_GOAL} {k})"]
+        label = f"grow stage {k}/{stages}"
+        rules.append(_rule([*stage, f"(civilian-population < {round(v0 + (vn - v0) * frac)})", f"(can-train {v})"],
+                           [f"(train {v})"], f"{label}: villagers"))
+        army = a0 + (an - a0) * frac
+        for n, c in soldiers:
+            const = names.const(n, "object")
+            todo, actions, _ = _do("train", const, max(c, round(c * army / a0)))
+            rules.append(_rule([*stage, *todo], actions, f"{label}: {n}"))
+        for b in makers:
+            base = kept.get(b, 1)
+            const = names.const(b, "object")
+            count = min(max(base, GROW_MAX_PRODUCTION), max(base, round(base * army / a0)))
+            todo, actions, _ = _do("build", const, count)
+            rules.append(_rule([*stage, *todo], actions, f"{label}: {b}"))
+        tcs = 1 + round((int(g["town_centers"]) - 1) * frac)
+        if tcs > 1:
+            todo, actions, _ = _do("build", tc, tcs)
+            rules.append(_rule([*stage, *todo], actions, f"{label}: town centers (expand)"))
+        for d in DROPSITES.get(game, ()):
+            const = names.const(d, "object")
+            todo, actions, _ = _do("build", const, 1 + round((GROW_DROPSITES - 1) * frac))
+            rules.append(_rule([*stage, *todo], actions, f"{label}: {d}"))
+    return setup, rules
 
 
 def _soldier(name: str, game: str) -> str | None:
@@ -392,6 +463,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         if attack.get("naval"):
             init.append(f"(enable-timer {NAVAL_TIMER} {int(attack.get('first', 600))})")
     init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)"]
+    grow_setup, grow_rules = _grow(spec, game, names) if spec.get("grow") else ([], [])
+    init += grow_setup
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
     rebalance = spec.get("rebalance", True)
@@ -476,6 +549,7 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         todo, actions, _ = _do(kind, const, count)
         when = [f"(goal my-step {len(steps) + 1})"] if keep_from == "end" else []
         body.append(_rule([*when, *todo], actions, f"keep {name} x{count}"))
+    body += grow_rules
     if rebalance:
         # One 5% move a minute, to a resource the plan spends that's running out, from whichever other resource has
         # the most: the first rule that matches resets the timer, so the tiers go from the biggest pile down.

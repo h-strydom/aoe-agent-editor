@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- AI specs: `grow: {to, minutes}` macros toward a population over time: villagers, the keep list's soldiers and the
+  buildings that make them, extra town centers and dropsites rise in stages. `levels: auto` grows 3x slower on
+  easy and 2x faster on hard.
+
 ## 0.6.0
 
 - AI specs: `levels` plays an easy, normal or hard version by the game's difficulty (`auto`: easy barely attacks,

@@ -45,6 +45,7 @@ levels: auto                        # follow the game's difficulty: auto scales 
 army: {civ: GREEK, share: 50}       # lean the keep list's soldiers toward the civ's bonus units (see below)
 start: {trigger: 1}                 # do nothing until the scenario's AI Script Goal effect sends 1 (blocks
                                     # start_ai, claim_base); timers such as attack.first count from then
+grow: {to: 200, minutes: 60}        # macro toward a population over time (see Growing below)
 attack:                             # leave out to never attack
   first: 600                        # seconds into the game
   every: 240                        # seconds between attacks
@@ -56,8 +57,8 @@ rules: "(defrule ...)"              # extra raw .per, appended
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
 step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times
-rebalancing. Goals 3-4 count waits and attacks, goal 5 holds the difficulty level, goal 6 whether the AI has
-started, and goals 10-16 hold the probe report's signal ids. Extra `rules`
+rebalancing, timer 5 the growth stages. Goals 3-4 count waits and attacks, goal 5 holds the difficulty level, goal 6
+whether the AI has started, goal 7 the growth stage, and goals 10-16 hold the probe report's signal ids. Extra `rules`
 can read `(goal my-step N)` but should use other goal and timer numbers.
 
 ## Difficulty levels
@@ -76,9 +77,25 @@ goal 5. `levels: auto` makes the easy and hard versions from the spec:
 | time between attacks | x4 (rarely attacks) | x0.4, at least 20 s (constant pressure) |
 | attack group sizes | x0.5 | x1.5 |
 | soldiers in the keep list | x0.6 | x1.5 |
+| `grow` minutes | x3 (very slow) | x0.5 |
 
 No level cheats: the AI gathers and pays for everything it makes, sees only what it explores, and gets no extra
 resources or spawned units. A harder AI is a bigger economy and army that attacks more often.
+
+## Growing
+
+`grow: {to: 200, minutes: 60}` makes the AI build up toward a population of `to` over `minutes`, in `stages`
+(default 8) even steps on timer 5, the stage held in goal 7. Each stage raises the targets a step further:
+
+- villagers, from the spec's `villagers` to `villagers` here (default 40% of `to`)
+- the keep list's soldiers, in proportion, to what's left: `to` less the villagers, transports and 10 spare
+- the buildings that make those soldiers, along with the army, up to 4 each
+- town centers to `town_centers` (default 3: expansion) and dropsites (STORAGE_PIT and GRANARY in RoR) to 3
+
+Houses follow by themselves (the houses rule builds while there's room under the population cap), so the
+scenario's population cap must allow `to`. The engine places the buildings: dropsites by resources with the new
+building system, extra town centers where it finds room (unverified in game). Nothing is free: a stage's targets
+are only reached as fast as the AI can gather.
 
 ## Civilization armies
 
