@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
 - Mod sounds: `aoe2ed.audio.pcm_wem` writes the .wem files the game plays from a mod (plain PCM, no Wwise
   needed; verified as Return of Rome intro narration). `install_campaign_mod` takes `sound_files` (played by name

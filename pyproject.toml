@@ -1,6 +1,6 @@
 [project]
 name = "aoe-agent-editor"
-version = "0.7.0"
+version = "0.8.0"
 description = "Let AI agents build Age of Empires II DE scenarios and campaigns end to end: MCP server, CLI and building blocks over AoE2ScenarioParser."
 authors = [
     { name = "Hannes Strydom", email = "13560787+h-strydom@users.noreply.github.com" }
