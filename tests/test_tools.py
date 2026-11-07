@@ -106,6 +106,13 @@ def test_options_messages(blank, tmp_path):
     assert call("scenario_summary", handle=h2)["messages"]["instructions"] == "Survive 45 minutes."
 
 
+def test_custom_victory_without_conquest(blank, tmp_path):
+    assert call("options_get", handle=blank)["victory_conquest"] is True          # the game's default
+    call("options_set", handle=blank, fields={"victory_condition": "CUSTOM", "victory_conquest": False})
+    h2 = reload(blank, tmp_path)
+    assert call("options_get", handle=h2)["victory_conquest"] is False
+
+
 def test_xs_embed_and_check(blank, tmp_path):
     good = 'void main() { xsChatData("hello"); }'
     assert call("xs_check", code=good)["ok"]

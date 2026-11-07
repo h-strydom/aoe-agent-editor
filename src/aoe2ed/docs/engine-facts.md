@@ -92,6 +92,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Modify Attribute HIT_POINTS ADD 15 on ARCHER took effect in game. *Smoke replay, user-confirmed.*
 - Modify Attribute POPULATION (110) is a whole number in triggers: `SET -0.5` on every villager type (the value
   RoR's Logistics tech uses for infantry) left villagers at 1 population. *RoR-RI playtest, 2026-11-07.*
+- A Custom victory keeps its Conquest checkbox (GlobalVictory `conquest_required`, 1 by default) unless it's
+  cleared: killing every enemy then wins the game whatever the other custom settings are. *RoR-RI playtest,
+  2026-11-07.*
 - `remove_object` by unit type over an area (Gaia forage bushes, object state alive) removed nothing; on
   `selected_object_ids` it works. *RoR-RI playtest, 2026-11-07.*
 - `task_object` MOVE with `selected_object_ids` and queued (`queue_action`) waypoints drives player-owned

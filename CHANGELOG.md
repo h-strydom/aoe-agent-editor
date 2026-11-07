@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+- `options_set`/`options_get`: `victory_conquest`, the Custom victory's Conquest checkbox (the scenario's
+  GlobalVictory section; on by default). Left on, defeating every enemy wins whatever the other custom settings
+  say.
+
 ## 0.8.2
 
 - Reverts 0.8.1: in game, a trigger's POPULATION (attribute 110) of -0.5 had no effect (the effect reads it as a

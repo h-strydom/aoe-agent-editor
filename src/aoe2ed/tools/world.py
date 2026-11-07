@@ -129,16 +129,27 @@ def diplomacy_set(handle: str, player: int, others: list[int], state: str = "ALL
 OPTION_DATASETS = {"victory_condition": "VictoryCondition", "secondary_game_modes": "SecondaryGameMode"}
 OPTION_FIELDS = ("victory_condition", "victory_score", "victory_years", "victory_custom_conditions_required",
                  "secondary_game_modes", "lock_teams", "allow_players_choose_teams", "random_start_points",
-                 "lock_coop_alliances", "villager_force_drop", "collide_and_correct", "legacy_execution_order")
+                 "lock_coop_alliances", "villager_force_drop", "collide_and_correct", "legacy_execution_order",
+                 "victory_conquest")
+# Options the option manager doesn't carry: name -> (scenario section, field).
+#   victory_conquest: the Conquest checkbox of a Custom victory, on by default. Left on, defeating every enemy
+#   wins the game whatever the other custom settings say (RoR-RI, Ascent of Egypt 3 playtest, 2026-11-07).
+SECTION_OPTIONS = {"victory_conquest": ("GlobalVictory", "conquest_required")}
 MESSAGE_FIELDS = ("instructions", "hints", "victory", "loss", "history", "scouts")
 
 
 @tool
 def options_get(handle: str) -> dict:
-    """Scenario options: victory condition/score/years, team locks, game modes, etc."""
-    om = SESSIONS.get(handle).scenario.option_manager
+    """Scenario options: victory condition/score/years, the Custom victory's Conquest checkbox, team locks, game
+    modes, etc."""
+    scenario = SESSIONS.get(handle).scenario
+    om = scenario.option_manager
     out = {}
     for f in OPTION_FIELDS:
+        if f in SECTION_OPTIONS:
+            section, field = SECTION_OPTIONS[f]
+            out[f] = bool(getattr(scenario.sections[section], field))
+            continue
         v = getattr(om, f, None)
         out[f] = getattr(v, "name", v) if not isinstance(v, list) else [getattr(x, "name", x) for x in v]
     return out
@@ -148,10 +159,15 @@ def options_get(handle: str) -> dict:
 def options_set(handle: str, fields: dict) -> dict:
     """Set scenario options (see options_get for fields). Enum values by name, e.g.
     victory_condition='CUSTOM'."""
-    om = SESSIONS.get(handle).scenario.option_manager
+    scenario = SESSIONS.get(handle).scenario
+    om = scenario.option_manager
     for k, v in fields.items():
         if k not in OPTION_FIELDS:
             raise ValueError(f"Unknown option '{k}'. Options: {OPTION_FIELDS}")
+        if k in SECTION_OPTIONS:
+            section, field = SECTION_OPTIONS[k]
+            setattr(scenario.sections[section], field, int(bool(v)))
+            continue
         ds = OPTION_DATASETS.get(k)
         if ds:
             enum_cls = ENUM_DATASETS[ds]
