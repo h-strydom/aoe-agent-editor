@@ -35,6 +35,23 @@ def _unsupported_without_class_patch(self, class_reference, uuid) -> bool:
 
 RetrieverObjectLink.overwrite_unsupported_properties = _unsupported_without_class_patch
 
+from AoE2ScenarioParser.datasets.trigger_lists import ObjectAttribute  # noqa: E402
+
+# Attributes that take fractions although the parser's table lists them as whole numbers. The parser writes a
+# float-typed attribute's quantity into the effect's quantity_float field and leaves the integer field at -1.
+#   110 POPULATION: the game's own techs set it to fractions (RoR's Logistics: infantry -0.5, i.e. half a
+#   population space). Unverified that the trigger effect reads the fraction; if the game ignores the float
+#   field it reads -1, an ordinary 1-population unit.
+FRACTIONAL_ATTRIBUTES = {110}
+_parser_storage_type = ObjectAttribute._storage_type
+
+
+def _storage_type(value):
+    return "float" if value in FRACTIONAL_ATTRIBUTES else _parser_storage_type(value)
+
+
+ObjectAttribute._storage_type = staticmethod(_storage_type)
+
 from AoE2ScenarioParser.datasets import conditions as condition_dataset  # noqa: E402
 from AoE2ScenarioParser.datasets import effects as effect_dataset  # noqa: E402
 from AoE2ScenarioParser.datasets.conditions import ConditionId  # noqa: E402

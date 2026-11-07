@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+- Triggers: POPULATION (attribute 110) takes fractions, e.g. `SET -0.5` for half a population space as RoR's
+  Logistics does. The parser's table lists it as a whole number and floored -0.5 to -1. Unverified in game that
+  the trigger effect reads the fraction (if not, the unit keeps a population of 1).
+
 ## 0.8.0
 
 - Mod sounds: `aoe2ed.audio.pcm_wem` writes the .wem files the game plays from a mod (plain PCM, no Wwise
