@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- `options_set`/`options_get`: `victory_relics`, the Relics a Custom victory asks for (GlobalVictory
+  `artifacts_required`; 0 leaves the box unchecked).
+
 ## 0.9.0
 
 - `options_set`/`options_get`: `victory_conquest`, the Custom victory's Conquest checkbox (the scenario's

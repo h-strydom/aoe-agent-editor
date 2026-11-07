@@ -108,9 +108,11 @@ def test_options_messages(blank, tmp_path):
 
 def test_custom_victory_without_conquest(blank, tmp_path):
     assert call("options_get", handle=blank)["victory_conquest"] is True          # the game's default
-    call("options_set", handle=blank, fields={"victory_condition": "CUSTOM", "victory_conquest": False})
+    call("options_set", handle=blank, fields={"victory_condition": "CUSTOM", "victory_conquest": False,
+                                              "victory_relics": 10})
     h2 = reload(blank, tmp_path)
-    assert call("options_get", handle=h2)["victory_conquest"] is False
+    got = call("options_get", handle=h2)
+    assert got["victory_conquest"] is False and got["victory_relics"] == 10
 
 
 def test_xs_embed_and_check(blank, tmp_path):

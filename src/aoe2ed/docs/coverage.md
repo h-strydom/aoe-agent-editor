@@ -31,7 +31,7 @@ dedicated MCP/CLI tool. **Block** means a building block in a campaign spec. **P
 | | All 103 effects / 41 conditions | `triggers_add` with any type; `effect_schema` / `condition_schema` |
 | | Objectives panel | Trigger fields `display_as_objective`, `description`, ...; block `objective` |
 | | Variables | Tools `variables_list`, `variable_add`, `variable_rename` |
-| Victory | Standard / conquest / score / time / custom, and the Custom victory's Conquest checkbox | Tool `options_set` (`victory_condition`, `victory_conquest`, ...) |
+| Victory | Standard / conquest / score / time / custom, and the Custom victory's Conquest checkbox | Tool `options_set` (`victory_condition`, `victory_conquest`, `victory_relics`, ...) |
 | Options | Lock teams, random start, villager force drop, ... | Tool `options_set` |
 | | Global victory / secondary game modes | Tool `options_set` (`secondary_game_modes`) |
 | XS | Script file / embedded script | Tools `xs_set_script_name`, `xs_embed`; spec `xs:` |
