@@ -53,19 +53,26 @@ def scenario_game(scenario: Any) -> str:
 # The data sets (DLC packs) a file depends on, by game: the scenario header's list after the variant, and a
 # campaign's dependency list. The parser's own values; the RoR editor saves [11] (a scenario made there, 2026-11-08).
 # Setting the variant field first made the parser skip its own update, so converted RoR scenarios kept the blank
-# template's AoE2 list (every pack but 11) and played by AoE2 rules: defeating the last enemy won a Custom victory
-# that a [11] scenario with the same settings doesn't (RoR-RI, Ascent of Egypt 3 playtest).
+# template's AoE2 list (every pack but 11), and saves from a campaign of them wouldn't load ("can't determine data
+# set"); verified fixed in game (RoR-RI, Ascent of Egypt 3, 2026-11-08).
 DATA_SETS = {"aoe2": [2, 3, 4, 5, 6, 7, 8, 9, 10, 12], "ror": [11]}
+# The DataHeader's 9 unnamed bytes: the parser's default starts with 1, the RoR editor saves all zeros. With the 1,
+# a RoR scenario ended in victory the moment the last enemy was defeated, whatever the Custom victory settings;
+# zeroing that byte alone stopped it (RoR-RI probes against the user's own scenario, 2026-11-08).
+ROR_DATA_HEADER_UNKNOWN = b"\x00" * 9
 
 
 def set_scenario_game(scenario: Any, game: str) -> None:
-    """Mark a scenario as AoE2 or RoR: the header's variant (the game lists the file by it) and data sets."""
+    """Mark a scenario as AoE2 or RoR: the header's variant (the game lists the file by it), data sets and, for
+    RoR, the data header bytes the RoR editor writes."""
     game = normalize(game)
     variant = ScenarioVariant.ROR if game == "ror" else ScenarioVariant.AOE2
     header = scenario.sections["FileHeader"]
     header.unknown_value_2 = variant.value
     header.unknown_numbers = list(DATA_SETS[game])
     header.amount_of_unknown_numbers = len(DATA_SETS[game])
+    if game == "ror":
+        scenario.sections["DataHeader"].unknown = ROR_DATA_HEADER_UNKNOWN
     scenario.variant = variant
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0
+
+- Return of Rome scenarios save their DataHeader's unnamed bytes as zeros, as the RoR editor does. The parser's
+  default (first byte 1) made RoR end a scenario in victory the moment the last enemy was defeated, whatever its
+  victory settings (verified in game against a RoR-editor scenario). 0.11.0's data set [11] is verified too:
+  saves from a campaign of converted RoR scenarios load again.
+
 ## 0.11.0
 
 - Return of Rome files now depend on RoR's data set (11), as the RoR editor saves them: the scenario header's

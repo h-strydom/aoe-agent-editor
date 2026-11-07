@@ -92,15 +92,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Modify Attribute HIT_POINTS ADD 15 on ARCHER took effect in game. *Smoke replay, user-confirmed.*
 - Modify Attribute POPULATION (110) is a whole number in triggers: `SET -0.5` on every villager type (the value
   RoR's Logistics tech uses for infantry) left villagers at 1 population. *RoR-RI playtest, 2026-11-07.*
-- A Return of Rome scenario must depend on data set 11 (FileHeader data-set list; the RoR editor saves [11]).
-  Converted scenarios listing AoE2's packs instead won a Custom victory the moment the last enemy died, where a
-  [11] scenario with the same victory settings didn't; the victory findings below were made with those files.
-  *RoR-RI, 2026-11-08 (the user's scenario vs. a converted mission, diffed field by field).*
-- A Custom victory that should never end on its own needs its Conquest checkbox cleared (GlobalVictory
-  `conquest_required`, 1 by default; `options_set` `victory_conquest`) **and** "All" ticked
-  (`victory_custom_conditions_required`). With conquest off but "Any One", defeating the last enemy still won,
-  even with a hidden building keeping that enemy alive; with "All" and nothing checked it didn't. *RoR-RI
-  playtests and the user's own scenario, 2026-11-08.*
+- A Return of Rome scenario must be saved the way the RoR editor saves it: data set list [11] (FileHeader) and
+  the DataHeader's 9 unnamed bytes all zero (the parser's default starts with 1). With that first byte at 1, a
+  converted mission ended in victory the moment the last enemy was defeated, whatever its victory settings;
+  zeroing it alone stopped it. With AoE2's data sets, saved games from a campaign of such scenarios wouldn't
+  load ("Package has no dependencies, can't determine data set"); [11] fixed it. *RoR-RI probes against the
+  user's own scenario and Ascent of Egypt 3 saves, verified in game 2026-11-08.*
 - `remove_object` by unit type over an area (Gaia forage bushes, object state alive) removed nothing; on
   `selected_object_ids` it works. *RoR-RI playtest, 2026-11-07.*
 - `task_object` MOVE with `selected_object_ids` and queued (`queue_action`) waypoints drives player-owned

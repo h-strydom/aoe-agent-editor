@@ -106,7 +106,9 @@ def test_ror_files_depend_on_the_ror_data_set(tmp_path):
     h = TOOLS["scenario_new"](map_size=60, game="ror")["handle"]
     out = tmp_path / "r.aoe2scenario"
     TOOLS["scenario_save"](handle=h, path=str(out))
-    assert list(AoE2DEScenario.from_file(str(out)).sections["FileHeader"].unknown_numbers) == [11]
+    saved = AoE2DEScenario.from_file(str(out))
+    assert list(saved.sections["FileHeader"].unknown_numbers) == [11]
+    assert saved.sections["DataHeader"].unknown == bytes(9)         # all zero, as the RoR editor saves it
     camp = Campaign("c", [CampaignScenario("m", out.name, out.read_bytes())])
     assert Campaign.from_bytes(camp.to_bytes()).dependencies == [11]
     h2 = TOOLS["scenario_new"](map_size=60)["handle"]
