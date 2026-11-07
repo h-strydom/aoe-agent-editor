@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0
+
+- Return of Rome files now depend on RoR's data set (11), as the RoR editor saves them: the scenario header's
+  data-set list (`set_scenario_game` set the variant first, so the parser skipped its own update and RoR
+  scenarios kept AoE2's packs), and a campaign's dependencies (taken from its scenarios unless given). With
+  AoE2's packs the game played converted RoR missions by AoE2 rules, and saves from such a campaign wouldn't
+  load ("can't determine data set").
+
 ## 0.10.0
 
 - `options_set`/`options_get`: `victory_relics`, the Relics a Custom victory asks for (GlobalVictory

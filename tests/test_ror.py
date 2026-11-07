@@ -95,3 +95,20 @@ def test_buildings_are_their_buildable_base():
     # ("Academy Age3" 18 has a lower id than "Academy Age1" 103). AIs build by these ids.
     objects = games.ror_data()["objects"]
     assert (objects["ACADEMY"], objects["TEMPLE"], objects["TOWN_CENTER"]) == (103, 104, 109)
+
+
+def test_ror_files_depend_on_the_ror_data_set(tmp_path):
+    """The RoR editor saves scenarios depending on data set 11; AoE2's packs instead made the game play converted
+    missions by AoE2 rules and left a campaign's saves unloadable."""
+    from AoE2ScenarioParser.scenarios.aoe2_de_scenario import AoE2DEScenario
+
+    from aoe2ed.campaign import Campaign, CampaignScenario
+    h = TOOLS["scenario_new"](map_size=60, game="ror")["handle"]
+    out = tmp_path / "r.aoe2scenario"
+    TOOLS["scenario_save"](handle=h, path=str(out))
+    assert list(AoE2DEScenario.from_file(str(out)).sections["FileHeader"].unknown_numbers) == [11]
+    camp = Campaign("c", [CampaignScenario("m", out.name, out.read_bytes())])
+    assert Campaign.from_bytes(camp.to_bytes()).dependencies == [11]
+    h2 = TOOLS["scenario_new"](map_size=60)["handle"]
+    TOOLS["scenario_save"](handle=h2, path=str(tmp_path / "a.aoe2scenario"))
+    assert 11 not in AoE2DEScenario.from_file(str(tmp_path / "a.aoe2scenario")).sections["FileHeader"].unknown_numbers

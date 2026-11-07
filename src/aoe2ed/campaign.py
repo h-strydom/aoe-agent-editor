@@ -2,7 +2,7 @@
 
 Layout (little endian), as used by the game's own campaigns:
   char[4]   version            b"2.00"
-  int32     dependency_count, then int32 * count   DLC/data dependencies (2..7 in all files seen)
+  int32     dependency_count, then int32 * count   DLC/data set dependencies (AoE2 campaigns: 2..7)
   char[256] name               NUL-terminated; the campaign bank (Store/Load Key Value) is scoped by it
   int32     scenario_count
   per scenario:
@@ -33,8 +33,19 @@ class CampaignScenario:
 class Campaign:
     name: str
     scenarios: list[CampaignScenario] = field(default_factory=list)
-    dependencies: list[int] = field(default_factory=lambda: list(DEFAULT_DEPENDENCIES))
+    # None: the data sets of the game its scenarios are for (games.DATA_SETS: Return of Rome [11]); a campaign
+    # of RoR scenarios listing AoE2's packs (2..7) left its saved games unloadable: "Package has no
+    # dependencies, can't determine data set" (RoR-RI playtest, 2026-11-08; the fix is unverified in game).
+    dependencies: list[int] | None = None
     version: bytes = VERSION
+
+    def data_sets(self) -> list[int]:
+        if self.dependencies is not None:
+            return self.dependencies
+        from .games import DATA_SETS, file_game
+        if self.scenarios and all(file_game(s.data) == "ror" for s in self.scenarios):
+            return list(DATA_SETS["ror"])
+        return list(DEFAULT_DEPENDENCIES)
 
     # ------------------------------------------------------------ io
     @classmethod
@@ -84,7 +95,8 @@ class Campaign:
             return struct.pack("<HH", STR_MARKER, len(raw)) + raw
 
         head = bytearray(self.version)
-        head += struct.pack(f"<i{len(self.dependencies)}i", len(self.dependencies), *self.dependencies)
+        deps = self.data_sets()
+        head += struct.pack(f"<i{len(deps)}i", len(deps), *deps)
         head += name.ljust(NAME_LEN, b"\0")
         head += struct.pack("<i", len(self.scenarios))
         table_size = sum(8 + len(enc_str(s.name)) + len(enc_str(s.filename)) for s in self.scenarios)
@@ -109,6 +121,6 @@ class Campaign:
         self.scenarios.append(CampaignScenario(name or path.name, path.name, path.read_bytes()))
 
     def summary(self) -> dict:
-        return {"name": self.name, "dependencies": self.dependencies,
+        return {"name": self.name, "dependencies": self.data_sets(),
                 "scenarios": [{"index": i, "name": s.name, "filename": s.filename, "bytes": len(s.data)}
                               for i, s in enumerate(self.scenarios)]}
