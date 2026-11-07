@@ -88,3 +88,18 @@ def test_install_campaign_mod(tmp_path):
     (profile / "mods" / "mod-status.json").write_text(json.dumps(
         {"Mods": [{"Path": "local//My Mod", "Enabled": True}]}), encoding="utf-8")
     assert screens.mod_enabled("My Mod", profile) is True
+
+
+def test_install_campaign_mod_with_sounds_and_a_display_name(tmp_path):
+    from aoe2ed.audio import pcm_wem, wem_seconds
+    camp = Campaign("x", [CampaignScenario("One", "one.aoe2scenario", b"scenario")])
+    src = camp.write(tmp_path / "my_campaign.aoe2campaign")
+    wem = pcm_wem(b"\0\0" * 22050, 22050)                       # one second of silence
+    assert wem[:4] == b"RIFF" and wem[20:22] == b"\xfe\xff" and wem_seconds(wem) == 1.0
+    screens.install_campaign_mod(src, "My Mod", intro={"Scenarios": []}, game="ror", profile=tmp_path,
+                                 name="My Campaign, Part One", sound_files={"my_intro_1": wem})
+    root = tmp_path / "mods" / "local" / "My Mod"
+    assert (root / screens.SOUND_DIRS["ror"] / "my_intro_1.wem").read_bytes() == wem
+    folder = root / screens.GAME_CAMPAIGN_DIRS["ror"]
+    assert Campaign.read(folder / "My Campaign, Part One.aoe2campaign").name == "My Campaign, Part One"
+    assert (folder / "My Campaign, Part One.json").is_file()

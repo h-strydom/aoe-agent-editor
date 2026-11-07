@@ -30,9 +30,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
   CampaignIconVillagerHunter, ...) work from a mod's layout. Without a layout, the default book shows
   at most 9 mission flags. Intro slide images load from the mod's `modes/Pompeii/widgetui/` (not the mod's
   root `widgetui/`) via "SlideImageSequence": "textures/campaign/<name>/<n>/intro/%d.png", with %d counting
-  from 1. Custom narration doesn't play: MP3, WAV and OGG in the mod's `resources/_common/drs/sounds` (root
-  and `modes/Pompeii`) were all silent; "Sound" plays only the game's Wwise events. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign),
-  2026-11-01.*
+  from 1. *RoR layout tests (Ascent of Egypt layout on a generated 12-mission campaign), 2026-11-01.*
+- An intro's (or outro's) "Sound" plays the game's own Wwise events (RoR's campaigns: `PLAY_AOECAM1_01_INTRO`)
+  or a mod's own `.wem` by file name without the extension, from `resources/_common/drs/sounds` (`modes/Pompeii`
+  for RoR). MP3, WAV and OGG there are ignored, but plain 16-bit PCM in a RIFF/WAVE container named `.wem`
+  plays, both Wwise's PCM layout (format 0xFFFE) and an ordinary WAV renamed (`aoe2ed.audio.pcm_wem`).
+  *RoR campaign intro test, 2026-11-07: both played, mono 48 kHz, files in both sounds folders; which folder
+  RoR reads isn't pinned down yet.*
 
 ## AI scripts
 - RoR buildings exist once per age look (Academy 103/105/18/19 for Ages 1-4); AIs build the Age1 base, and the

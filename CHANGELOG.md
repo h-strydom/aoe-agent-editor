@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Mod sounds: `aoe2ed.audio.pcm_wem` writes the .wem files the game plays from a mod (plain PCM, no Wwise
+  needed; verified as Return of Rome intro narration). `install_campaign_mod` takes `sound_files` (played by name
+  from an intro's or outro's "Sound") and `name`, the campaign's installed name, which the Custom Campaign list
+  shows.
+
 ## 0.7.0
 
 - AI specs: `grow: {to, minutes}` macros toward a population over time: villagers, the keep list's soldiers and the
