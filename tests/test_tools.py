@@ -169,10 +169,10 @@ def test_fractional_quantity(blank, tmp_path):
     assert call("trigger_get", handle=h2, trigger="ok")["effects"][0]["quantity"] == pytest.approx(1.15)
 
 
-def test_population_takes_a_fraction(blank, tmp_path):
-    """RoR's Logistics halves infantry population with -0.5; the parser would floor it to -1."""
+def test_population_takes_whole_numbers_only(blank):
+    """The trigger effect reads POPULATION as a whole number: -0.5 (as RoR's Logistics tech sets it) had no
+    effect in game, so it's rejected like other fractions on integer attributes."""
     half = {"type": "modify_attribute", "object_list_unit_id": "ARCHER", "source_player": 1,
             "object_attributes": 110, "operation": "SET", "quantity": -0.5}
-    call("triggers_add", handle=blank, triggers=[{"name": "half", "effects": [half]}])
-    h2 = reload(blank, tmp_path)
-    assert call("trigger_get", handle=h2, trigger="half")["effects"][0]["quantity"] == pytest.approx(-0.5)
+    with pytest.raises(ValueError, match="truncated"):
+        call("triggers_add", handle=blank, triggers=[{"name": "half", "effects": [half]}])

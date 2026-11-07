@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2
+
+- Reverts 0.8.1: in game, a trigger's POPULATION (attribute 110) of -0.5 had no effect (the effect reads it as a
+  whole number, as the parser's table says), so fractions are rejected again. Whole numbers work, e.g. `SET 0`.
+
 ## 0.8.1
 
 - Triggers: POPULATION (attribute 110) takes fractions, e.g. `SET -0.5` for half a population space as RoR's
