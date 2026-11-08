@@ -256,3 +256,30 @@ def test_grow_macros_toward_the_population_over_time():
     assert [lv[k]["grow"]["minutes"] for k in ("easy", "normal", "hard")] == [120, 40, 20]
     with pytest.raises(SpecError, match="grow is"):
         build_script({**SPEC, "grow": {"speed": 2}}, "ror")
+
+
+def test_raids_keep_their_party_and_lifetime_keeps_never_replace():
+    spec = {"keep": [{"train": "FISHING_BOAT", "count": 5, "lifetime": True},
+                     {"research": "TOOLWORKING", "when": {"soldiers": 8}}],
+            "raids": [{"units": ["SLINGER", "AXEMAN"], "count": 3, "min": 1, "start": {"trigger": 7},
+                       "near": {"x": 47, "y": 20, "radius": 5}},
+                      {"units": ["BOWMAN"], "count": 5, "first": 300, "every": 150, "target": "villagers"}]}
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+    assert per.check(script) == []
+    assert "(up-compare-goal 50 < 5)" in script and "(up-modify-goal 50 c:+ 1)" in script     # 5 boats, ever
+    assert "(defend-soldier-count >= 8)" in script
+    assert "(event-detected trigger 7)" in script and "(up-filter-distance c: -1 c: 5)" in script
+    assert "(enable-timer 11 300)" in script and "(enable-timer 11 150)" in script            # raid 2's timing
+    assert script.count("(up-add-object-by-id my-search-local g: 10") == 3                     # raid 1's party
+    assert "(up-find-remote c: 904 c: 40)" in script and "(up-find-remote c: -1 c: 40)" in script
+    assert "(up-target-objects 1 my-action-default -1 my-stance-aggressive)" in script
+    assert "(defconst my-search-local 1)" in script
+    with games.use("ror"):
+        assert "my-search-local" not in build_script({"keep": []}, "ror")
+        with pytest.raises(SpecError, match="a raid is"):
+            build_script({"raids": [{"count": 3}]}, "ror")
+        with pytest.raises(SpecError, match="raid target"):
+            build_script({"raids": [{"units": ["BOWMAN"], "target": "cows"}]}, "ror")
+        with pytest.raises(SpecError, match="keep entries"):
+            build_script({"build_order": [{"build": "HOUSE", "lifetime": True}]}, "ror")

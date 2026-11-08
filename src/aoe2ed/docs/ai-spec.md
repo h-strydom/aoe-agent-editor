@@ -32,6 +32,9 @@ step_timeout: 180                   # seconds before a stalled step is checked. 
                                     # Build and research steps are skipped if affordable (so disabled or
                                     # impossible), else waited for, up to 4 times. 0 = never skip
 keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
+                                    # lifetime: true = count is all it ever makes (never replaced: no farming
+                                    # its fishing boats); when: {soldiers: 8} = only while 8 soldiers stand at
+                                    # home (upgrades once a defence stands)
 keep_from: start                    # start (default) or end: only once the build order is done
 rebalance: true                     # every minute, move 5% of villagers to a resource the plan spends that's running
                                     # out (under 200), from the biggest pile over 400; a share stops at 5%; default true
@@ -51,9 +54,24 @@ attack:                             # leave out to never attack
   every: 240                        # seconds between attacks
   min_group: 4                      # soldiers it needs before it goes
   max_group: 12
+raids:                              # small parties at the closest enemy units, apart from attacks (see Raids)
+  - {units: [BOWMAN, SLINGER], count: 5, first: 300, every: 150, target: villagers}
+  - {units: [SLINGER, AXEMAN], count: 3, min: 1, start: {trigger: 7}, near: {x: 47, y: 20, radius: 5}}
 strategic_numbers: {sn-number-explore-groups: 1}     # raw engine settings
 rules: "(defrule ...)"              # extra raw .per, appended
 ```
+
+## Raids
+
+A raid takes up to `count` of its `units` (in the order listed; only those within `radius` of `near`, if given),
+and sends them at the closest object of the `target` kind (`villagers`, `buildings`, `any`) the AI knows of
+belonging to the closest enemy; with none of that kind known, at anything. It goes at `first` seconds (then every
+`every`), or when the scenario's AI Script Goal effect sends `start.trigger`, and only with at least `min` units
+(default `count`). The party's ids are kept, and its orders renewed every `resend` seconds (default 10) while
+any of it lives: sent once, the engine's own tasking takes such units back (a trigger-ordered landing party
+"moved left a bit and gave up", RoR-RI playtest 2026-11-08). Timers 10-14 launch raids and 20-24 renew orders;
+goals 20-34 track them, 41-46 hold search state and a point, 50-99 keep's lifetime counts, 100-299 party ids.
+Unverified in game.
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
 step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times

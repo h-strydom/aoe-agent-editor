@@ -16,6 +16,9 @@ Spec (YAML/JSON; every key optional):
   step_timeout: 180                  # seconds before a step that can't happen is checked: skipped if it's affordable
                                      #   (so it's disabled or impossible); waited for up to 4 times while it isn't
   keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
+                                     #   lifetime: true = count is all it ever makes (never replaced)
+                                     #   when: {soldiers: 8} = only while that many soldiers stand at home
+                                     #   (defend-soldier-count): upgrades once a defence stands
   keep_from: start                   # start (default): the keep list works from the beginning; end: only once the
                                      #   build order is done
   rebalance: true                    # every minute, move 5% of villagers to a resource the plan spends that's
@@ -44,6 +47,16 @@ Spec (YAML/JSON; every key optional):
     max_group: 12
     percent: 80                      #   share of idle soldiers that go (default 80)
     naval: false                     #   warships also attack on the same timing (default false)
+  raids:                             # small parties sent at the closest enemy's units, apart from attacks
+    - units: [BOWMAN, SLINGER]       #   what a party is made of (up to `count`, taken in this order)
+      count: 5                       #   party size (1-40); min: fewest worth sending (default count)
+      first: 300                     #   seconds into the game; every: seconds between parties (default: once)
+      start: {trigger: 2}            #   instead of first: when the scenario's AI Script Goal effect sends 2
+      near: {x: 47, y: 20, radius: 6}   # take only units this close to the point (a landing party)
+      target: villagers              #   villagers, buildings or any (default): the closest one it knows of;
+                                     #   with nothing of that kind known, anything
+      resend: 10                     #   the party's orders are renewed every this many seconds while one lives,
+                                     #   so the AI's own tasking can't call it home (default 10)
   strategic_numbers: {sn-number-explore-groups: 1}     # raw engine settings (names checked)
   rules: "(defrule ...)"             # extra raw .per appended as is
   debug: false                       # announce each build step and attack in chat (for playtests)
@@ -54,6 +67,11 @@ resign: the engine only resigns when a script says (resign).
 Attacks follow DE's AIBuilder (shipped with RoR, the designers' scenario AI): target the closest enemy, set
 the share of soldiers that go, attack-now; warships separately. The setup enables DE's building system and full
 response to sighted enemies, as AIBuilder does.
+
+Raids remember their party's object ids when sent and re-target them every `resend` seconds: a party that is
+only sent once is taken back by the engine's own tasking (RoR-RI Egypt 5 playtest, 2026-11-08: a landing party
+ordered by triggers "moved left a bit and gave up"). The searches follow RoR's own scripts (default/dawn.per:
+up-find-local, up-clean-search by distance, up-set-target-object, up-target-objects 1). Unverified in game.
 """
 from __future__ import annotations
 
@@ -64,7 +82,7 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start", "army", "grow"}
+            "rebalance", "scout", "levels", "start", "army", "grow", "raids"}
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -117,6 +135,18 @@ GROW_GOAL, GROW_TIMER = 7, 5
 GROW_DEFAULTS = {"to": 200, "minutes": 60, "stages": 8, "town_centers": 3}
 GROW_VILLAGER_SHARE, GROW_SPARE, GROW_MAX_PRODUCTION, GROW_DROPSITES = 0.4, 10, 4, 3
 DROPSITES = {"ror": ("STORAGE_PIT", "GRANARY"), "aoe2": ("LUMBER_CAMP", "MINING_CAMP", "MILL")}
+# raids: launch timer RAID_TIMER+k, resend timer RESEND_TIMER+k; goals: launching RAID_READY+k, party out
+# RAID_OUT+k, search state SEARCH_STATE..+3 (local index, local total, remote index, remote total), a point at
+# POINT_GOAL/+1, party ids RAID_IDS + RAID_MAX_COUNT*k + i. keep's lifetime counters: LIFETIME_GOAL + entry index.
+RAID_KEYS = {"units", "count", "min", "first", "every", "start", "near", "target", "resend"}
+RAID_TARGETS = {"any": -1, "villagers": 904, "buildings": 903}      # all-units-class, villager-class, building-class
+RAID_TIMER, RESEND_TIMER, RAID_READY, RAID_OUT = 10, 20, 20, 30
+SEARCH_STATE, POINT_GOAL, LIFETIME_GOAL, RAID_IDS = 41, 45, 50, 100
+RAID_MAX, RAID_MAX_COUNT, RAID_CHUNK = 5, 40, 20
+# Constants RoR's scripts define themselves (default/defaultConstants.per): the engine has no names for them.
+UP_CONSTS = {"my-search-local": 1, "my-search-remote": 2, "my-object-data-id": 0, "my-object-data-distance": 44,
+             "my-position-object": 12, "my-search-order-asc": 1, "my-action-default": 0, "my-stance-aggressive": 0}
+KEEP_EXTRA = {"lifetime", "when"}
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
 
@@ -185,7 +215,7 @@ def auto_gatherers(items: list[tuple[str, int, int]], game: str) -> dict[str, in
 
 def _step(step: dict) -> tuple[str, str, int]:
     kinds = [k for k in STEP_KINDS if k in step]
-    if len(kinds) != 1 or set(step) - {*STEP_KINDS, "count"}:
+    if len(kinds) != 1 or set(step) - {*STEP_KINDS, "count", *KEEP_EXTRA}:
         raise SpecError(f"a build_order step is one of {STEP_KINDS} with an optional count, got {step}")
     return kinds[0], step[kinds[0]], int(step.get("count", 1))
 
@@ -285,6 +315,93 @@ def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
             const = names.const(d, "object")
             todo, actions, _ = _do("build", const, 1 + round((GROW_DROPSITES - 1) * frac))
             rules.append(_rule([*stage, *todo], actions, f"{label}: {d}"))
+    return setup, rules
+
+
+def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
+    """(setup actions, rules) for `raids`. Per raid: a launch (timer or scenario event) searches the party, stores
+    its ids if there are enough, and sends it; while any of it lives, its orders are renewed every `resend` s."""
+    raids = spec.get("raids") or []
+    if not isinstance(raids, list) or len(raids) > RAID_MAX:
+        raise SpecError(f"raids is a list of up to {RAID_MAX} raids, got {raids!r}")
+    setup, rules = [], []
+    for k, r in enumerate(raids):
+        if not isinstance(r, dict) or set(r) - RAID_KEYS or not r.get("units"):
+            raise SpecError(f"a raid is {{units: [...], count, min, first, every, start, near, target, resend}}, "
+                            f"got {r!r}")
+        count = int(r.get("count", 5))
+        least = int(r.get("min", count))
+        if not 1 <= count <= RAID_MAX_COUNT or not 1 <= least <= count:
+            raise SpecError(f"raid count is 1-{RAID_MAX_COUNT} and min 1-count, got {count} and {least}")
+        target = r.get("target", "any")
+        if target not in RAID_TARGETS:
+            raise SpecError(f"raid target is one of {sorted(RAID_TARGETS)}, got {target!r}")
+        timer, resend_timer = RAID_TIMER + k, RESEND_TIMER + k
+        ready, out = RAID_READY + k, RAID_OUT + k
+        ids = [RAID_IDS + RAID_MAX_COUNT * k + i for i in range(count)]
+        every, resend = r.get("every"), max(1, int(r.get("resend", 10)))
+        units = [names.const(u, "object") for u in r["units"]]
+        label = f"raid {k + 1} ({'/'.join(r['units'])} x{count})"
+        setup += [f"(set-goal {ready} 0)", f"(set-goal {out} 0)"]
+        again = [f"(enable-timer {timer} {int(every)})"] if every else []
+        start = r.get("start")
+        if start is not None:
+            if not isinstance(start, dict) or set(start) != {"trigger"} or not 0 <= int(start["trigger"]) <= 255:
+                raise SpecError(f"raid start is {{trigger: N}} (0-255), got {start!r}")
+            n = int(start["trigger"])
+            rules.append(_rule([f"(event-detected trigger {n})"],
+                               [f"(acknowledge-event trigger {n})", f"(set-goal {ready} 1)", *again],
+                               f"{label}: the scenario sends AI Script Goal {n}"))
+            if every:
+                rules.append(_rule([f"(timer-triggered {timer})"],
+                                   [f"(disable-timer {timer})", *again, f"(set-goal {ready} 1)"], f"{label}: again"))
+        else:
+            setup.append(f"(enable-timer {timer} {int(r.get('first', 600))})")
+            rules.append(_rule([f"(timer-triggered {timer})"],
+                               [f"(disable-timer {timer})", *again, f"(set-goal {ready} 1)"], f"{label}: time"))
+        find = ["(up-full-reset-search)"]
+        near = r.get("near")
+        if near is not None:
+            if not isinstance(near, dict) or set(near) - {"x", "y", "radius"} or not {"x", "y"} <= set(near):
+                raise SpecError(f"raid near is {{x, y, radius}}, got {near!r}")
+            find += [f"(set-goal {POINT_GOAL} {int(near['x'])})", f"(set-goal {POINT_GOAL + 1} {int(near['y'])})",
+                     f"(up-set-target-point {POINT_GOAL})",
+                     f"(up-filter-distance c: -1 c: {int(near.get('radius', 6))})"]
+        find += [f"(up-find-local c: {u} c: {count})" for u in units] + [f"(up-get-search-state {SEARCH_STATE})"]
+        rules.append(_rule([f"(goal {ready} 1)"], find, f"{label}: find the party"))
+        enough = [f"(goal {ready} 1)", f"(up-compare-goal {SEARCH_STATE + 1} >= {least})"]
+        for c in range(0, count, RAID_CHUNK):
+            rules.append(_rule(enough, [f"(set-goal {g} -1)" for g in ids[c:c + RAID_CHUNK]], f"{label}: forget"))
+        for i, g in enumerate(ids):
+            rules.append(_rule([*enough, f"(up-compare-goal {SEARCH_STATE + 1} > {i})"],
+                               [f"(up-set-target-object my-search-local c: {i})",
+                                f"(up-get-object-data my-object-data-id {g})"], f"{label}: remember unit {i + 1}"))
+        rules.append(_rule(enough, [f"(set-goal {out} 1)", f"(disable-timer {resend_timer})",
+                                    f"(enable-timer {resend_timer} 1)"], f"{label}: send it"))
+        rules.append(_rule([f"(goal {ready} 1)"], [f"(set-goal {ready} 0)"], f"{label}: launched or not"))
+        # The party, while any of it lives: orders renewed, at the closest enemy object of the target kind.
+        live = [f"(timer-triggered {resend_timer})", f"(goal {out} 1)"]
+        for c in range(0, count, RAID_CHUNK):
+            first = ["(up-find-player my-enemy my-find-closest 2)", "(up-modify-sn sn-focus-player-number g:= 2)",
+                     "(up-full-reset-search)"] if c == 0 else []
+            rules.append(_rule(live, [*first, *(f"(up-add-object-by-id my-search-local g: {g})"
+                                                for g in ids[c:c + RAID_CHUNK])], f"{label}: the party"))
+        rules.append(_rule(live, [f"(up-get-search-state {SEARCH_STATE})"], f"{label}: how many are left"))
+        rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 1} < 1)"],
+                           [f"(set-goal {out} 0)", f"(disable-timer {resend_timer})"], f"{label}: the party is gone"))
+        rules.append(_rule(live, ["(up-set-target-object my-search-local c: 0)",
+                                  f"(up-get-point my-position-object {POINT_GOAL})",
+                                  f"(up-set-target-point {POINT_GOAL})",
+                                  f"(up-find-remote c: {RAID_TARGETS[target]} c: 40)",
+                                  f"(up-get-search-state {SEARCH_STATE})"], f"{label}: look for a {target} target"))
+        if target != "any":
+            rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 3} < 1)"],
+                               ["(up-find-remote c: -1 c: 40)"], f"{label}: none known, so anything"))
+        rules.append(_rule(live, ["(up-clean-search my-search-remote my-object-data-distance my-search-order-asc)",
+                                  "(up-set-target-object my-search-remote c: 0)",
+                                  "(up-target-objects 1 my-action-default -1 my-stance-aggressive)",
+                                  f"(disable-timer {resend_timer})", f"(enable-timer {resend_timer} {resend})"],
+                           f"{label}: at the closest"))
     return setup, rules
 
 
@@ -415,6 +532,8 @@ def build_script(spec: dict, game: str = "ror") -> str:
             f"(defconst my-step {STEP_GOAL})", f"(defconst my-enemy {ENEMY_STANCE})",
             f"(defconst my-find-closest {FIND_CLOSEST})"]
     head += [f"(defconst {c} {i})" for c, i in names.ids.values()]
+    if any(s.get("raids") for s in (level_specs(spec, game).values() if spec.get("levels") else [spec])):
+        head += [f"(defconst {c} {v})" for c, v in UP_CONSTS.items()]
     extra = spec.get("rules") or ""
     return "\n".join(head) + "\n\n" + "\n".join(pre + body) + (f"\n{extra.strip()}\n" if extra else "")
 
@@ -422,6 +541,8 @@ def build_script(spec: dict, game: str = "ror") -> str:
 def _body(spec: dict, game: str, names: Names) -> list[str]:
     """The rules for one spec (one difficulty level)."""
     steps = [_step(s) for s in spec.get("build_order") or []]
+    if any(set(s) & KEEP_EXTRA for s in spec.get("build_order") or []):
+        raise SpecError(f"{sorted(KEEP_EXTRA)} are for keep entries, not build_order steps")
     timeout = int(spec.get("step_timeout", 180))
     keep = [_step(s) for s in spec.get("keep") or []]
 
@@ -465,6 +586,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
     init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)"]
     grow_setup, grow_rules = _grow(spec, game, names) if spec.get("grow") else ([], [])
     init += grow_setup
+    raid_setup, raid_rules = _raids(spec, names)
+    init += raid_setup
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
     rebalance = spec.get("rebalance", True)
@@ -544,11 +667,27 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         sc = names.const(scout, "object")
         body.append(_rule([f"(unit-type-count-total {sc} < 1)", f"(can-train {sc})"], [f"(train {sc})"],
                           "scout ship: explores, so attacks across water find a target"))
-    for kind, name, count in keep:
+    for i, (entry, (kind, name, count)) in enumerate(zip(spec.get("keep") or [], keep, strict=True)):
         const = names.const(name, "tech" if kind == "research" else "object")
         todo, actions, _ = _do(kind, const, count)
         when = [f"(goal my-step {len(steps) + 1})"] if keep_from == "end" else []
-        body.append(_rule([*when, *todo], actions, f"keep {name} x{count}"))
+        cond = entry.get("when") or {}
+        if set(cond) - {"soldiers"}:
+            raise SpecError(f"keep when is {{soldiers: N}}, got {cond!r}")
+        if "soldiers" in cond:
+            when.append(f"(defend-soldier-count >= {int(cond['soldiers'])})")
+        label = f"keep {name} x{count}"
+        if entry.get("lifetime"):
+            if kind == "research":
+                raise SpecError(f"keep {name}: lifetime is for units and buildings")
+            goal = LIFETIME_GOAL + i
+            if goal >= RAID_IDS:
+                raise SpecError("too many keep entries for lifetime counters")
+            when.append(f"(up-compare-goal {goal} < {count})")
+            actions = [*actions, f"(up-modify-goal {goal} c:+ 1)"]
+            label += ", never replaced"
+        body.append(_rule([*when, *todo], actions, label))
+    body += raid_rules
     body += grow_rules
     if rebalance:
         # One 5% move a minute, to a resource the plan spends that's running out, from whichever other resource has

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0
+
+- AI specs: `raids`, small parties of chosen units sent at the closest enemy villagers, buildings or anything,
+  on a timer or when the scenario sends an AI Script Goal, optionally only units near a point (a landing party).
+  The party is remembered and its orders renewed every few seconds, so the engine's own tasking can't call it
+  home. Keep entries take `lifetime: true` (never replaced once made) and `when: {soldiers: N}` (only with a
+  standing defence). Unverified in game.
+
 ## 0.13.0
 
 - Triggers: the OR and AND conditions (`{"type": "or"}`) work; the parser names them `or_`/`and_`, so they failed.
