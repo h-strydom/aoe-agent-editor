@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.0
+
+- AI raids: targets are searched by named classes (villagers, infantry, archers, cavalry, scouts, siege, ships,
+  buildings) instead of all-units-class alone, which found nothing; `fallback: {x, y}` sends the party to a point
+  when nothing is known; `debug: true` announces each raid in chat. Unverified in game.
+- AI specs: `trade`, Market deals (buy food, wood or stone under a target with gold; sell surplus when gold runs
+  low), as RoR's AIBuilder trades.
+
 ## 0.15.0
 
 - AI specs: `attack.warm_up`, a few smaller warning attacks before the main waves ({attacks, min_group,

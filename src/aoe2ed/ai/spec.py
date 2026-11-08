@@ -59,6 +59,10 @@ Spec (YAML/JSON; every key optional):
                                      #   with nothing of that kind known, anything
       resend: 10                     #   the party's orders are renewed every this many seconds while one lives,
                                      #   so the AI's own tasking can't call it home (default 10)
+      fallback: {x: 32, y: 58}       #   with nothing of the enemy's known, go there (aggressive) instead
+  trade: {buy: {stone: 200}, sell: {food: 600, wood: 600}, every: 5}   # the Market: buy what's under its
+                                     #   target while gold lasts; sell what's over its floor when gold runs low
+                                     #   (under 150), one deal every `every` seconds (default 5)
   strategic_numbers: {sn-number-explore-groups: 1}     # raw engine settings (names checked)
   rules: "(defrule ...)"             # extra raw .per appended as is
   debug: false                       # announce each build step and attack in chat (for playtests)
@@ -84,7 +88,7 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start", "army", "grow", "raids"}
+            "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade"}
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -142,8 +146,13 @@ DROPSITES = {"ror": ("STORAGE_PIT", "GRANARY"), "aoe2": ("LUMBER_CAMP", "MINING_
 # raids: launch timer RAID_TIMER+k, resend timer RESEND_TIMER+k; goals: launching RAID_READY+k, party out
 # RAID_OUT+k, search state SEARCH_STATE..+3 (local index, local total, remote index, remote total), a point at
 # POINT_GOAL/+1, party ids RAID_IDS + RAID_MAX_COUNT*k + i. keep's lifetime counters: LIFETIME_GOAL + entry index.
-RAID_KEYS = {"units", "count", "min", "first", "every", "start", "near", "target", "resend"}
-RAID_TARGETS = {"any": -1, "villagers": 904, "buildings": 903}      # all-units-class, villager-class, building-class
+RAID_KEYS = {"units", "count", "min", "first", "every", "start", "near", "target", "resend", "fallback"}
+# What a raid looks for, by RoR's class constants (default/defaultConstants.per): villager 904, building 903,
+# infantry 906, archery 900, archery-cannon (Slingers) 944, cavalry 912, cavalry-archer 936, scout 947, siege 913,
+# warship 922, fishing ship 921, transport 920. Not all-units-class (-1): RoR's scripts only search with it
+# behind a filter, and a raid searching with it alone found nothing (the party stood idle, Egypt 5 playtest).
+RAID_UNITS = (906, 900, 944, 912, 936, 947, 913, 922, 921, 920)
+RAID_TARGETS = {"any": (904, *RAID_UNITS, 903), "villagers": (904,), "buildings": (903,)}
 RAID_TIMER, RESEND_TIMER, RAID_READY, RAID_OUT = 10, 20, 20, 30
 SEARCH_STATE, POINT_GOAL, LIFETIME_GOAL, RAID_IDS = 41, 45, 50, 100
 RAID_MAX, RAID_MAX_COUNT, RAID_CHUNK = 5, 40, 20
@@ -151,6 +160,10 @@ RAID_MAX, RAID_MAX_COUNT, RAID_CHUNK = 5, 40, 20
 UP_CONSTS = {"my-search-local": 1, "my-search-remote": 2, "my-object-data-id": 0, "my-object-data-distance": 44,
              "my-position-object": 12, "my-search-order-asc": 1, "my-action-default": 0, "my-stance-aggressive": 0}
 KEEP_EXTRA = {"lifetime", "when"}
+# trade: one Market deal every `every` seconds on timer TRADE_TIMER, as RoR's AIBuilder market.per trades
+# (buy-commodity / sell-commodity, gold for food, wood and stone). Sells only when gold is under TRADE_GOLD_LOW.
+TRADE_TIMER, TRADE_GOLD_LOW = 6, 150
+COMMODITIES = ("food", "wood", "stone")
 SETUP_CHUNK = 15                     # setup actions per rule (+ disable-self): well inside the engine's limit
 
 
@@ -346,6 +359,13 @@ def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
         every, resend = r.get("every"), max(1, int(r.get("resend", 10)))
         units = [names.const(u, "object") for u in r["units"]]
         label = f"raid {k + 1} ({'/'.join(r['units'])} x{count})"
+        who = str(spec.get("name", "AI")).replace('"', "'")
+
+        def say(text: str) -> list[str]:
+            return [f'(chat-to-all "{who}: raid {k + 1} {text}")'] if spec.get("debug") else []
+        fallback = r.get("fallback")
+        if fallback is not None and (not isinstance(fallback, dict) or set(fallback) != {"x", "y"}):
+            raise SpecError(f"raid fallback is {{x, y}}, got {fallback!r}")
         setup += [f"(set-goal {ready} 0)", f"(set-goal {out} 0)"]
         again = [f"(enable-timer {timer} {int(every)})"] if every else []
         start = r.get("start")
@@ -381,7 +401,10 @@ def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
                                [f"(up-set-target-object my-search-local c: {i})",
                                 f"(up-get-object-data my-object-data-id {g})"], f"{label}: remember unit {i + 1}"))
         rules.append(_rule(enough, [f"(set-goal {out} 1)", f"(disable-timer {resend_timer})",
-                                    f"(enable-timer {resend_timer} 1)"], f"{label}: send it"))
+                                    f"(enable-timer {resend_timer} 1)", *say("sent")], f"{label}: send it"))
+        if spec.get("debug"):
+            rules.append(_rule([f"(goal {ready} 1)", f"(up-compare-goal {SEARCH_STATE + 1} < {least})"],
+                               say("not enough units"), f"{label}: not enough units"))
         rules.append(_rule([f"(goal {ready} 1)"], [f"(set-goal {ready} 0)"], f"{label}: launched or not"))
         # The party, while any of it lives: orders renewed, at the closest enemy object of the target kind.
         live = [f"(timer-triggered {resend_timer})", f"(goal {out} 1)"]
@@ -392,20 +415,34 @@ def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
                                                 for g in ids[c:c + RAID_CHUNK])], f"{label}: the party"))
         rules.append(_rule(live, [f"(up-get-search-state {SEARCH_STATE})"], f"{label}: how many are left"))
         rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 1} < 1)"],
-                           [f"(set-goal {out} 0)", f"(disable-timer {resend_timer})"], f"{label}: the party is gone"))
+                           [f"(set-goal {out} 0)", f"(disable-timer {resend_timer})", *say("is gone")],
+                           f"{label}: the party is gone"))
         rules.append(_rule(live, ["(up-set-target-object my-search-local c: 0)",
                                   f"(up-get-point my-position-object {POINT_GOAL})",
                                   f"(up-set-target-point {POINT_GOAL})",
-                                  f"(up-find-remote c: {RAID_TARGETS[target]} c: 40)",
+                                  *(f"(up-find-remote c: {c} c: 40)" for c in RAID_TARGETS[target]),
                                   f"(up-get-search-state {SEARCH_STATE})"], f"{label}: look for a {target} target"))
         if target != "any":
             rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 3} < 1)"],
-                               ["(up-find-remote c: -1 c: 40)"], f"{label}: none known, so anything"))
-        rules.append(_rule(live, ["(up-clean-search my-search-remote my-object-data-distance my-search-order-asc)",
-                                  "(up-set-target-object my-search-remote c: 0)",
-                                  "(up-target-objects 1 my-action-default -1 my-stance-aggressive)",
-                                  f"(disable-timer {resend_timer})", f"(enable-timer {resend_timer} {resend})"],
+                               [*(f"(up-find-remote c: {c} c: 40)" for c in (*RAID_UNITS, 903)),
+                                f"(up-get-search-state {SEARCH_STATE})"], f"{label}: none known, so anything"))
+        found = [*live, f"(up-compare-goal {SEARCH_STATE + 3} >= 1)"]
+        rules.append(_rule(found, ["(up-clean-search my-search-remote my-object-data-distance my-search-order-asc)",
+                                   "(up-set-target-object my-search-remote c: 0)",
+                                   "(up-target-objects 1 my-action-default -1 my-stance-aggressive)", *say("attacks")],
                            f"{label}: at the closest"))
+        if fallback:
+            # Nothing of the enemy's known: to the fallback point, aggressive, attacking what it meets on the way.
+            rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 3} < 1)"],
+                               [f"(set-goal {POINT_GOAL} {int(fallback['x'])})",
+                                f"(set-goal {POINT_GOAL + 1} {int(fallback['y'])})",
+                                f"(up-target-point {POINT_GOAL} my-action-default -1 my-stance-aggressive)",
+                                *say("heads for the fallback point")], f"{label}: nothing known: the fallback point"))
+        elif spec.get("debug"):
+            rules.append(_rule([*live, f"(up-compare-goal {SEARCH_STATE + 3} < 1)"], say("finds no target"),
+                               f"{label}: no target"))
+        rules.append(_rule(live, [f"(disable-timer {resend_timer})", f"(enable-timer {resend_timer} {resend})"],
+                           f"{label}: again in {resend} s"))
     return setup, rules
 
 
@@ -592,6 +629,13 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
     init += grow_setup
     raid_setup, raid_rules = _raids(spec, names)
     init += raid_setup
+    trade = spec.get("trade")
+    if trade:
+        if not isinstance(trade, dict) or set(trade) - {"buy", "sell", "every"} or any(
+                set(trade.get(k) or {}) - set(COMMODITIES) for k in ("buy", "sell")):
+            raise SpecError(f"trade is {{buy: {{stone: 200}}, sell: {{food: 600}}, every: 5}} (food, wood, stone), "
+                            f"got {trade!r}")
+        init.append(f"(enable-timer {TRADE_TIMER} {int(trade.get('every', 5))})")
     if steps and timeout:
         init.append(f"(enable-timer {STEP_TIMER} {timeout})")
     rebalance = spec.get("rebalance", True)
@@ -692,6 +736,17 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
             label += ", never replaced"
         body.append(_rule([*when, *todo], actions, label))
     body += raid_rules
+    if trade:
+        tick = [f"(timer-triggered {TRADE_TIMER})"]
+        for res, target in (trade.get("buy") or {}).items():
+            body.append(_rule([*tick, f"({res}-amount < {int(target)})", f"(can-buy-commodity {res})"],
+                              [f"(buy-commodity {res})", *say(f"buys {res}")], f"trade: buy {res} up to {target}"))
+        for res, floor in (trade.get("sell") or {}).items():
+            body.append(_rule([*tick, f"(gold-amount < {TRADE_GOLD_LOW})", f"({res}-amount > {int(floor)})",
+                               f"(can-sell-commodity {res})"],
+                              [f"(sell-commodity {res})", *say(f"sells {res}")], f"trade: sell {res} over {floor}"))
+        body.append(_rule(tick, [f"(disable-timer {TRADE_TIMER})",
+                                 f"(enable-timer {TRADE_TIMER} {int(trade.get('every', 5))})"], "trade: next deal"))
     body += grow_rules
     if rebalance:
         # One 5% move a minute, to a resource the plan spends that's running out, from whichever other resource has

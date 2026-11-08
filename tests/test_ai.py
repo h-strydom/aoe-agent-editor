@@ -272,17 +272,33 @@ def test_raids_keep_their_party_and_lifetime_keeps_never_replace():
     assert "(event-detected trigger 7)" in script and "(up-filter-distance c: -1 c: 5)" in script
     assert "(enable-timer 11 300)" in script and "(enable-timer 11 150)" in script            # raid 2's timing
     assert script.count("(up-add-object-by-id my-search-local g: 10") == 3                     # raid 1's party
-    assert "(up-find-remote c: 904 c: 40)" in script and "(up-find-remote c: -1 c: 40)" in script
+    assert "(up-find-remote c: 904 c: 40)" in script and "(up-find-remote c: 906 c: 40)" in script
+    assert "(up-find-remote c: -1" not in script
     assert "(up-target-objects 1 my-action-default -1 my-stance-aggressive)" in script
     assert "(defconst my-search-local 1)" in script
     with games.use("ror"):
         assert "my-search-local" not in build_script({"keep": []}, "ror")
         with pytest.raises(SpecError, match="a raid is"):
             build_script({"raids": [{"count": 3}]}, "ror")
+        debug = build_script({"debug": True, "name": "Red", "raids": [
+            {"units": ["SCOUT"], "fallback": {"x": 32, "y": 58}}]}, "ror")
+        assert '(chat-to-all "Red: raid 1 sent")' in debug and "(up-target-point 45 my-action-default" in debug
+        assert per.check(debug) == []
         with pytest.raises(SpecError, match="raid target"):
             build_script({"raids": [{"units": ["BOWMAN"], "target": "cows"}]}, "ror")
         with pytest.raises(SpecError, match="keep entries"):
             build_script({"build_order": [{"build": "HOUSE", "lifetime": True}]}, "ror")
+
+
+def test_trade_buys_what_it_lacks_and_sells_surplus_for_gold():
+    with games.use("ror"):
+        script = build_script({"trade": {"buy": {"stone": 200}, "sell": {"food": 600}}}, "ror")
+    assert per.check(script) == []
+    assert "(buy-commodity stone)" in script and "(stone-amount < 200)" in script
+    assert "(sell-commodity food)" in script and "(gold-amount < 150)" in script
+    assert "(enable-timer 6 5)" in script
+    with games.use("ror"), pytest.raises(SpecError, match="trade is"):
+        build_script({"trade": {"buy": {"gold": 100}}}, "ror")
 
 
 def test_warm_up_attacks_come_before_the_main_waves():

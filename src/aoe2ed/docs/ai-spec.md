@@ -59,6 +59,8 @@ attack:                             # leave out to never attack
 raids:                              # small parties at the closest enemy units, apart from attacks (see Raids)
   - {units: [BOWMAN, SLINGER], count: 5, first: 300, every: 150, target: villagers}
   - {units: [SLINGER, AXEMAN], count: 3, min: 1, start: {trigger: 7}, near: {x: 47, y: 20, radius: 5}}
+trade: {buy: {stone: 200}, sell: {food: 600, wood: 600}, every: 5}   # Market deals: buy under the target while
+                                    # gold lasts, sell over the floor when gold is under 150 (timer 6)
 strategic_numbers: {sn-number-explore-groups: 1}     # raw engine settings
 rules: "(defrule ...)"              # extra raw .per, appended
 ```
@@ -73,8 +75,11 @@ belonging to the closest enemy; with none of that kind known, at anything. It go
 any of it lives: sent once, the engine's own tasking takes such units back (a trigger-ordered landing party
 "moved left a bit and gave up", RoR-RI playtest 2026-11-08). Timers 10-14 launch raids and 20-24 renew orders;
 goals 20-34 track them, 41-46 hold search state and a point, 50-99 keep's lifetime counts, 100-299 party ids.
-**Doesn't work yet:** in its first playtest (RoR-RI Egypt 5, 2026-11-08: a 3-unit landing party raided on AI
-Script Goal 7 with `near`) the party stood completely idle. Cause not found; probe before relying on raids.
+In its first playtest (RoR-RI Egypt 5, 2026-11-08: a 3-unit landing party raided on AI Script Goal 7 with
+`near`) the party stood completely idle. Since 0.16.0 targets are searched by named classes (the search used
+all-units-class -1 alone, which RoR's scripts never do, and found nothing, so the party was ordered at nothing),
+`fallback: {x, y}` sends the party to a point when nothing is known, and `debug: true` announces each raid in
+chat. Unverified in game; Egypt 6's raids also had no enemy to find (the players were neutral).
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
 step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times
