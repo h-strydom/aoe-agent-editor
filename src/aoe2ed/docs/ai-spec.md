@@ -54,6 +54,8 @@ attack:                             # leave out to never attack
   every: 240                        # seconds between attacks
   min_group: 4                      # soldiers it needs before it goes
   max_group: 12
+  warm_up: {attacks: 3, min_group: 5, max_group: 8, every: 180}   # the first 3 land attacks are smaller warnings
+                                    # (from `first`, then every 180 s); after them, the sizes and `every` above
 raids:                              # small parties at the closest enemy units, apart from attacks (see Raids)
   - {units: [BOWMAN, SLINGER], count: 5, first: 300, every: 150, target: villagers}
   - {units: [SLINGER, AXEMAN], count: 3, min: 1, start: {trigger: 7}, near: {x: 47, y: 20, radius: 5}}

@@ -283,3 +283,17 @@ def test_raids_keep_their_party_and_lifetime_keeps_never_replace():
             build_script({"raids": [{"units": ["BOWMAN"], "target": "cows"}]}, "ror")
         with pytest.raises(SpecError, match="keep entries"):
             build_script({"build_order": [{"build": "HOUSE", "lifetime": True}]}, "ror")
+
+
+def test_warm_up_attacks_come_before_the_main_waves():
+    spec = {"attack": {"first": 300, "every": 360, "min_group": 20, "max_group": 25,
+                       "warm_up": {"attacks": 3, "min_group": 6, "max_group": 8, "every": 180}}}
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+    assert per.check(script) == []
+    assert "(up-compare-goal 8 < 3)" in script and "(up-compare-goal 8 >= 3)" in script
+    assert "(defend-soldier-count >= 6)" in script and "(defend-soldier-count >= 20)" in script
+    assert "(enable-timer 2 180)" in script and "(enable-timer 2 360)" in script
+    assert "(set-strategic-number sn-maximum-attack-group-size 8)" in script
+    with games.use("ror"), pytest.raises(SpecError, match="warm_up"):
+        build_script({"attack": {"warm_up": {"min_group": 3}}}, "ror")

@@ -47,6 +47,8 @@ Spec (YAML/JSON; every key optional):
     max_group: 12
     percent: 80                      #   share of idle soldiers that go (default 80)
     naval: false                     #   warships also attack on the same timing (default false)
+    warm_up: {attacks: 3, min_group: 5, max_group: 8, every: 180}   # the first `attacks` land attacks are
+                                     #   these smaller warnings (from `first`), then the main sizes and `every`
   raids:                             # small parties sent at the closest enemy's units, apart from attacks
     - units: [BOWMAN, SLINGER]       #   what a party is made of (up to `count`, taken in this order)
       count: 5                       #   party size (1-40); min: fewest worth sending (default count)
@@ -110,7 +112,9 @@ REBALANCE_TIMER, REBALANCE_EVERY, REBALANCE_STEP = 4, 60, 5
 # RICH_TIERS[-1]. A fixed 800 pile never fired in the third Trojan War probe (2026-11-05): with the step window
 # wood was spent as it came in, and food sat under 200 for 11 minutes. MIN_SHARE is the floor a share drops to.
 RICH_TIERS, POOR, MIN_SHARE = (1600, 800, 400), 200, 5
-ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval"}
+ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval", "warm_up"}
+WARM_UP_KEYS = {"attacks", "min_group", "max_group", "every"}
+LAND_ATTACKS_GOAL = 8                # land attacks launched so far (attack.warm_up)
 STEP_KINDS = ("build", "train", "research")
 STEP_GOAL, STEP_TIMER, ATTACK_TIMER, TARGET_GOAL, NAVAL_TIMER = 1, 1, 2, 2, 3
 # AIBuilder's constants for (up-find-player enemy find-closest goal): the engine's stance and search ids.
@@ -583,7 +587,7 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
                  f"(enable-timer {ATTACK_TIMER} {int(attack.get('first', 600))})"]
         if attack.get("naval"):
             init.append(f"(enable-timer {NAVAL_TIMER} {int(attack.get('first', 600))})")
-    init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)"]
+    init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)", f"(set-goal {LAND_ATTACKS_GOAL} 0)"]
     grow_setup, grow_rules = _grow(spec, game, names) if spec.get("grow") else ([], [])
     init += grow_setup
     raid_setup, raid_rules = _raids(spec, names)
@@ -711,12 +715,27 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         every, percent = int(attack.get("every", 240)), int(attack.get("percent", 80))
         target = [f"(up-find-player my-enemy my-find-closest {TARGET_GOAL})",
                   f"(up-modify-sn sn-target-player-number g:= {TARGET_GOAL})"]
-        body.append(_rule([f"(timer-triggered {ATTACK_TIMER})", "(players-building-count any-enemy >= 1)",
-                           f"(defend-soldier-count >= {int(attack.get('min_group', 4))})"],
-                          [*target, f"(set-strategic-number sn-percent-attack-soldiers {percent})",
-                           "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)", f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)",
-                           f"(disable-timer {ATTACK_TIMER})", f"(enable-timer {ATTACK_TIMER} {every})",
-                           *say("attacking")], "attack"))
+        warm = attack.get("warm_up")
+        if warm is not None and (not isinstance(warm, dict) or set(warm) - WARM_UP_KEYS or "attacks" not in warm):
+            raise SpecError(f"attack.warm_up is {{attacks, min_group, max_group, every}}, got {warm!r}")
+        # (label, gate, smallest group, largest, seconds to the next attack)
+        waves = [("attack", [], int(attack.get("min_group", 4)), int(attack.get("max_group", 12)), every)]
+        if warm:
+            n = int(warm["attacks"])
+            wmin = int(warm.get("min_group", 4))
+            waves = [("warning attack", [f"(up-compare-goal {LAND_ATTACKS_GOAL} < {n})"], wmin,
+                      int(warm.get("max_group", max(wmin, 8))), int(warm.get("every", every))),
+                     ("attack", [f"(up-compare-goal {LAND_ATTACKS_GOAL} >= {n})"], *waves[0][2:])]
+        for label, gate, least, most, wait in waves:
+            sizes = [f"(set-strategic-number sn-minimum-attack-group-size {least})",
+                     f"(set-strategic-number sn-maximum-attack-group-size {most})"] if warm else []
+            body.append(_rule([f"(timer-triggered {ATTACK_TIMER})", *gate, "(players-building-count any-enemy >= 1)",
+                               f"(defend-soldier-count >= {least})"],
+                              [*target, *sizes, f"(set-strategic-number sn-percent-attack-soldiers {percent})",
+                               "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)",
+                               f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)", f"(up-modify-goal {LAND_ATTACKS_GOAL} c:+ 1)",
+                               f"(disable-timer {ATTACK_TIMER})", f"(enable-timer {ATTACK_TIMER} {wait})",
+                               *say("attacking" if label == "attack" else label)], label))
         if attack.get("naval"):
             body.append(_rule([f"(timer-triggered {NAVAL_TIMER})", "(players-building-count any-enemy >= 1)",
                                "(warboat-count > 0)"],

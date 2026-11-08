@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.0
+
+- AI specs: `attack.warm_up`, a few smaller warning attacks before the main waves ({attacks, min_group,
+  max_group, every}). Docs: raids don't work yet (the first playtest left the party idle).
+
 ## 0.14.0
 
 - AI specs: `raids`, small parties of chosen units sent at the closest enemy villagers, buildings or anything,

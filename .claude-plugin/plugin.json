@@ -1,7 +1,7 @@
 {
   "name": "aoe2-editor",
   "displayName": "AoE2 Editor",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Build Age of Empires II DE scenarios and whole campaigns from a plain-language idea: map generation, triggers, XS, campaign files, persistent progression and telemetry-based playtesting.",
   "author": {
     "name": "Hannes Strydom"
