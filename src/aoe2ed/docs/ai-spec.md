@@ -71,7 +71,8 @@ belonging to the closest enemy; with none of that kind known, at anything. It go
 any of it lives: sent once, the engine's own tasking takes such units back (a trigger-ordered landing party
 "moved left a bit and gave up", RoR-RI playtest 2026-11-08). Timers 10-14 launch raids and 20-24 renew orders;
 goals 20-34 track them, 41-46 hold search state and a point, 50-99 keep's lifetime counts, 100-299 party ids.
-Unverified in game.
+**Doesn't work yet:** in its first playtest (RoR-RI Egypt 5, 2026-11-08: a 3-unit landing party raided on AI
+Script Goal 7 with `near`) the party stood completely idle. Cause not found; probe before relying on raids.
 
 Names are the game's own: RoR names for `game: ror` (`lookup("bowman", game="ror")`). Build orders run as a
 step counter (goal 1). Timer 1 skips stuck steps, timers 2-3 time land and naval attacks, and timer 4 times
