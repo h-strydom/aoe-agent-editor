@@ -290,6 +290,18 @@ def test_raids_keep_their_party_and_lifetime_keeps_never_replace():
             build_script({"build_order": [{"build": "HOUSE", "lifetime": True}]}, "ror")
 
 
+def test_fixed_attack_target_and_keep_waiting_for_units():
+    with games.use("ror"):
+        script = build_script({"attack": {"target": 1, "min_group": 4}, "raids": [{"units": ["SCOUT"]}],
+                               "keep": [{"train": "TRADE_BOAT", "count": 50, "when": {"units": {"WAR_GALLEY": 8}}}]},
+                              "ror")
+    assert per.check(script) == []
+    assert "up-find-player" not in script and "(set-goal 2 1)" in script
+    assert "(unit-type-count my-o-war-galley >= 8)" in script
+    with games.use("ror"), pytest.raises(SpecError, match="attack.target"):
+        build_script({"attack": {"target": 12}}, "ror")
+
+
 def test_trade_buys_what_it_lacks_and_sells_surplus_for_gold():
     with games.use("ror"):
         script = build_script({"trade": {"buy": {"stone": 200}, "sell": {"food": 600}}}, "ror")

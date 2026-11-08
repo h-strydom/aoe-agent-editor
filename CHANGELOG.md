@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.0
+
+- AI specs: `attack.target`, a fixed player to attack and raid instead of the closest enemy; keep entries take
+  `when: {units: {NAME: N}}` (only once it has that many).
+
 ## 0.16.0
 
 - AI raids: targets are searched by named classes (villagers, infantry, archers, cavalry, scouts, siege, ships,

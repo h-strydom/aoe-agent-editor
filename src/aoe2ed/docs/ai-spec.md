@@ -34,7 +34,8 @@ step_timeout: 180                   # seconds before a stalled step is checked. 
 keep: [{train: BOWMAN, count: 10}, {build: BARRACKS}]   # keep these topped up / rebuilt
                                     # lifetime: true = count is all it ever makes (never replaced: no farming
                                     # its fishing boats); when: {soldiers: 8} = only while 8 soldiers stand at
-                                    # home (upgrades once a defence stands)
+                                    # home (upgrades once a defence stands); when: {units: {WAR_GALLEY: 8}} =
+                                    # only once it has that many (a trade fleet once it rules the water)
 keep_from: start                    # start (default) or end: only once the build order is done
 rebalance: true                     # every minute, move 5% of villagers to a resource the plan spends that's running
                                     # out (under 200), from the biggest pile over 400; a share stops at 5%; default true
@@ -54,6 +55,7 @@ attack:                             # leave out to never attack
   every: 240                        # seconds between attacks
   min_group: 4                      # soldiers it needs before it goes
   max_group: 12
+  target: 1                         # attack (and raid) this player instead of the closest enemy
   warm_up: {attacks: 3, min_group: 5, max_group: 8, every: 180}   # the first 3 land attacks are smaller warnings
                                     # (from `first`, then every 180 s); after them, the sizes and `every` above
 raids:                              # small parties at the closest enemy units, apart from attacks (see Raids)

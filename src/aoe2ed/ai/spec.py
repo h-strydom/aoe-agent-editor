@@ -19,6 +19,8 @@ Spec (YAML/JSON; every key optional):
                                      #   lifetime: true = count is all it ever makes (never replaced)
                                      #   when: {soldiers: 8} = only while that many soldiers stand at home
                                      #   (defend-soldier-count): upgrades once a defence stands
+                                     #   when: {units: {WAR_GALLEY: 8}} = only once it has that many of each
+                                     #   (a trade fleet once it rules the water)
   keep_from: start                   # start (default): the keep list works from the beginning; end: only once the
                                      #   build order is done
   rebalance: true                    # every minute, move 5% of villagers to a resource the plan spends that's
@@ -47,6 +49,7 @@ Spec (YAML/JSON; every key optional):
     max_group: 12
     percent: 80                      #   share of idle soldiers that go (default 80)
     naval: false                     #   warships also attack on the same timing (default false)
+    target: 1                        #   attack (and raid) this player, not the closest enemy (default)
     warm_up: {attacks: 3, min_group: 5, max_group: 8, every: 180}   # the first `attacks` land attacks are
                                      #   these smaller warnings (from `first`), then the main sizes and `every`
   raids:                             # small parties sent at the closest enemy's units, apart from attacks
@@ -116,7 +119,7 @@ REBALANCE_TIMER, REBALANCE_EVERY, REBALANCE_STEP = 4, 60, 5
 # RICH_TIERS[-1]. A fixed 800 pile never fired in the third Trojan War probe (2026-11-05): with the step window
 # wood was spent as it came in, and food sat under 200 for 11 minutes. MIN_SHARE is the floor a share drops to.
 RICH_TIERS, POOR, MIN_SHARE = (1600, 800, 400), 200, 5
-ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval", "warm_up"}
+ATTACK_KEYS = {"first", "every", "min_group", "max_group", "percent", "naval", "warm_up", "target"}
 WARM_UP_KEYS = {"attacks", "min_group", "max_group", "every"}
 LAND_ATTACKS_GOAL = 8                # land attacks launched so far (attack.warm_up)
 STEP_KINDS = ("build", "train", "research")
@@ -335,6 +338,17 @@ def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
     return setup, rules
 
 
+def _find_target(player, goal: int) -> list[str]:
+    """Actions putting the player to attack in `goal`: `player` (attack.target), else the closest enemy. A fixed
+    target keeps an AI on the player even when another enemy is closer (RoR-RI Egypt 7: the Minoans and Canaanites
+    are enemies only so they don't trade with each other)."""
+    if player is None:
+        return [f"(up-find-player my-enemy my-find-closest {goal})"]
+    if not 1 <= int(player) <= 8:
+        raise SpecError(f"attack.target is a player number 1-8, got {player!r}")
+    return [f"(set-goal {goal} {int(player)})"]
+
+
 def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
     """(setup actions, rules) for `raids`. Per raid: a launch (timer or scenario event) searches the party, stores
     its ids if there are enough, and sends it; while any of it lives, its orders are renewed every `resend` s."""
@@ -409,8 +423,8 @@ def _raids(spec: dict, names: Names) -> tuple[list[str], list[str]]:
         # The party, while any of it lives: orders renewed, at the closest enemy object of the target kind.
         live = [f"(timer-triggered {resend_timer})", f"(goal {out} 1)"]
         for c in range(0, count, RAID_CHUNK):
-            first = ["(up-find-player my-enemy my-find-closest 2)", "(up-modify-sn sn-focus-player-number g:= 2)",
-                     "(up-full-reset-search)"] if c == 0 else []
+            first = [*_find_target((spec.get("attack") or {}).get("target"), 2),
+                     "(up-modify-sn sn-focus-player-number g:= 2)", "(up-full-reset-search)"] if c == 0 else []
             rules.append(_rule(live, [*first, *(f"(up-add-object-by-id my-search-local g: {g})"
                                                 for g in ids[c:c + RAID_CHUNK])], f"{label}: the party"))
         rules.append(_rule(live, [f"(up-get-search-state {SEARCH_STATE})"], f"{label}: how many are left"))
@@ -720,10 +734,12 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         todo, actions, _ = _do(kind, const, count)
         when = [f"(goal my-step {len(steps) + 1})"] if keep_from == "end" else []
         cond = entry.get("when") or {}
-        if set(cond) - {"soldiers"}:
-            raise SpecError(f"keep when is {{soldiers: N}}, got {cond!r}")
+        if set(cond) - {"soldiers", "units"}:
+            raise SpecError(f"keep when is {{soldiers: N, units: {{NAME: N}}}}, got {cond!r}")
         if "soldiers" in cond:
             when.append(f"(defend-soldier-count >= {int(cond['soldiers'])})")
+        for unit, n in (cond.get("units") or {}).items():
+            when.append(f"(unit-type-count {names.const(unit, 'object')} >= {int(n)})")
         label = f"keep {name} x{count}"
         if entry.get("lifetime"):
             if kind == "research":
@@ -768,7 +784,7 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
                           "rebalance: nothing to move"))
     if attack:
         every, percent = int(attack.get("every", 240)), int(attack.get("percent", 80))
-        target = [f"(up-find-player my-enemy my-find-closest {TARGET_GOAL})",
+        target = [*_find_target(attack.get("target"), TARGET_GOAL),
                   f"(up-modify-sn sn-target-player-number g:= {TARGET_GOAL})"]
         warm = attack.get("warm_up")
         if warm is not None and (not isinstance(warm, dict) or set(warm) - WARM_UP_KEYS or "attacks" not in warm):
