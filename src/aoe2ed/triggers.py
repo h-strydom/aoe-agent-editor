@@ -220,7 +220,9 @@ def _member(enum_cls, kind: str, type_name) -> object:
 def add_condition(trigger, spec: dict, resolver: Resolver):
     member = _member(ConditionId, "condition", spec.get("type"))
     params = resolver.params(condition_dataset, member.value, spec)
-    return getattr(trigger.new_condition, member.name.lower())(**params)
+    name = member.name.lower()
+    # The parser names the OR and AND conditions or_() and and_() (Python keywords).
+    return getattr(trigger.new_condition, f"{name}_" if name in ("or", "and") else name)(**params)
 
 
 def add_effect(trigger, spec: dict, resolver: Resolver):

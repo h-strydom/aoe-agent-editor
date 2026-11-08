@@ -185,3 +185,12 @@ def test_population_takes_whole_numbers_only(blank):
             "object_attributes": 110, "operation": "SET", "quantity": -0.5}
     with pytest.raises(ValueError, match="truncated"):
         call("triggers_add", handle=blank, triggers=[{"name": "half", "effects": [half]}])
+
+
+def test_or_conditions(blank, tmp_path):
+    """OR and AND are conditions too (the parser calls them or_ and and_)."""
+    conds = [{"type": "timer", "timer": 5}, {"type": "or"}, {"type": "timer", "timer": 9}]
+    call("triggers_add", handle=blank, triggers=[{"name": "either", "conditions": conds}])
+    h2 = reload(blank, tmp_path)
+    got = [c["type"] for c in call("trigger_get", handle=h2, trigger="either")["conditions"]]
+    assert got == ["timer", "or", "timer"]

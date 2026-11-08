@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0
+
+- Triggers: the OR and AND conditions (`{"type": "or"}`) work; the parser names them `or_`/`and_`, so they failed.
+
 ## 0.12.0
 
 - Return of Rome scenarios save their DataHeader's unnamed bytes as zeros, as the RoR editor does. The parser's
