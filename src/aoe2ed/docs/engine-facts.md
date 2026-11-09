@@ -155,7 +155,7 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Automatic attack by target: charge type 6 with a charge projectile (125) and charge target (162); settable by trigger
   (copied from AoE2's Fire Archer: max 20, event -4, type 6, target 191).
 - A charge-type-6 projectile fires at the unit's current target and obeys its minimum range: it's not a separate
-  close-range weapon (tower test, 2026-11-09). Trait 8 mode switching works on buildings too.
+  close-range weapon (tower test, 2026-11-09). Trait 8 mode switching does not work on buildings: no switch button.
 - Player resource 33 ("Effect Function Number") switches hard-coded civ functions: 50 = Khmer farmers (no drop-off).
 - XS `xsGetUnitProperty`/`xsSetUnitProperty(id, cUnitAttributeHeld, ...)` reads and empties what a villager carries.
 - A unit can cost a spare resource (AoE2's mercenaries use 214), unlike techs; effect 11 gives it to a whole team.
