@@ -78,8 +78,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   building attacks four ways: Modify Attribute Add and Set for the type, Modify Object Attribute Add, Change
   Object Attack. In every case `xsGetUnitAttribute(tower, 9, class)` read −1 for melee and buildings, and each
   stone did 1 damage. Changing an existing class works (pierce Set 0 read 0). Armour has Add Armor Type (160);
-  attacks have no equivalent. *Crucible catapult tower demo, round 2, 2026-11-09.* Untested: `xsEffectAmount`
-  Add/Set with class × 256 + amount, and the data mod (round 3).
+  attacks have no equivalent. *Crucible catapult tower demo, round 2, 2026-11-09.*
+- `xsEffectAmount` (Add or Set, value class × 256 + amount) can't add one either; the classes still read −1.
+  Setting a tower's existing pierce attack to 50 by trigger works: it read 50, and each stone did 50 damage.
+  *Round 3.* A data mod that writes the classes into the unit should work, but round 3's Guard Tower still read −1,
+  probably because the data mod wasn't picked; unconfirmed.
 
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
