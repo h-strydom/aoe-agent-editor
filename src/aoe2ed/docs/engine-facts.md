@@ -86,6 +86,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
   0/50/140 in game, and its catapult stones hit an elephant for about 46 (its melee armour taken off). *Round 3,
   rerun with the data mod picked.*
 
+## Ruins, the Monument and artifacts (Return of Rome)
+*Crucible ruins and artifacts test, 2026-11-09.*
+- King of the Hill's monument trickles (221-224, which tech 151 sets to 1) pay the owner of the Monument (826)
+  about 0.8 of each resource a second, but nothing for owning Artifact Ruins (52), even though both carry
+  resource storage 14.
+- Artifacts can't garrison: Relic Carts (159) wouldn't enter a Barracks with garrison type 127 (every category).
+  Their unit class (1, artifact) matches no garrison category.
+- Units: the AoE1 artifact is 25 "Artifact" (graphic 8369 "Artifact (Idle)"), with no garrison task; 44 is the War
+  Chest; 159 is a "Relic Cart" with AoE2's relic look (graphic 647); 944 and 1304 are Relic Carts with the artifact
+  look, hidden in the editor.
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
