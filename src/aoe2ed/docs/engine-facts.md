@@ -77,11 +77,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
 - Blast Width (22) 3 on a Stone Thrower: targets 2 tiles from the impact were hit.
 - Minimum Range (20) 0 on a Ballista: it hit an adjacent enemy; the unchanged one didn't.
-- Projectile Unit (16) swapped on a Catapult (a ballista bolt, or a projectile made faster and flat): it still
-  fires and does its own damage.
+- Projectile Unit (16) swapped on a Catapult: it fires the new projectile (a ballista bolt showed as a bolt) with
+  its own damage. A projectile given Movement Speed ×3 and Projectile Arc 0 flew fast and flat, like a cannon shot.
+- Maximum Range (12) 3 on a Hoplite (melee, no projectile): it attacked from range.
 - Friendly Fire Damage (119) 0 on one Stone Thrower: no effect; friendly units took the same damage as with the
   unchanged one.
-- Trade Food/Wood/Stone Percent (251-253) work: at 25 each, a 24-gold trade paid 13 gold and 3 of each.
+- Trade Food/Wood/Stone Percent (251-253) work: at 25 each, a 24-gold trade paid 13 gold and 3 of each (about half
+  the setting each). The trade boat's panel still shows only gold.
 
 ## Garrisoned arrows
 - In RoR, raising a tower's Maximum Total Missiles (107) from 1 to 6 doesn't make garrisoned villagers add arrows,
