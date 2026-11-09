@@ -128,6 +128,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   costs are paid at queue time, so a player can queue two and get both.
 - A tech cost in a spare resource (e.g. 30, which a civ can start with) is ignored: not shown, not charged, doesn't
   block queueing.
+- Chronicles-style exclusivity (red cross on hover, the other blocked while one researches) doesn't happen in RoR,
+  whatever the tech type (0, 9 or 33 tried). Disabling the others by script (`xsEffectAmount(cModifyTech, tech,
+  cAttributeDisable, 0, p)`) when one is queued didn't block them either. Only the disable on completion works.
 - Ported units' alternate forms (Immortal melee/ranged) come across once genieutils' `nothing` field is followed
   (0 means none).
 
