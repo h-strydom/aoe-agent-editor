@@ -86,6 +86,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
   0/50/140 in game, and its catapult stones hit an elephant for about 46 (its melee armour taken off). *Round 3,
   rerun with the data mod picked.*
 
+## Adding buildings in a data mod
+- **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
+  unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
+  (a Guard Tower copy with the Stone Thrower's attack) built and fired. An upgrade-only building (the Ballista Tower)
+  becomes buildable the same way. *Crucible tower build test, 2026-11-09.*
+- The build page comes from the building's interface kind (2 economic, 10 military). On the military page, slots 5
+  and 10 showed; 14 and 15 didn't (AoE2's highest used slot is 13, the Castle).
+- Names: the build button shows the copied unit's text (it read "Guard Tower"). The built tower showed the name of
+  string 7079, which RoR uses for "Ballista Tower" even though its tech is called "Catapult Tower". A new unit
+  needs strings of its own (unverified how a mod adds them).
+
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
 - Blast Width (22) 3 on a Stone Thrower: targets 2 tiles from the impact were hit.
