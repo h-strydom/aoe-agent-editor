@@ -137,6 +137,15 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Ported units' alternate forms (Immortal melee/ranged) come across once genieutils' `nothing` field is followed
   (0 means none).
 
+## AoE2 unit tasks and effects in Return of Rome (data mod)
+*Crucible mechanics test, 2026-11-09.*
+- Work when copied onto RoR units or ported: HP transform (task 158), AoE2's Mule Cart as a movable drop site (task 153,
+  plus a dropsites.json entry and the cart listed in every villager job unit's drop sites).
+- Tech effects work: spawn unit (7: unit, building, count), enemy attribute multiply (25), team resource (11, the
+  player included).
+- Didn't work when copied onto RoR units: aura (155: a count-based armour aura, a speed aura on a building) and loot
+  (154). Cause not found yet.
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
