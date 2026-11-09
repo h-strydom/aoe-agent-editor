@@ -74,6 +74,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (`xsSetPlayerAttribute`) gave exactly 21 gold for 212 wood. *Same test.*
 
 ## Attack classes
+- **Correction (2026-11-09): a trigger can add an attack class** via Modify Object Attribute *Add Attack Type* (161):
+  set 161 to the class first, then set Attack for that class. An Axeman given 161 = 11 (buildings) then +50 vs
+  buildings razed a House in ~15 s; setting +50 vs buildings alone (class missing) took ~80 s.
 - **Triggers can't give a unit an attack class it doesn't have.** Towers (pierce attack only) got melee and
   building attacks four ways: Modify Attribute Add and Set for the type, Modify Object Attribute Add, Change
   Object Attack. In every case `xsGetUnitAttribute(tower, 9, class)` read −1 for melee and buildings, and each
@@ -146,6 +149,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   needs strings of its own (unverified how a mod adds them).
 
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
+- Mechanics test (2026-11-09): Regeneration (109, HP per minute) works on units and buildings, in and out of combat.
+  Damage reflection (118) reflects melee only, and weakly. Area damage (115) needs a blast width (22) and works on
+  ranged and melee attackers. Bonus damage resistance (24) works. Dead unit (57) can leave a live unit (Horse Archer
+  -> Bowman worked; Camel Rider -> Broad Swordsman didn't). Charge (59 max, 60 recharge, 61 event 1, 62 type 1)
+  gives a charged first hit; type 3 adds its charge but didn't splash.
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
 - Blast Width (22) 3 on a Stone Thrower: targets 2 tiles from the impact were hit.
 - Minimum Range (20) 0 on a Ballista: it hit an adjacent enemy; the unchanged one didn't.
