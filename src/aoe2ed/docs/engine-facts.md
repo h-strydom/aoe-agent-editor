@@ -84,7 +84,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   the projectile (friendly fire test, 2026-11-09). The attribute reference calls it the "blast damage multiplier to
   non directly targeted units". The documented switch is Blast Attack Level (44): base 0-3 plus flags 4 "damage
   enemy units only", 8 "ignore friendly fire", 64 distance falloff, 128 narrow cone (ugc.aoe2.rocks, attribute 44).
-  RoR's data uses 6, 10, 34, 66 and 138. Unverified in game.
+  RoR's data uses 6, 10, 34, 66 and 138.
+- **No friendly fire: Blast Attack Level + 4.** Level 6 (2 + "enemy units only") on a Stone Thrower (one unit) and on
+  every Catapult (Modify Attribute) left friendly units untouched while splash still hit enemies. Level 10 (+ 8,
+  "ignore friendly fire") did nothing in RoR. *Friendly fire test round 2, 2026-11-09.*
 - Trade Food/Wood/Stone Percent (251-253) work: at 25 each, a 24-gold trade paid 13 gold and 3 of each (about half
   the setting each). The trade boat's panel still shows only gold.
 
