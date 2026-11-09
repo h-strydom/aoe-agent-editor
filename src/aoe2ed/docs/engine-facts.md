@@ -173,7 +173,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
   group in formation (verified).
 - A safe zone works by XS: a 1 s rule setting each unit's `cUnitAttackable` from its position (0 inside the square, 1
   outside) kept units inside from being attacked by an army with a Stone Thrower. A looping trigger doing Enable
-  Unit Attackable by area then Disable for the zone leaked (units inside took damage).
+  Unit Attackable by area then Disable for the zone leaked (units inside took damage). Unattackable doesn't stop
+  splash from attack-ground (verified 2026-11-09): pair it with fast regeneration and high armour for units inside.
 - A resource pile's amount: XS `xsSetUnitProperty(id, cUnitAttributeHeld, v)` works; Modify Object Attribute 21 on a
   Gaia gold mine didn't.
 - Several decision popups at once stack on screen (the first can hide under the menu buttons) and stay open; picking one
