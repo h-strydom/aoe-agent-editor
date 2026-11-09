@@ -38,6 +38,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
   *RoR campaign intro test, 2026-11-07: both played, mono 48 kHz, files in both sounds folders; which folder
   RoR reads isn't pinned down yet.*
 
+## Data mods
+- Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
+  Difficulty. Its tooltip: "Scenario Default will load the Data Mod with which it was created, if available." So a
+  scenario records the data mod it was made with, and a campaign can depend on one. Still open: which scenario
+  field records it, and whether a JSON-only mod (such as an overriding `dropsites.json`) counts as a data mod.
+  *User's screenshot of the RoR campaign screen, 2026-11-09.*
+
 ## AI scripts
 - RoR buildings exist once per age look (Academy 103/105/18/19 for Ages 1-4); AIs build the Age1 base, and the
   Town Center by 109 (the engine places its foundation, 621). *Trojan War playtest, 2026-11-03: an AI given 18
