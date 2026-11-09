@@ -55,6 +55,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
   of its own, so only one can be active: drop sites and data changes have to ship together in one data mod.
   *Crucible data mod test, 2026-11-09.*
 
+## Garrisoned arrows
+- In RoR, raising a tower's Maximum Total Missiles (107) from 1 to 6 doesn't make garrisoned villagers add arrows,
+  and only villagers can garrison in towers. *Crucible data mod test, mission 3, 2026-11-09.*
+- What AoE2's data has and RoR's lacks (data files compared, 2026-11-09):
+  - towers: Maximum Total Missiles 5 (RoR 1);
+  - Secondary Projectile Unit 505 (RoR −1; 505 exists in RoR's data);
+  - garrison type 11, villagers, infantry and priests (RoR 1, villagers only).
+  - Units: garrison firepower, archers 1 and villagers −2.5 (RoR 0 for every unit).
+  All are trigger attributes (107, 65, 30, 130). Whether setting them makes towers fire garrison arrows in RoR is
+  unverified.
+
 ## Triggers: training
 - A building can train a unit it normally doesn't with triggers alone: Enable Object for the unit, then Modify
   Attribute on it, Train Location (42) set to the building and Train Button (43) set to a free slot. Scouts trained
