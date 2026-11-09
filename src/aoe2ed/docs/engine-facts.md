@@ -66,6 +66,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - What a gather task takes is decided by the target, not the task's `resource_in`: fishing boats edited to take wood
   still took fish and paid food.
 - `xsGetUnitProperty(id, cUnitAttributeHeld)` reads a resource pile's remaining amount (a stone mine: 350).
+- Changing what a pile holds (Type First Storage, 168) takes effect, per object and per type (a type-wide Modify
+  Attribute reaches objects already on the map), but **doesn't change what gatherers receive**: lumberjacks on "gold"
+  trees got wood, foragers on "stone" bushes got food, a boat on a "gold" fish got food. The gatherer's task decides
+  the payout. *Resource test round 2, 2026-11-09.*
+- XS can convert resources at any ratio: reading wood gathered (167) each second and paying 10% as gold
+  (`xsSetPlayerAttribute`) gave exactly 21 gold for 212 wood. *Same test.*
 
 ## Garrisoned arrows
 - In RoR, raising a tower's Maximum Total Missiles (107) from 1 to 6 doesn't make garrisoned villagers add arrows,
