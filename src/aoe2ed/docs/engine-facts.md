@@ -81,8 +81,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   attacks have no equivalent. *Crucible catapult tower demo, round 2, 2026-11-09.*
 - `xsEffectAmount` (Add or Set, value class × 256 + amount) can't add one either; the classes still read −1.
   Setting a tower's existing pierce attack to 50 by trigger works: it read 50, and each stone did 50 damage.
-  *Round 3.* A data mod that writes the classes into the unit should work, but round 3's Guard Tower still read −1,
-  probably because the data mod wasn't picked; unconfirmed.
+  *Round 3.*
+- **A data mod can.** A Guard Tower with melee 50 and buildings 140 added to its attack list (genieutils-py) read
+  0/50/140 in game, and its catapult stones hit an elephant for about 46 (its melee armour taken off). *Round 3,
+  rerun with the data mod picked.*
 
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
