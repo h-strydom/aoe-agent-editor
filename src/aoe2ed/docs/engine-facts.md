@@ -146,6 +146,18 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Don't work in RoR at all: aura (155) and loot (154). Not when copied onto RoR units, and not on AoE2's own units ported
   whole (Centurion, Camel Raider, the Chronicles Hoplite's phalanx). Extra spawn (156) works.
 
+## Unit fire modes and economy tricks (Return of Rome)
+*Crucible unit test, 2026-11-09; all verified.*
+- Multi-shot (Chu Ko Nu): Total Missiles (102) and Max Total Missiles (107) 3, Secondary Projectile (65) an arrow; by trigger.
+  Spread (Kipchak): the creatable's projectile spawning area (data only).
+- Mangonel-style: Projectile (16) a catapult stone, Blast Width (22) 1, Blast Attack Level (44) 2; by trigger.
+- Manual mode switch: unit trait 8 and the alternate unit in genieutils' `nothing`, both ways (data).
+- Automatic attack by target: charge type 6 with a charge projectile (125) and charge target (162); settable by trigger
+  (copied from AoE2's Fire Archer: max 20, event -4, type 6, target 191).
+- Player resource 33 ("Effect Function Number") switches hard-coded civ functions: 50 = Khmer farmers (no drop-off).
+- XS `xsGetUnitProperty`/`xsSetUnitProperty(id, cUnitAttributeHeld, ...)` reads and empties what a villager carries.
+- A unit can cost a spare resource (AoE2's mercenaries use 214), unlike techs; effect 11 gives it to a whole team.
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
