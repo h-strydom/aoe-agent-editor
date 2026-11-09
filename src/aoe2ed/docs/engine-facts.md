@@ -44,6 +44,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
   scenario records the data mod it was made with, and a campaign can depend on one. Still open: which scenario
   field records it. *User's screenshot of the RoR campaign screen, 2026-11-09.*
 - Picking a data mod other than the scenario's own in that dropdown shows a warning first.
+- **A chosen data mod applies in a campaign:** RoR's data file edited with genieutils-py (Hoplites 999 HP,
+  Axemen 400 HP, the Greek bonuses removed) took effect in both missions. Mods > Installed Mods marks data mods
+  with a gear icon. *Crucible data mod test, 2026-11-09.*
+- A drop site needs two changes: `dropsites.json` makes the building accept the resource (the drop-off cursor
+  shows), but each villager job unit (lumberjack 123/218, miners, hunters...) also lists the buildings it drops
+  at (`bird.drop_sites` in the data file). With only the JSON, villagers went idle at the House. *Same test;
+  the fix (House added to the lumberjacks' lists) is unverified in game.*
 - A mod that only holds `modes/Pompeii/resources/_common/dat/dropsites.json` is listed in the dropdown as a data mod
   of its own, so only one can be active: drop sites and data changes have to ship together in one data mod.
   *Crucible data mod test, 2026-11-09.*
