@@ -104,6 +104,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   infantry (6) or priest (18) class garrison. `xsGetGarrisonedUnitIds` then sees them.
   But Gaia copies in those classes join player 1 at the start of the game (map revealed), while the real artifact
   stays Gaia until reached. Owned copies still capture the real artifact on contact.
+- The per-unit Capture setting (`capture_flag`: -1 default, 0 never, 1 once, 2 multiple times, 3 never/Gaia
+  aggressive; scenario format 1.59+) decides that. With 1 (Once), even the real Gaia artifact joined player 1 at
+  the start; with 0, 2 or 3, none of the three did, class copies included.
 - A building's work rate (13) speeds up both its training and its research. Set it on every age look of the
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
