@@ -102,6 +102,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Garrison checks the unit's class, not just its task: with the villager's garrison task (action 3, class 3) and
   a Barracks at `building.garrison_type` 127, the artifact (class 1) still won't enter, but copies switched to the
   infantry (6) or priest (18) class garrison. `xsGetGarrisonedUnitIds` then sees them.
+  But Gaia copies in those classes join player 1 at the start of the game (map revealed), while the real artifact
+  stays Gaia until reached. Owned copies still capture the real artifact on contact.
 - A building's work rate (13) speeds up both its training and its research. Set it on every age look of the
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
