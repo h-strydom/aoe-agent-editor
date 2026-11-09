@@ -106,7 +106,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   stays Gaia until reached. Owned copies still capture the real artifact on contact.
 - The per-unit Capture setting (`capture_flag`: -1 default, 0 never, 1 once, 2 multiple times, 3 never/Gaia
   aggressive; scenario format 1.59+) decides that. With 1 (Once), even the real Gaia artifact joined player 1 at
-  the start; with 0, 2 or 3, none of the three did, class copies included.
+  the start; with 0, 2 or 3, none of the three did, class copies included. On contact: with 2 (Multiple Times)
+  all three were captured, so a garrisonable copy placed with flag 2 acts like a real artifact. With 0 the copies
+  stayed Gaia (the real artifact was captured anyway). With 3 the infantry copy turned hostile and attacked, and
+  the priest copy, attacked to 0 HP, never died.
 - A building's work rate (13) speeds up both its training and its research. Set it on every age look of the
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
