@@ -114,6 +114,19 @@ Add to this file whenever a playtest teaches something; never record guesses her
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
 
+## Porting units from AoE2 into Return of Rome
+*Crucible port test, 2026-11-09.*
+- Chronicles civs and units are in AoE2's main data file (units from 2101), sprites in the shared graphics folder.
+  RoR reads sprites from that folder, so a RoR data mod can add AoE2 and Chronicles units without copying art.
+- RoR keeps AoE2's unit ids but reuses some slots (38: Knight / Cavalry), and about a third of the graphic ids point
+  at other sprites: copy the unit's graphics, sounds and linked units (dead unit, projectiles, the alternate form in
+  genieutils' `nothing` field) and renumber those whose RoR entry differs. Ported units then animate, attack, shoot
+  and die correctly.
+- `icon_id` indexes RoR's own icon set (no fallback to AoE2's icon files): an AoE2 id shows the wrong portrait, a
+  Chronicles one (past RoR's set) shows black.
+- Mutually exclusive techs: each tech's effect disables every tech in the set (command 102), as Chronicles does. But
+  costs are paid at queue time, so a player can queue two and get both.
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
