@@ -42,8 +42,16 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
   Difficulty. Its tooltip: "Scenario Default will load the Data Mod with which it was created, if available." So a
   scenario records the data mod it was made with, and a campaign can depend on one. Still open: which scenario
-  field records it, and whether a JSON-only mod (such as an overriding `dropsites.json`) counts as a data mod.
-  *User's screenshot of the RoR campaign screen, 2026-11-09.*
+  field records it. *User's screenshot of the RoR campaign screen, 2026-11-09.*
+- Picking a data mod other than the scenario's own in that dropdown shows a warning first.
+- A mod that only holds `modes/Pompeii/resources/_common/dat/dropsites.json` is listed in the dropdown as a data mod
+  of its own, so only one can be active: drop sites and data changes have to ship together in one data mod.
+  *Crucible data mod test, 2026-11-09.*
+
+## Triggers: training
+- A building can train a unit it normally doesn't with triggers alone: Enable Object for the unit, then Modify
+  Attribute on it, Train Location (42) set to the building and Train Button (43) set to a free slot. Scouts trained
+  at the Barracks in RoR. *Crucible data mod test, 2026-11-09.*
 
 ## AI scripts
 - RoR buildings exist once per age look (Academy 103/105/18/19 for Ages 1-4); AIs build the Age1 base, and the
