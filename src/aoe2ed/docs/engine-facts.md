@@ -165,6 +165,14 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Several `create_object` effects at the same tile place only **one** unit ("+4 Men-at-Arms" gave 1).
   Give each unit its own tile with the `spawn` helper. *Crucible playtest, 2026-10-30.*
 
+## Known parser issue (AoE2ScenarioParser 0.9.8)
+- Effects on float-valued attributes (Modify Attribute / Modify Object Attribute on work rate, friendly fire, minimum
+  range...) store the value in `quantity_float`. **Writing 0 works** (the file holds 0.0), but **reading one back
+  returns −1**: the parser's Effect constructor does `quantity = _quantity_float or quantity`, and 0.0 is falsy, so
+  it falls back to the integer field, which is −1 for these effects. So opening a scenario and saving it again turns
+  such a 0 into −1. Scenarios built in one go are unaffected. *Found 2026-11-09 by reading the raw section values
+  of the crucible combat test (quantity_float 0.0, quantity −1). Not yet fixed in aoe2ed or reported upstream.*
+
 ## Campaign bank (Store / Load / Delete Key Value)
 *Verified with the kv_* test campaigns, 2026-10-19.*
 - Values are int64 per campaign, stored in `profile/Player.nfp` as `PKEY:<campaign>:<key>`.
