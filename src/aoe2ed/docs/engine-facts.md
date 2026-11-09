@@ -163,6 +163,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - XS `xsGetUnitProperty`/`xsSetUnitProperty(id, cUnitAttributeHeld, ...)` reads and empties what a villager carries.
 - A unit can cost a spare resource (AoE2's mercenaries use 214), unlike techs; effect 11 gives it to a whole team.
 
+## Map tricks (Return of Rome)
+*Crucible map tricks test, 2026-11-09.*
+- Don't block building placement: Flags or other objects with "can be built on" 0 (visible or not), and an overlay
+  layer (tile `layer`) of an unbuildable terrain. The layer is visual only.
+- Disable Unit Attackable (trigger, by area) or XS `cUnitAttackable` 0 doesn't make units immune: they still took damage
+  from an attacking army (splash, hits on the way).
+- A resource pile's amount: XS `xsSetUnitProperty(id, cUnitAttributeHeld, v)` works; Modify Object Attribute 21 on a
+  Gaia gold mine didn't.
+- Several decision popups at once stack on screen (the first can hide under the menu buttons) and stay open; picking one
+  doesn't close the others.
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
