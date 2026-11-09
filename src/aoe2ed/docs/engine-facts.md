@@ -73,6 +73,16 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - XS can convert resources at any ratio: reading wood gathered (167) each second and paying 10% as gold
   (`xsSetPlayerAttribute`) gave exactly 21 gold for 212 wood. *Same test.*
 
+## Combat settings (Return of Rome, per unit with Modify Object Attribute)
+*Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
+- Blast Width (22) 3 on a Stone Thrower: targets 2 tiles from the impact were hit.
+- Minimum Range (20) 0 on a Ballista: it hit an adjacent enemy; the unchanged one didn't.
+- Projectile Unit (16) swapped on a Catapult (a ballista bolt, or a projectile made faster and flat): it still
+  fires and does its own damage.
+- Friendly Fire Damage (119) 0 on one Stone Thrower: no effect; friendly units took the same damage as with the
+  unchanged one.
+- Trade Food/Wood/Stone Percent (251-253) work: at 25 each, a 24-gold trade paid 13 gold and 3 of each.
+
 ## Garrisoned arrows
 - In RoR, raising a tower's Maximum Total Missiles (107) from 1 to 6 doesn't make garrisoned villagers add arrows,
   and only villagers can garrison in towers. *Crucible data mod test, mission 3, 2026-11-09.*
