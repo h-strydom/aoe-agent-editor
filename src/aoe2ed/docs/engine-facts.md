@@ -73,6 +73,14 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - XS can convert resources at any ratio: reading wood gathered (167) each second and paying 10% as gold
   (`xsSetPlayerAttribute`) gave exactly 21 gold for 212 wood. *Same test.*
 
+## Attack classes
+- **Triggers can't give a unit an attack class it doesn't have.** Towers (pierce attack only) got melee and
+  building attacks four ways: Modify Attribute Add and Set for the type, Modify Object Attribute Add, Change
+  Object Attack. In every case `xsGetUnitAttribute(tower, 9, class)` read −1 for melee and buildings, and each
+  stone did 1 damage. Changing an existing class works (pierce Set 0 read 0). Armour has Add Armor Type (160);
+  attacks have no equivalent. *Crucible catapult tower demo, round 2, 2026-11-09.* Untested: `xsEffectAmount`
+  Add/Set with class × 256 + amount, and the data mod (round 3).
+
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
 *Crucible combat test, 2026-11-09; some units strayed out of their lanes.*
 - Blast Width (22) 3 on a Stone Thrower: targets 2 tiles from the impact were hit.
