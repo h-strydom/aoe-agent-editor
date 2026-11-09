@@ -63,8 +63,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
   - Secondary Projectile Unit 505 (RoR −1; 505 exists in RoR's data);
   - garrison type 11, villagers, infantry and priests (RoR 1, villagers only).
   - Units: garrison firepower, archers 1 and villagers −2.5 (RoR 0 for every unit).
-  All are trigger attributes (107, 65, 30, 130). Whether setting them makes towers fire garrison arrows in RoR is
-  unverified.
+  All are trigger attributes (107, 65, 30, 130).
+- **Garrison arrows work in RoR by trigger:** with a tower's Maximum Total Missiles 6, Secondary Projectile Unit 505
+  and villagers' garrison firepower 1, each garrisoned villager added an arrow. *Crucible mission 3, 2026-11-09.*
+- RoR's soldiers have no garrison command for buildings: their only garrison task (action 3) aims at transport
+  ships (class 20). AoE2's archers and infantry also have one aimed at buildings (class 3). Tasks live in the data
+  file, so only a data mod adds them. The crucible test mod copies the villager's task onto foot soldiers
+  (unverified in game).
 
 ## Triggers: training
 - A building can train a unit it normally doesn't with triggers alone: Enable Object for the unit, then Modify
