@@ -126,6 +126,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Chronicles one (past RoR's set) shows black.
 - Mutually exclusive techs: each tech's effect disables every tech in the set (command 102), as Chronicles does. But
   costs are paid at queue time, so a player can queue two and get both.
+- A tech cost in a spare resource (e.g. 30, which a civ can start with) is ignored: not shown, not charged, doesn't
+  block queueing.
+- Ported units' alternate forms (Immortal melee/ranged) come across once genieutils' `nothing` field is followed
+  (0 means none).
 
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
