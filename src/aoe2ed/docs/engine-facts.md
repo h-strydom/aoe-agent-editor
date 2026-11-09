@@ -55,6 +55,18 @@ Add to this file whenever a playtest teaches something; never record guesses her
   of its own, so only one can be active: drop sites and data changes have to ship together in one data mod.
   *Crucible data mod test, 2026-11-09.*
 
+## Resources (Return of Rome)
+*Crucible resource test scenario, 2026-11-09, logged by XS every 10 s.*
+- Work rate 0 (Modify Attribute 13) on the stone miner units: villagers gather nothing and the mine isn't touched.
+- The gather multipliers (Stone Bonus 79, Gold Bonus 47, Wood Bonus 189, Food Bonus 190, Fishing Productivity 219)
+  are "resources last longer": Stone Bonus 10 gave about 10 stone per unit the mine lost. A value of 0 is
+  ignored (it plays like the default).
+- Food/Wood Generation (230/231) are **per minute**: 60 gave +1 food a second.
+- No effect in RoR: Military Food Trickle (287) with soldiers, and Chopping Gold Productivity (266).
+- What a gather task takes is decided by the target, not the task's `resource_in`: fishing boats edited to take wood
+  still took fish and paid food.
+- `xsGetUnitProperty(id, cUnitAttributeHeld)` reads a resource pile's remaining amount (a stone mine: 350).
+
 ## Garrisoned arrows
 - In RoR, raising a tower's Maximum Total Missiles (107) from 1 to 6 doesn't make garrisoned villagers add arrows,
   and only villagers can garrison in towers. *Crucible data mod test, mission 3, 2026-11-09.*
