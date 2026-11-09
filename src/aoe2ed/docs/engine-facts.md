@@ -210,6 +210,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   or 32 facts and actions in a rule, which the checker enforces. *RoR playtest, Trojan War, 2026-11-03.*
 
 ## XS
+- `xsEffectAmount(cSetUnitAttribute, unitId, attribute, value, player)` changes one unit (verified with regeneration 109,
+  2026-11-09: a per-unit, out-of-combat-only regen). Don't call it on a unit at 0 HP: the game crashed the moment
+  such a unit died (it still passes `xsDoesUnitExist`).
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*
 - Script Call messages compile in trigger order and XS requires definition before use, so the
