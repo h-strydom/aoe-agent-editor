@@ -167,6 +167,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
 *Crucible map tricks test, 2026-11-09.*
 - Don't block building placement: Flags or other objects with "can be built on" 0 (visible or not), and an overlay
   layer (tile `layer`) of an unbuildable terrain. The layer is visual only.
+- **An unbuildable strip that looks like anything**: base terrain Rock 1 (40), Quicksand (46) or Bogland (101) with the
+  wanted look as the tile's overlay `layer` (verified 2026-11-09: nothing could be built on it).
+- Formations: Task Object with action type 18 (line) or 19 (box), then a Move with `issue_group_command`, marches the
+  group in formation (verified).
 - A safe zone works by XS: a 1 s rule setting each unit's `cUnitAttackable` from its position (0 inside the square, 1
   outside) kept units inside from being attacked by an army with a Stone Thrower. A looping trigger doing Enable
   Unit Attackable by area then Disable for the zone leaked (units inside took damage).
