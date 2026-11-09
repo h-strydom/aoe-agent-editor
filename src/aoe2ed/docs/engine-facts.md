@@ -273,6 +273,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Give each unit its own tile with the `spawn` helper. *Crucible playtest, 2026-10-30.*
 
 ## Known parser issue (AoE2ScenarioParser 0.9.8)
+- Modify (Object) Attribute on Population (110): the parser lists 110 as an integer attribute (`ObjectAttribute._storage_type`), so a
+  quantity of -0.5 is cut to -1 when the effect is made and only the integer field is written. aoe-editor's
+  fraction guard refuses it outright. But RoR's own Logistics sets 110 to -0.5 (half a pop slot), so the game
+  takes fractions there. Writing -0.5 into the effect's float field needs a workaround (crucible's mechdatatest
+  swaps in an Effect subclass); whether the game then honours it is being tested (2026-11-09).
 - Modify Object Attribute on Attack (9) or Armour (8) must use `armour_attack_class` and `armour_attack_quantity`. Putting the
   encoded value (class * 256 + amount) in `quantity` saves a file the parser can't read back (seen 2026-11-09).
 - Effects on float-valued attributes (Modify Attribute / Modify Object Attribute on work rate, friendly fire, minimum
