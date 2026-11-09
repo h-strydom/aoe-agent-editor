@@ -96,6 +96,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Units: the AoE1 artifact is 25 "Artifact" (graphic 8369 "Artifact (Idle)"), with no garrison task; 44 is the War
   Chest; 159 is a "Relic Cart" with AoE2's relic look (graphic 647); 944 and 1304 are Relic Carts with the artifact
   look, hidden in the editor.
+- A data mod copy of the Monument with the Artifact Ruins' graphic, icon and name earns the monument trickle just
+  like the Monument (about 0.8 of each a second), including after it's captured from Gaia: the way to make
+  "ruins" that trickle. An XS rule that pays per `xsGetObjectCount(p, 52)` also works, without a data mod.
 
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
