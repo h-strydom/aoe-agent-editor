@@ -180,10 +180,11 @@ def test_fractional_quantity(blank, tmp_path):
 
 def test_population_takes_whole_numbers_only(blank):
     """The trigger effect reads POPULATION as a whole number: -0.5 (as RoR's Logistics tech sets it) had no
-    effect in game, so it's rejected like other fractions on integer attributes."""
+    effect in game, even with the float field forced (crucible, 2026-11-09), so it's rejected; the error points to
+    XS, which does take -0.5."""
     half = {"type": "modify_attribute", "object_list_unit_id": "ARCHER", "source_player": 1,
             "object_attributes": 110, "operation": "SET", "quantity": -0.5}
-    with pytest.raises(ValueError, match="truncated"):
+    with pytest.raises(ValueError, match="truncated.*xsEffectAmount\\(cSetAttribute"):
         call("triggers_add", handle=blank, triggers=[{"name": "half", "effects": [half]}])
 
 

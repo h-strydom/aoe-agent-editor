@@ -190,6 +190,12 @@ def _check_fractional_quantity(dataset, type_id: int, params: dict) -> None:
             and ObjectAttribute._storage_type(attr) == "float":
         return
     name = ObjectAttribute(attr).name if attr is not None else "this parameter"
+    if attr == ObjectAttribute.POPULATION:
+        # Verified 2026-11-09: a trigger's population is truncated even with the float field forced, but XS and
+        # data take fractions (RoR's own Logistics sets -0.5: half a pop slot).
+        raise ValueError(f"quantity {q} would be truncated: a trigger can't set a fractional POPULATION. For half a "
+                         f"pop slot use XS, e.g. xsEffectAmount(cSetAttribute, <unit id>, 110, {q}, <player>) "
+                         f"(negative: -0.5 is half a slot), or a data mod.")
     raise ValueError(f"quantity {q} would be truncated: {name} is an integer value. Use a whole "
                      f"number, e.g. operation ADD with the computed amount instead of MULTIPLY by {q}.")
 
