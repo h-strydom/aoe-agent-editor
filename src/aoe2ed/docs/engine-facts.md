@@ -143,6 +143,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   plus a dropsites.json entry and the cart listed in every villager job unit's drop sites).
 - Tech effects work: spawn unit (7: unit, building, count), enemy attribute multiply (25), team resource (11, the
   player included).
+- Tech effects verified in RoR (2026-11-10): food cost (attribute 103, add), population room on a Town Center or tower
+  (attribute 21, the first resource storage, which is population on both), armour and attack as class × 256 + amount
+  (attributes 8 and 9, also on a whole class), farm food (resource 36, add). RoR's buildings are a new unit each age
+  (Market 84, 116, 137): an effect on one building id stops at the next age; follow the upgrade-unit (3) commands.
+  Multiplying the research time resource (86, type 6) has no effect.
 - Don't work in RoR at all: aura (155) and loot (154). Not when copied onto RoR units, and not on AoE2's own units ported
   whole (Centurion, Camel Raider, the Chronicles Hoplite's phalanx). Extra spawn (156) works.
 
