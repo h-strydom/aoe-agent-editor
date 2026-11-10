@@ -147,7 +147,7 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (attribute 21, the first resource storage, which is population on both), armour and attack as class × 256 + amount
   (attributes 8 and 9, also on a whole class), farm food (resource 36, add). RoR's buildings are a new unit each age
   (Market 84, 116, 137): an effect on one building id stops at the next age; follow the upgrade-unit (3) commands.
-  Multiplying the research time resource (86, type 6) has no effect.
+  Multiplying the research time resource (86, type 6) has no effect; setting it (type 1, e.g. 1/1.3) works.
 - Don't work in RoR at all: aura (155) and loot (154). Not when copied onto RoR units, and not on AoE2's own units ported
   whole (Centurion, Camel Raider, the Chronicles Hoplite's phalanx). Extra spawn (156) works.
 
