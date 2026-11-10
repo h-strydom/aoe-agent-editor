@@ -148,6 +148,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (attributes 8 and 9, also on a whole class), farm food (resource 36, add). RoR's buildings are a new unit each age
   (Market 84, 116, 137): an effect on one building id stops at the next age; follow the upgrade-unit (3) commands.
   Multiplying the research time resource (86, type 6) has no effect; setting it (type 1, e.g. 1/1.3) works.
+- A RoR civ's bonuses are only in its tech-tree effect (beside the tech disables that make up its tree) and its
+  team-bonus effect; units and starting resources differ only in graphics. Emptying the tech-tree effect and setting
+  team_bonus_id to -1 gives a civ no bonuses and every tech (verified 2026-11-10). The architecture style is the civ's
+  icon_set (0 Egyptian, 1 Greek, 2 Babylonian, 3 Asian, 4 Roman); Stone Age buildings look alike, temples show it.
 - Don't work in RoR at all: aura (155) and loot (154). Not when copied onto RoR units, and not on AoE2's own units ported
   whole (Centurion, Camel Raider, the Chronicles Hoplite's phalanx). Extra spawn (156) works.
 
