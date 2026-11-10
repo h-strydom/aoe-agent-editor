@@ -180,6 +180,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Several decision popups at once stack on screen (the first can hide under the menu buttons) and stay open; picking one
   doesn't close the others.
 
+## Techs at runtime (Return of Rome)
+*Crucible shop tests, 2026-11-10.*
+- A tech can start on no building (research location -1) and be put on one mid-game by the trigger effect *Change
+  Technology Location* (technology, object_list_unit_id_2 = the building, button_location); it appears there and
+  researches normally (verified).
+- XS `xsSetTechName(tech, player, text)` and `xsSetTechDescription(tech, player, text)` rename a tech's button and tooltip
+  live, text built at runtime ("Stable boons (" + n + " left)"); the checker rejects a string in the second argument.
+- A starting age above Stone researches some techs for free: an Iron Age start had Nobility (cavalry +15% HP) and Axe.
+  Check stats from a Stone Age start.
+- Two percentage HP effects stack multiplicatively (Nobility x1.15 then a x1.15 boon: 125 -> 144 -> 166).
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
