@@ -189,6 +189,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   live, text built at runtime ("Stable boons (" + n + " left)"); the checker rejects a string in the second argument.
 - A starting age above Stone researches some techs for free: an Iron Age start had Nobility (cavalry +15% HP) and Axe.
   Check stats from a Stone Age start.
+- A researched tech doesn't come back, even with the data's repeatable flag set; but the trigger effect *Enable/Disable
+  Technology* (enabled 1) brings a researched (or disabled) tech back, ready to research again (verified 2026-11-10).
+- Giving a building a trainable unit adds a gather-point button at row 3, column 1 of its panel (button 11). A free
+  dummy unit still needs population room.
 - Two percentage HP effects stack multiplicatively (Nobility x1.15 then a x1.15 boon: 125 -> 144 -> 166).
 
 ## Adding buildings in a data mod
