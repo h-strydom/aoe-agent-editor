@@ -265,7 +265,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Techs from XS (RoR data mod, 2026-11-10): `xsEffectAmount(cModifyTech, tech, cAttrSetLocation, building, p)` and
   `cAttrSetButton` put a tech with no location onto a building's button, where it researches.
   `xsEffectAmount(cDisableTech, tech, cAttributeDisable, 0, p)` removes the button, but `cAttributeEnable` doesn't
-  bring it back (the trigger Enable/Disable Technology does).
+  bring it back, nor does `cModifyTech, cAttrSetState, cTechStateReady`; the trigger Enable/Disable Technology does.
+  `cAttrSetLocation -1` doesn't take a placed tech off its building.
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*
 - Script Call messages compile in trigger order and XS requires definition before use, so the
