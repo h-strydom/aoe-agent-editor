@@ -10,6 +10,9 @@ uv run pytest
 ```bash
 uv run ruff check src tests scripts
 ```
+The tests also run before every push, from the pre-push hook in `.githooks/` (a failing suite stops the push);
+enable it once per clone with `git config core.hooksPath .githooks`.
+
 Tests need no game install. Tests that read the real game or profile skip themselves when the paths
 aren't found (set `AOE2DE_PATH` / `AOE2DE_PROFILE` to point at them).
 

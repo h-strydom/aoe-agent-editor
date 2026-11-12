@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs the test suite before every push and stops the push if it fails. Enable once per clone:
+# git config core.hooksPath .githooks
+echo "pre-push: running the tests (uv run pytest -q)"
+uv run pytest -q </dev/null || { echo "pre-push: tests failed, push stopped"; exit 1; }
