@@ -4,7 +4,7 @@ A computer player's behaviour comes from an AI script (`.per`) embedded in the s
 the script from a readable **AI spec**, checks it, and embeds it:
 
 - `ai_build(spec, game)`: the script for a spec, with its check
-- `ai_set(handle, player, spec | .per path | script text | "none" | "immobile" | "default")`: embed it
+- `ai_set(handle, player, spec | .per path | script text | "none" | "immobile" | "default" | {"standard": ...})`: embed it
 - `ai_check(script)`: check a hand-written script
 - `ai_lookup("attack", "strategic_numbers")`: search the script language: what the game's own scripts use plus
   the AI Scripting Encyclopedia ([airef.github.io](https://airef.github.io)): command signatures, the version
@@ -158,5 +158,12 @@ clean. A warning isn't always wrong, but nothing proves the engine accepts it.
   RoR's own AI relies on (it only checks that it owns transports). So water maps need `transports`; without
   ships an AI can't reach an enemy on another island. *Unverified in game for generated scripts.*
 - "none": no script, the player does nothing on its own (trigger-driven enemies). "immobile": units hold position.
+- `{"standard": {"plays": {"moderate": "hard", "hard": "hardest"}, "resign": false}}`: the standard skirmish AI,
+  embedded (it loads the game's `ai/default` files), each listed game difficulty playing another difficulty's
+  settings: the six `DIFFICULTY-<LEVEL>` blocks of `customConstants.per` (population and villager caps, attack
+  timing and share, kiting) are swapped in an inlined copy read from your install. Its other files' few difficulty
+  checks follow the game's difficulty. Without `resign: true` it never resigns. Pair it with the `ai_map_type`
+  option (`options_set`: "small_islands" or "continental", or a map id), which tells it to build boats and
+  transports. *Unverified in game.*
 - Return of Rome runs the same script engine; its own AIs give RoR units by id with `defconst`, which is
   what generated scripts do.

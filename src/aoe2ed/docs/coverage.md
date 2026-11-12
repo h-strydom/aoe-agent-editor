@@ -41,7 +41,7 @@ dedicated MCP/CLI tool. **Block** means a building block in a campaign spec. **P
 | Campaigns | Campaign editor (add, order, name) | Tools `campaign_build`, `campaign_read`, `campaign_extract`; spec `missions:` |
 | AI investigation | Lint AI specs; probe what AIs do in game (economy, army, buildings, attacks) and check it | Tools `ai_lint`, `ai_probe`, `ai_probe_report`; guide `ai-behaviour` |
 | Unit data | Every unit, building and tech: names, cost, HP, where made, age looks; pinned game build | Tools `unit_info`, `game_build_check`, `lookup` |
-| AI scripts | Player AI: custom .per, None AI, immobile | Tools `ai_build`, `ai_set`, `ai_check`, `ai_lookup`; `player_set ai: {name, spec}`; guide `ai-spec` |
+| AI scripts | Player AI: custom .per, None AI, immobile, standard AI at another difficulty, AI map type | Tools `ai_build`, `ai_set`, `ai_check`, `ai_lookup`; `player_set ai: {name, spec}`; guide `ai-spec` |
 | AI difficulty and timing | AI that follows the difficulty; AI that starts on a trigger (AI Script Goal) | AI spec `levels`, `start`; blocks `start_ai`, `claim_base` |
 | Civ bonuses | Which units each civ's bonuses favour (RoR) | `aoe2ed.civs`; AI spec `army` |
 | Fog of war | Start with an area explored (map revealers) | Block `reveal` |

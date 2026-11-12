@@ -195,3 +195,11 @@ def test_or_conditions(blank, tmp_path):
     h2 = reload(blank, tmp_path)
     got = [c["type"] for c in call("trigger_get", handle=h2, trigger="either")["conditions"]]
     assert got == ["timer", "or", "timer"]
+
+
+def test_ai_map_type_by_name(tmp_path):
+    h = call("scenario_new", map_size=100, game="ror")["handle"]
+    call("options_set", handle=h, fields={"ai_map_type": "small_islands"})
+    assert call("options_get", handle=reload(h, tmp_path))["ai_map_type"] == 166
+    with pytest.raises(ValueError, match="ai_map_type"):
+        call("options_set", handle=h, fields={"ai_map_type": "atlantis"})

@@ -325,3 +325,25 @@ def test_warm_up_attacks_come_before_the_main_waves():
     assert "(set-strategic-number sn-maximum-attack-group-size 8)" in script
     with games.use("ror"), pytest.raises(SpecError, match="warm_up"):
         build_script({"attack": {"warm_up": {"min_group": 3}}}, "ror")
+
+
+def test_standard_ai_plays_another_difficulty(tmp_path):
+    from aoe2ed.ai.standard import shifted_constants, standard_script
+    levels = ["EASIEST", "EASY", "MODERATE", "HARD", "HARDEST", "EXTREME"]
+    text = "(defconst a 1)\n" + "".join(f"#load-if-defined DIFFICULTY-{x}\n(defconst diff {i})\n#end-if\n"
+                                        for i, x in enumerate(levels, 1)) + "(defconst b 2)\n"
+    out = shifted_constants(text, {"moderate": "hard", "hard": "hardest"})
+    assert "#load-if-defined DIFFICULTY-MODERATE\n(defconst diff 4)\n" in out          # Moderate plays Hard
+    assert "#load-if-defined DIFFICULTY-HARD\n(defconst diff 5)\n" in out
+    assert "#load-if-defined DIFFICULTY-EASY\n(defconst diff 2)\n" in out and out.count("#end-if") == 6
+    assert out.startswith("(defconst a 1)") and out.endswith("(defconst b 2)\n")
+    with pytest.raises(ValueError, match="plays"):
+        shifted_constants(text, {"moderate": "brutal"})
+    root = tmp_path / "game"
+    folder = root / "modes/Pompeii/resources/_common/ai/default"
+    folder.mkdir(parents=True)
+    (folder / "customConstants.per").write_text(text)
+    script = standard_script({"moderate": "hard"}, root=root)
+    assert r'(load "default\init")' in script and r'(load "default\customConstants")' not in script
+    assert r'(load "default\resign")' not in script                                  # campaign enemies don't resign
+    assert r'(load "default\resign")' in standard_script(root=root, resign=True)

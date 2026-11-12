@@ -70,6 +70,12 @@ def set_ai(p, ai) -> None:
         if errors:
             raise ValueError(f"AI spec gives a script with errors: {errors[:5]}")
         p.set_custom_ai(ai.get("name") or ai["spec"].get("name") or "Custom AI", ai_script=script)
+    elif isinstance(ai, dict) and "standard" in ai:     # the game's standard AI playing a chosen difficulty
+        from ..ai.standard import standard_script
+        cfg = ai["standard"] or {}
+        p.set_custom_ai(ai.get("name") or "Standard AI",
+                        ai_script=standard_script(cfg.get("plays"), resign=bool(cfg.get("resign")),
+                                                  game=games.current()))
     elif isinstance(ai, dict):
         p.set_custom_ai(ai["name"], ai_script=ai.get("script"), per_file_path=ai.get("per_file"))
     elif ai == "none":
@@ -77,7 +83,7 @@ def set_ai(p, ai) -> None:
     elif ai == "immobile":
         p.set_immobile_ai()
     elif ai != "default":
-        raise ValueError("ai must be 'none', 'immobile', 'default' or {name, spec|script|per_file}")
+        raise ValueError("ai must be 'none', 'immobile', 'default' or {name, spec|script|per_file|standard}")
 
 
 @tool
@@ -87,7 +93,9 @@ def player_set(handle: str, player: int, fields: dict) -> dict:
     ai: 'none' (no AI script: never resigns or acts on its own, the right choice for trigger-driven
     enemies), 'immobile', 'default' (the game's standard AI, which resigns when it judges the game
     lost), {"name": ..., "spec": {<AI spec: build order, attacks, ...; guide("ai-spec")>}},
-    or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}.
+    or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}, or {"standard": {"plays":
+    {"moderate": "hard", "hard": "hardest"}, "resign": false}}: the game's standard skirmish AI (embedded,
+    loading the game's ai/default files), each listed difficulty playing another's settings (aoe2ed.ai.standard).
     Fields: see players_get output."""
     s = SESSIONS.get(handle).scenario
     p = s.player_manager.players[player]
@@ -130,12 +138,17 @@ OPTION_DATASETS = {"victory_condition": "VictoryCondition", "secondary_game_mode
 OPTION_FIELDS = ("victory_condition", "victory_score", "victory_years", "victory_custom_conditions_required",
                  "secondary_game_modes", "lock_teams", "allow_players_choose_teams", "random_start_points",
                  "lock_coop_alliances", "villager_force_drop", "collide_and_correct", "legacy_execution_order",
-                 "victory_conquest", "victory_relics")
+                 "victory_conquest", "victory_relics", "ai_map_type")
 # Options the option manager doesn't carry: name -> (scenario section, field, type).
 #   victory_conquest: the Conquest checkbox of a Custom victory, on by default.
 #   victory_relics: the Relics a Custom victory asks for (0: the box unchecked).
+#   ai_map_type: the map the standard AI plays it as (Options > AI Map Type; a map id: RoR's Small Islands is
+#     166, Continental 144, read from maps saved by the RoR editor, 2026-11-12). Islands teach it boats and
+#     transports.
 SECTION_OPTIONS = {"victory_conquest": ("GlobalVictory", "conquest_required", bool),
-                   "victory_relics": ("GlobalVictory", "artifacts_required", int)}
+                   "victory_relics": ("GlobalVictory", "artifacts_required", int),
+                   "ai_map_type": ("Options", "ai_map_type", int)}
+AI_MAP_TYPES = {"ror": {"small_islands": 166, "continental": 144}}
 MESSAGE_FIELDS = ("instructions", "hints", "victory", "loss", "history", "scouts")
 
 
@@ -167,6 +180,11 @@ def options_set(handle: str, fields: dict) -> dict:
             raise ValueError(f"Unknown option '{k}'. Options: {OPTION_FIELDS}")
         if k in SECTION_OPTIONS:
             section, field, kind = SECTION_OPTIONS[k]
+            if k == "ai_map_type" and isinstance(v, str):
+                types = AI_MAP_TYPES.get(games.scenario_game(scenario), {})
+                if v not in types:
+                    raise ValueError(f"ai_map_type: a map id or one of {sorted(types)}, got {v!r}")
+                v = types[v]
             setattr(scenario.sections[section], field, int(kind(v)))
             continue
         ds = OPTION_DATASETS.get(k)

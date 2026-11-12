@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0
+
+- `ai_set` / `player_set ai: {"standard": {"plays": {...}, "resign": false}}`: the game's standard skirmish AI,
+  embedded, playing another difficulty's settings (its `customConstants.per` difficulty blocks swapped) and never
+  resigning (`aoe2ed.ai.standard`).
+- `options_set ai_map_type`: the map the standard AI plays it as ("small_islands" 166, "continental" 144 in RoR, or
+  a map id).
+
 ## 0.17.0
 
 - AI specs: `attack.target`, a fixed player to attack and raid instead of the closest enemy; keep entries take
