@@ -176,7 +176,7 @@ def wave_actions(spec: dict) -> list[str]:
     out = [f"(set-goal {WAVE_OUT} 1)"]
     if spec.get("retreat"):
         keep = 100 - int(spec["retreat"].get("lost", 50))
-        out = ["(up-get-fact military-population 0 %d)" % WAVE_POP, f"(up-modify-goal {WAVE_FLOOR} g:= {WAVE_POP})",
+        out = [f"(up-get-fact military-population 0 {WAVE_POP})", f"(up-modify-goal {WAVE_FLOOR} g:= {WAVE_POP})",
                f"(up-modify-goal {WAVE_FLOOR} c:* {keep})", f"(up-modify-goal {WAVE_FLOOR} c:/ 100)", *out]
     return out
 
