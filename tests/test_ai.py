@@ -37,7 +37,8 @@ def test_spec_compiles_to_a_clean_ror_script():
     assert per.check(script) == []
     # setup, 3 steps, 2 waiting, villagers + houses, attack, rebalance (3 pile sizes x 3 sources for each resource
     # the plan spends: food and wood here, + an idle tick)
-    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1 + 3 * 2 * 3 + 1
+    # + 1: the base skill's setup action (no engine scaling) carries one level's setup into a second rule
+    assert script.count("(defrule") == 1 + 3 * 3 + 2 + 2 + 1 + 3 * 2 * 3 + 1 + 1
     assert "(set-strategic-number sn-percent-attack-soldiers 80)" in script     # AIBuilder's attack
     assert "(up-find-player my-enemy my-find-closest 2)" in script
 
@@ -369,3 +370,40 @@ def test_standard_ai_attacks_no_sooner_than_asked():
     out = shifted_constants(text, {"moderate": "hard"}, attack_after=1800)
     assert "DIFFICULTY-MODERATE\n(defconst min-attack-time 1800)" in out           # Hard's 900, held to 1800
     assert "DIFFICULTY-EASIEST\n(defconst min-attack-time 7200)" in out            # later already
+
+
+def test_toolbox_town_profile_compiles_with_its_skills():
+    from aoe2ed.ai.profiles import expand
+    profile = {"kind": "town", "army": {"core": ["AXEMAN"], "support": ["BOWMAN"], "raiders": ["SCOUT"]},
+               "upgrades": "economy", "water": "light", "defense": "home", "offense": "light",
+               "goal": {"stockpile": {"food": 2000, "hold_from": 1200}}}
+    spec = expand(profile)
+    assert spec["grow"]["to"] == 100 and spec["levels"]["easy"]["grow"]["to"] == 50     # population targets
+    assert spec["levels"]["hard"]["grow"]["to"] == 150
+    assert spec["composition"]["size"] == 40 and spec["attack"]["first"] == 900
+    assert spec["levels"]["hard"]["attack"]["first"] == 630                             # Hard attacks sooner
+    with games.use("ror"):
+        script = build_script({"profile": profile}, "ror")
+    assert [d for d in per.check(script) if d.severity == "error"] == []
+    assert script.index("sn-do-not-scale-for-difficulty-level 1") < script.index("gatherer-percentage")
+    assert "(defconst my-line266 -266)" in script and "(train my-line266)" in script    # Axemen by line
+    assert "(idle-farm-count < 1)" in script and "(food-amount < 1200)" in script
+    assert "(set-strategic-number sn-percent-attack-soldiers 70)" in script            # a 30% home guard
+    assert "(up-retreat-now)" in script and "(town-under-attack)" in script
+    assert "(soldier-count >= 10)" in script                                           # economy first
+    assert script.count("water: fishing up to 3") == 3                                 # one per level
+
+
+def test_toolbox_army_profile_keeps_its_size_and_attacks_in_waves():
+    from aoe2ed.ai.profiles import ProfileError, expand
+    spec = expand({"kind": "army", "army": {"core": ["SHORT_SWORDSMAN"], "support": ["IMPROVED_BOWMAN"], "size": 9},
+                   "offense": "light", "defense": "home"})
+    assert spec["composition"] == {"units": {"core": ["SHORT_SWORDSMAN"], "support": ["IMPROVED_BOWMAN"]},
+                                   "size": 9, "start": 9}
+    assert "grow" not in spec and spec["houses"] is False
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+    assert [d for d in per.check(script) if d.severity == "error"] == []
+    assert "(train my-line294)" in script and "(attack-now)" in script
+    with pytest.raises(ProfileError, match="kind"):
+        expand({"kind": "pirates"})

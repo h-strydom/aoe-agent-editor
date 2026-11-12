@@ -1,7 +1,13 @@
 # AI toolbox: scenario AIs from skills (design)
 
-Status: design, 2026-11-12. Nothing here is built yet. It replaces neither `ai-spec.md` (today's spec compiler) nor
-the standard AI option; it is the plan for the next layer.
+Status, 2026-11-12: the first skills and two kinds are built (v0.19.0). None of it is verified in game yet.
+- Built: `aoe2ed/ai/skills.py` (base, composition, defense, retreat, farms, water, goal, upgrades) and
+  `aoe2ed/ai/profiles.py` (kinds `town` and `army`).
+- Use them with `{"profile": {...}}` in any AI spec; `build_script` expands it first.
+- Still designed only: kinds `guard`, `raiders` and `ally`, and the skills `hold`, `reinforce`, `trade` (beyond
+  today's Market `trade`), `phases` and `standard` overrides.
+
+It replaces neither `ai-spec.md` (the spec compiler) nor the standard AI option.
 
 ## Why
 

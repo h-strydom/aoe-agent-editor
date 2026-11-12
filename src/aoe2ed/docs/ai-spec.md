@@ -21,6 +21,17 @@ gatherers: auto                     # villager split: auto (default) follows wha
                                     # 45/30/15/10; or {food: 45, wood: 35, gold: 15, stone: 5} in percent
 villagers: 25                       # keep training villagers up to this many (default: off)
 houses: true                        # build a house when housing is nearly full (default: true)
+profile: {kind: town, pop: default, army: {core: [AXEMAN], support: [BOWMAN]}, offense: light}
+                                    # the toolbox (docs/ai-toolbox.md): expanded into the keys below first
+composition: {units: {core: [AXEMAN], support: [BOWMAN], raiders: [SCOUT]}, size: 40, start: 6}
+                                    # the army mix by unit line, growing with grow's stages; makes its buildings
+defense: {home: 30, radius: 14}     # a home guard (attacks send 100 - home %), answer enemies near town, recall a
+                                    # wave when the town is attacked
+retreat: {lost: 50}                 # a wave comes home once the army is down by that share
+farms: 40                           # another farm whenever every farm is worked (auto: 40)
+water: {fishing: 3, warships: 1}    # caps for fishing boats and warships, by line
+goal: {stockpile: {food: 2000, hold_from: 1200}}   # stop spending food on units past 1200
+upgrades: economy                   # economy, military or balanced research (or {first, army_at, villagers_at})
 provoked: {players: [1], signal: 40} # neutral toward these players until its town is attacked, then their enemy,
                                     # sending AI signal 40 (the AI Signal condition) so a trigger can answer.
                                     # Also {"standard": {"provoked": {...}}}. Unverified in game

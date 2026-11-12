@@ -91,7 +91,9 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade", "provoked"}
+            "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade", "provoked",
+            "composition", "defense", "retreat", "farms", "water", "goal", "upgrades",   # skills.py
+            "profile"}                                                                      # profiles.py
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -288,6 +290,7 @@ def _scaled(spec: dict, f: dict, game: str = "ror") -> dict:
 def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
     """(setup actions, rules) for `grow`: the stage timer and each stage's raised targets."""
     from .. import tables
+    from . import skills
     grow = spec["grow"]
     if not isinstance(grow, dict) or set(grow) - GROW_KEYS:
         raise SpecError(f"grow is {{to, minutes, stages, villagers, town_centers}}, got {grow!r}")
@@ -314,8 +317,8 @@ def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
     for k in range(1, stages + 1):
         frac, stage = k / stages, [f"(goal {GROW_GOAL} {k})"]
         label = f"grow stage {k}/{stages}"
-        rules.append(_rule([*stage, f"(civilian-population < {round(v0 + (vn - v0) * frac)})", f"(can-train {v})"],
-                           [f"(train {v})"], f"{label}: villagers"))
+        rules.append(_rule([*stage, *skills.spend_gate(spec), f"(civilian-population < {round(v0 + (vn - v0) * frac)})",
+                            f"(can-train {v})"], [f"(train {v})"], f"{label}: villagers"))
         army = a0 + (an - a0) * frac
         for n, c in soldiers:
             const = names.const(n, "object")
@@ -554,7 +557,11 @@ def _gated(rule: str, facts: list[str]) -> str:
 
 
 def build_script(spec: dict, game: str = "ror") -> str:
-    """The .per script for an AI spec."""
+    """The .per script for an AI spec. A spec with `profile` (aoe2ed.ai.profiles) is expanded first; its other keys
+    override the profile's."""
+    if "profile" in spec:
+        from .profiles import expand
+        spec = {**expand(spec["profile"]), **{k: v for k, v in spec.items() if k != "profile"}}
     unknown = set(spec) - TOP_KEYS
     if unknown:
         raise SpecError(f"unknown AI spec keys {sorted(unknown)}; allowed {sorted(TOP_KEYS)}")
@@ -628,8 +635,10 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
     elif scout is True:
         scout = SCOUT_SHIPS.get(game)
 
+    from . import skills
     body = []
-    init = [f"(set-strategic-number sn-{k}-gatherer-percentage {v})" for k, v in gatherers.items()]
+    init = skills.base_setup()
+    init += [f"(set-strategic-number sn-{k}-gatherer-percentage {v})" for k, v in gatherers.items()]
     sns = {**BASE_SNS, **(SCOUT_SNS if scout else {}), **(spec.get("strategic_numbers") or {})}
     init += [f"(set-strategic-number {k} {int(v)})" for k, v in sns.items()]
     if attack:
@@ -641,6 +650,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
     init += ["(set-goal my-step 1)", f"(set-goal {ATTACKS_GOAL} 0)", f"(set-goal {LAND_ATTACKS_GOAL} 0)"]
     grow_setup, grow_rules = _grow(spec, game, names) if spec.get("grow") else ([], [])
     init += grow_setup
+    defense_setup, defense_rules = skills.defense(spec) if spec.get("defense") else ([], [])
+    init += defense_setup
     raid_setup, raid_rules = _raids(spec, names)
     init += raid_setup
     trade = spec.get("trade")
@@ -715,8 +726,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
 
     if spec.get("villagers"):
         v = names.const("VILLAGER", "object")
-        body.append(_rule([f"(civilian-population < {int(spec['villagers'])})", f"(can-train {v})"],
-                          [f"(train {v})"], "villagers"))
+        body.append(_rule([*skills.spend_gate(spec), f"(civilian-population < {int(spec['villagers'])})",
+                           f"(can-train {v})"], [f"(train {v})"], "villagers"))
     if spec.get("transports"):
         tr = names.const(spec.get("transport_unit") or TRANSPORT_UNITS.get(game, "TRANSPORT_SHIP"), "object")
         body.append(_rule([f"(unit-type-count-total {tr} < {int(spec['transports'])})", f"(can-train {tr})"],
@@ -757,6 +768,17 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
             actions = [*actions, f"(up-modify-goal {goal} c:+ 1)"]
             label += ", never replaced"
         body.append(_rule([*when, *todo], actions, label))
+    if spec.get("composition"):
+        stages = max(1, int({**GROW_DEFAULTS, **spec["grow"]}["stages"])) if spec.get("grow") else None
+        body += skills.composition(spec, game, names, stages, GROW_GOAL)
+    body += defense_rules
+    if spec.get("retreat"):
+        body += skills.retreat(spec)
+    body += skills.farms(spec, names)
+    if spec.get("water"):
+        body += skills.water(spec, game, names)
+    if spec.get("upgrades"):
+        body += skills.upgrades(spec, game, names)
     body += raid_rules
     if trade:
         tick = [f"(timer-triggered {TRADE_TIMER})"]
@@ -789,7 +811,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
                           [f"(disable-timer {REBALANCE_TIMER})", f"(enable-timer {REBALANCE_TIMER} {REBALANCE_EVERY})"],
                           "rebalance: nothing to move"))
     if attack:
-        every, percent = int(attack.get("every", 240)), int(attack.get("percent", 80))
+        every = int(attack.get("every", 240))
+        percent = int(attack.get("percent", skills.home_percent(spec) or 80))
         target = [*_find_target(attack.get("target"), TARGET_GOAL),
                   f"(up-modify-sn sn-target-player-number g:= {TARGET_GOAL})"]
         warm = attack.get("warm_up")
@@ -811,6 +834,7 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
                               [*target, *sizes, f"(set-strategic-number sn-percent-attack-soldiers {percent})",
                                "(set-strategic-number sn-percent-attack-boats 0)", "(attack-now)",
                                f"(up-modify-goal {ATTACKS_GOAL} c:+ 1)", f"(up-modify-goal {LAND_ATTACKS_GOAL} c:+ 1)",
+                               *skills.wave_actions(spec),
                                f"(disable-timer {ATTACK_TIMER})", f"(enable-timer {ATTACK_TIMER} {wait})",
                                *say("attacking" if label == "attack" else label)], label))
         if attack.get("naval"):

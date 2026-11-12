@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.19.0
+
+- The AI toolbox's first skills (`aoe2ed/ai/skills.py`): `composition` (army mix by unit line, growing with grow's
+  stages), `defense` (home guard, answers attacks on the town, recalls a wave), `retreat`, `farms`, `water` caps,
+  `goal: {stockpile}` and `upgrades` (economy, military or balanced).
+- Profiles (`aoe2ed/ai/profiles.py`): `{"profile": {kind: town|army, pop, army, offense, defense, water, ...}}` in
+  any spec. Population targets by difficulty: Standard 50, Moderate 100, Hard 150.
+- Every generated script turns off the engine's difficulty scaling of strategic numbers
+  (`sn-do-not-scale-for-difficulty-level 1`, first), so the spec's own levels decide.
+- All unverified in game.
+
 ## 0.18.2
 
 - AI specs and the standard AI: `provoked: {players, signal}`, neutral toward those players until its town is
