@@ -11,6 +11,9 @@ buildings, some researches) still follow the game's difficulty.
 `attack_after` (seconds) holds back its first attack at least that long on every difficulty (its
 `min-attack-time`, 0 on Hardest): a campaign's enemy that should give you time to build up.
 
+`provoked_by` ({players, signal}) adds rules after the game's: neutral toward those players until its town is
+attacked, then their enemy (provoked()). The standard AI only mirrors the other player's stance on its own.
+
 The `resign` file is left out unless asked for: campaign enemies fight to the end (the standard AI resigns when it
 judges the game lost).
 
@@ -42,6 +45,19 @@ _MIN_ATTACK = re.compile(r"\(defconst min-attack-time (\d+)\)")
 _BLOCK = re.compile(r"#load-if-defined DIFFICULTY-([A-Z]+)\s*\n(.*?)#end-if[^\n]*\n?", re.S)
 
 
+def provoked(players, signal: int | None = None) -> str:
+    """Rules: while neutral toward a player in `players`, an attack on the town makes it their enemy, and sends
+    AI signal `signal` (the scenario's AI Signal condition) so a trigger can answer. AoE1's computer players turned
+    hostile when attacked; RoR's scripts keep their stance unless told. Unverified in game: that town-under-attack
+    counts an attack by a neutral player, and set-signal in RoR."""
+    out = []
+    for p in players:
+        tell = f"\n\t(set-signal {int(signal)})" if signal is not None else ""
+        out.append(f"(defrule ; provoked: player {int(p)} attacks the town\n\t(town-under-attack)\n"
+                   f"\t(stance-toward {int(p)} neutral)\n=>\n\t(set-stance {int(p)} enemy){tell}\n)\n")
+    return "".join(out)
+
+
 def ai_dir(game: str = "ror", root: Path | None = None) -> Path:
     root = root or config.find_game_dir()
     if root is None:
@@ -68,7 +84,7 @@ def shifted_constants(text: str, plays: dict[str, str], attack_after: int = 0) -
 
 
 def standard_script(plays: dict[str, str] | None = None, *, resign: bool = False, attack_after: int = 0,
-                    game: str = "ror", root: Path | None = None) -> str:
+                    provoked_by: dict | None = None, game: str = "ror", root: Path | None = None) -> str:
     """The standard AI's main script; `plays` maps a game difficulty to the difficulty it plays (default: its
     own). Without `plays` it loads every file, as the scenario editor's standard AI does."""
     folder = ai_dir(game, root) / "default"
@@ -83,4 +99,6 @@ def standard_script(plays: dict[str, str] | None = None, *, resign: bool = False
             lines.append(shifted_constants(text, plays or {}, attack_after))
         else:
             lines.append(f'(load "default\\{f}")')
+    if provoked_by and provoked_by.get("players"):
+        lines.append(provoked(provoked_by["players"], provoked_by.get("signal")))
     return "\n".join(lines) + "\n"

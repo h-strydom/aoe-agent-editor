@@ -76,6 +76,7 @@ def set_ai(p, ai) -> None:
         p.set_custom_ai(ai.get("name") or "Standard AI",
                         ai_script=standard_script(cfg.get("plays"), resign=bool(cfg.get("resign")),
                                                   attack_after=int(cfg.get("attack_after") or 0),
+                                                  provoked_by=cfg.get("provoked"),
                                                   game=games.current()))
     elif isinstance(ai, dict):
         p.set_custom_ai(ai["name"], ai_script=ai.get("script"), per_file_path=ai.get("per_file"))

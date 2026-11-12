@@ -349,6 +349,17 @@ def test_standard_ai_plays_another_difficulty(tmp_path):
     assert r'(load "default\resign")' in standard_script(root=root, resign=True)
 
 
+def test_provoked_turns_hostile_when_attacked(tmp_path):
+    from aoe2ed.ai.standard import standard_script
+    with games.use("ror"):
+        script = build_script({"build_order": [{"build": "BARRACKS"}], "provoked": {"players": [1], "signal": 41}},
+                              "ror")
+    assert "(stance-toward 1 neutral)" in script and "(set-stance 1 enemy)" in script and "(set-signal 41)" in script
+    root = tmp_path / "game"
+    (root / "modes/Pompeii/resources/_common/ai/default").mkdir(parents=True)
+    assert "(set-stance 1 enemy)" in standard_script(root=root, provoked_by={"players": [1], "signal": 41})
+
+
 def test_standard_ai_attacks_no_sooner_than_asked():
     from aoe2ed.ai.standard import shifted_constants
     levels = ["EASIEST", "EASY", "MODERATE", "HARD", "HARDEST", "EXTREME"]

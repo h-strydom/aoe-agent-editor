@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.2
+
+- AI specs and the standard AI: `provoked: {players, signal}`, neutral toward those players until its town is
+  attacked, then their enemy, sending an AI signal for the scenario's triggers. Unverified in game.
+
 ## 0.18.1
 
 - Standard AI: `attack_after` (seconds) holds back its first attack on every difficulty.

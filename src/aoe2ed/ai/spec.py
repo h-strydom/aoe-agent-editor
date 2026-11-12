@@ -91,7 +91,7 @@ from importlib import resources
 
 TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_timeout", "keep", "attack",
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
-            "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade"}
+            "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade", "provoked"}
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -721,6 +721,12 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         tr = names.const(spec.get("transport_unit") or TRANSPORT_UNITS.get(game, "TRANSPORT_SHIP"), "object")
         body.append(_rule([f"(unit-type-count-total {tr} < {int(spec['transports'])})", f"(can-train {tr})"],
                           [f"(train {tr})"], f"transports x{int(spec['transports'])}"))
+    pv = spec.get("provoked")
+    if pv:
+        if not isinstance(pv, dict) or set(pv) - {"players", "signal"} or not pv.get("players"):
+            raise SpecError(f"provoked is {{players: [1], signal: 40}}, got {pv!r}")
+        from .standard import provoked
+        body.append(provoked(pv["players"], pv.get("signal")))
     if spec.get("houses", True):
         h = names.const("HOUSE", "object")
         body.append(_rule([f"(housing-headroom < {HOUSE_HEADROOM})", "(population-headroom > 0)", f"(can-build {h})"],

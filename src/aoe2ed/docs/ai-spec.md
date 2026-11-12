@@ -21,6 +21,9 @@ gatherers: auto                     # villager split: auto (default) follows wha
                                     # 45/30/15/10; or {food: 45, wood: 35, gold: 15, stone: 5} in percent
 villagers: 25                       # keep training villagers up to this many (default: off)
 houses: true                        # build a house when housing is nearly full (default: true)
+provoked: {players: [1], signal: 40} # neutral toward these players until its town is attacked, then their enemy,
+                                    # sending AI signal 40 (the AI Signal condition) so a trigger can answer.
+                                    # Also {"standard": {"provoked": {...}}}. Unverified in game
 build_order:                        # done in order; a step is done once its count is reached
   - {build: BARRACKS}               # count: how many in total, built or being built (default 1)
   - {train: CLUBMAN, count: 5}      # count: how many alive in total
