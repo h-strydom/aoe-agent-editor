@@ -347,3 +347,14 @@ def test_standard_ai_plays_another_difficulty(tmp_path):
     assert r'(load "default\init")' in script and r'(load "default\customConstants")' not in script
     assert r'(load "default\resign")' not in script                                  # campaign enemies don't resign
     assert r'(load "default\resign")' in standard_script(root=root, resign=True)
+
+
+def test_standard_ai_attacks_no_sooner_than_asked():
+    from aoe2ed.ai.standard import shifted_constants
+    levels = ["EASIEST", "EASY", "MODERATE", "HARD", "HARDEST", "EXTREME"]
+    times = [7200, 3000, 1500, 900, 0, 0]
+    text = "".join(f"#load-if-defined DIFFICULTY-{x}\n(defconst min-attack-time {t})\n#end-if\n"
+                   for x, t in zip(levels, times))
+    out = shifted_constants(text, {"moderate": "hard"}, attack_after=1800)
+    assert "DIFFICULTY-MODERATE\n(defconst min-attack-time 1800)" in out           # Hard's 900, held to 1800
+    assert "DIFFICULTY-EASIEST\n(defconst min-attack-time 7200)" in out            # later already

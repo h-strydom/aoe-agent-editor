@@ -75,6 +75,7 @@ def set_ai(p, ai) -> None:
         cfg = ai["standard"] or {}
         p.set_custom_ai(ai.get("name") or "Standard AI",
                         ai_script=standard_script(cfg.get("plays"), resign=bool(cfg.get("resign")),
+                                                  attack_after=int(cfg.get("attack_after") or 0),
                                                   game=games.current()))
     elif isinstance(ai, dict):
         p.set_custom_ai(ai["name"], ai_script=ai.get("script"), per_file_path=ai.get("per_file"))
@@ -94,8 +95,10 @@ def player_set(handle: str, player: int, fields: dict) -> dict:
     enemies), 'immobile', 'default' (the game's standard AI, which resigns when it judges the game
     lost), {"name": ..., "spec": {<AI spec: build order, attacks, ...; guide("ai-spec")>}},
     or {"name": ..., "script": "<.per text>"} / {"name": ..., "per_file": path}, or {"standard": {"plays":
-    {"moderate": "hard", "hard": "hardest"}, "resign": false}}: the game's standard skirmish AI (embedded,
-    loading the game's ai/default files), each listed difficulty playing another's settings (aoe2ed.ai.standard).
+    {"moderate": "hard", "hard": "hardest"}, "resign": false, "attack_after": 1800}}: the game's standard
+    skirmish AI (embedded,
+    loading the game's ai/default files), each listed difficulty playing another's settings, its first attack no
+    sooner than attack_after seconds (aoe2ed.ai.standard).
     Fields: see players_get output."""
     s = SESSIONS.get(handle).scenario
     p = s.player_manager.players[player]
@@ -143,12 +146,16 @@ OPTION_FIELDS = ("victory_condition", "victory_score", "victory_years", "victory
 #   victory_conquest: the Conquest checkbox of a Custom victory, on by default.
 #   victory_relics: the Relics a Custom victory asks for (0: the box unchecked).
 #   ai_map_type: the map the standard AI plays it as (Options > AI Map Type; a map id: RoR's Small Islands is
-#     166, Continental 144, read from maps saved by the RoR editor, 2026-11-12). Islands teach it boats and
-#     transports.
+#     166, Continental 144, read from maps saved by the RoR editor, 2026-11-12; the others from the game's
+#     modes/Pompeii/resources/_common/dat/maps.json storage_id). Islands teach it boats and transports. Coastal,
+#     Continental, Mediterranean, Rivers, Narrows and Inland tell it there is water to use, so it builds a Dock and
+#     galleys (galley-rushes while its enemy has no army) whatever the map; Highland doesn't (ai/default/init.per:
+#     only fish, over 5 ocean or 25 shore fish, then does).
 SECTION_OPTIONS = {"victory_conquest": ("GlobalVictory", "conquest_required", bool),
                    "victory_relics": ("GlobalVictory", "artifacts_required", int),
                    "ai_map_type": ("Options", "ai_map_type", int)}
-AI_MAP_TYPES = {"ror": {"small_islands": 166, "continental": 144}}
+AI_MAP_TYPES = {"ror": {"small_islands": 166, "continental": 144, "coastal": 143, "highland": 148,
+                         "large_islands": 153, "mediterranean": 154, "inland": 150}}
 MESSAGE_FIELDS = ("instructions", "hints", "victory", "loss", "history", "scouts")
 
 

@@ -46,8 +46,9 @@ def ai_check(script: str) -> dict:
 def ai_set(handle: str, player: int, ai: str | dict, name: str | None = None) -> dict:
     """Give a scenario player an AI embedded in the scenario: an AI spec (dict), a .per path, script text,
     or 'none' (does nothing on its own), 'immobile' (units hold position), 'default' (the game's standard AI,
-    which resigns when losing), or {"standard": {"plays": {"moderate": "hard", ...}, "resign": False}}: the
-    standard skirmish AI embedded, playing other difficulties' settings and not resigning (aoe2ed.ai.standard).
+    which resigns when losing), or {"standard": {"plays": {"moderate": "hard", ...}, "resign": False,
+    "attack_after": 1800}}: the standard skirmish AI embedded, playing other difficulties' settings, not resigning
+    and not attacking before attack_after seconds (aoe2ed.ai.standard).
     Specs and scripts are checked first; errors refuse the change."""
     from .world import set_ai
     o = SESSIONS.get(handle)

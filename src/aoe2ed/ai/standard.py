@@ -8,6 +8,9 @@ inlines that file with each block's settings swapped for the level it should pla
 hard}` a Moderate game runs the Hard settings. The other files' few difficulty checks (boar hunting, extreme
 buildings, some researches) still follow the game's difficulty.
 
+`attack_after` (seconds) holds back its first attack at least that long on every difficulty (its
+`min-attack-time`, 0 on Hardest): a campaign's enemy that should give you time to build up.
+
 The `resign` file is left out unless asked for: campaign enemies fight to the end (the standard AI resigns when it
 judges the game lost).
 
@@ -35,6 +38,7 @@ BOARHUNTING = """#load-if-not-defined DIFFICULTY-EASIEST
 #end-if
 #end-if"""
 AI_DIRS = {"ror": "modes/Pompeii/resources/_common/ai", "aoe2": "resources/_common/ai"}
+_MIN_ATTACK = re.compile(r"\(defconst min-attack-time (\d+)\)")
 _BLOCK = re.compile(r"#load-if-defined DIFFICULTY-([A-Z]+)\s*\n(.*?)#end-if[^\n]*\n?", re.S)
 
 
@@ -45,8 +49,9 @@ def ai_dir(game: str = "ror", root: Path | None = None) -> Path:
     return Path(root) / AI_DIRS[game]
 
 
-def shifted_constants(text: str, plays: dict[str, str]) -> str:
-    """customConstants.per with each difficulty block holding the settings of the level its difficulty plays."""
+def shifted_constants(text: str, plays: dict[str, str], attack_after: int = 0) -> str:
+    """customConstants.per with each difficulty block holding the settings of the level its difficulty plays,
+    and its first attack no sooner than `attack_after` seconds."""
     blocks = {m.group(1).lower(): m.group(2) for m in _BLOCK.finditer(text)}
     if set(blocks) != set(LEVELS):
         raise ValueError(f"customConstants.per has difficulty blocks for {sorted(blocks)}, expected {LEVELS}")
@@ -55,13 +60,15 @@ def shifted_constants(text: str, plays: dict[str, str]) -> str:
         raise ValueError(f"plays maps difficulties to difficulties ({', '.join(LEVELS)}), got {bad}")
     first = _BLOCK.search(text)
     rest = _BLOCK.sub("", text)
-    swapped = "".join(f"#load-if-defined DIFFICULTY-{lvl.upper()}\n{blocks[plays.get(lvl, lvl)]}#end-if\n"
+    def held(block: str) -> str:
+        return _MIN_ATTACK.sub(lambda m: f"(defconst min-attack-time {max(int(m.group(1)), attack_after)})", block)
+    swapped = "".join(f"#load-if-defined DIFFICULTY-{lvl.upper()}\n{held(blocks[plays.get(lvl, lvl)])}#end-if\n"
                       for lvl in LEVELS)
     return rest[:first.start()] + swapped + rest[first.start():]
 
 
-def standard_script(plays: dict[str, str] | None = None, *, resign: bool = False, game: str = "ror",
-                    root: Path | None = None) -> str:
+def standard_script(plays: dict[str, str] | None = None, *, resign: bool = False, attack_after: int = 0,
+                    game: str = "ror", root: Path | None = None) -> str:
     """The standard AI's main script; `plays` maps a game difficulty to the difficulty it plays (default: its
     own). Without `plays` it loads every file, as the scenario editor's standard AI does."""
     folder = ai_dir(game, root) / "default"
@@ -71,9 +78,9 @@ def standard_script(plays: dict[str, str] | None = None, *, resign: bool = False
             continue
         if f == "@boarhunting":
             lines.append(BOARHUNTING)
-        elif f == "customConstants" and plays:
+        elif f == "customConstants" and (plays or attack_after):
             text = (folder / "customConstants.per").read_text(encoding="utf-8", errors="replace")
-            lines.append(shifted_constants(text, plays))
+            lines.append(shifted_constants(text, plays or {}, attack_after))
         else:
             lines.append(f'(load "default\\{f}")')
     return "\n".join(lines) + "\n"

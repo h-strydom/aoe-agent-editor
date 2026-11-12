@@ -201,5 +201,7 @@ def test_ai_map_type_by_name(tmp_path):
     h = call("scenario_new", map_size=100, game="ror")["handle"]
     call("options_set", handle=h, fields={"ai_map_type": "small_islands"})
     assert call("options_get", handle=reload(h, tmp_path))["ai_map_type"] == 166
+    call("options_set", handle=h, fields={"ai_map_type": "highland"})
+    assert call("options_get", handle=h)["ai_map_type"] == 148
     with pytest.raises(ValueError, match="ai_map_type"):
         call("options_set", handle=h, fields={"ai_map_type": "atlantis"})

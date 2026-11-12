@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.1
+
+- Standard AI: `attack_after` (seconds) holds back its first attack on every difficulty.
+- `ai_map_type` names: "highland" 148 (a land map: no Dock or galleys unless the map has many fish), "coastal",
+  "large_islands", "mediterranean", "inland". Continental (144) makes the standard AI build a navy.
+
 ## 0.18.0
 
 - `ai_set` / `player_set ai: {"standard": {"plays": {...}, "resign": false}}`: the game's standard skirmish AI,
