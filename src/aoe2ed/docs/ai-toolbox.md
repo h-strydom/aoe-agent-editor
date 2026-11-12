@@ -75,7 +75,8 @@ Three layers:
 ### Profiles: what a mission says
 
 ```yaml
-ai: {profile: town, water: light, defense: home, offense: light, goal: {stockpile: {food: 2000}}, level: game}
+ai: {profile: town, pop: default, army: {core: AXEMAN, support: BOWMAN, raiders: SCOUT}, upgrades: economy,
+     water: light, defense: home, offense: light, goal: {stockpile: {food: 2000}}}
 ```
 
 A profile names the player's kind. Each kind is a preset of skills, and every other key overrides one skill. Kinds:
@@ -97,7 +98,11 @@ difficulty, as sn0wsh00 does). Nothing is cheated unless a skill says so.
 | Skill | What it does | Settings | Mechanism (proven in) |
 |---|---|---|---|
 | **base** (always) | sane setup: no difficulty scaling by the engine, airef's essential SNs, new building system | none | `sn-do-not-scale-for-difficulty-level 1` (airef), AiBuilder setup 1068-1121 |
-| **economy** | villagers to a target, a gatherer split that follows what the plan spends, rebalancing | `villagers`, `split` | today's spec compiler (works) |
+| **population** | grows toward a target over the game: villagers first, the army's share rising with time | `pop: default` (by difficulty, below) or numbers, `grow: minutes` | today's `grow` stages |
+| **economy** | villagers to a share of the population, a gatherer split that follows what the plan spends, rebalancing | `villagers`, `split` | today's spec compiler (works) |
+| **army** | the composition: a core line, support lines and raiders, by age, plus counters to what it sees of yours | `core`, `support`, `raiders`, `counters: auto` | keep list per line (`-266` clubman/axeman and the other line ids); counters from `players-unit-type-count` on your lines (default units.per) |
+| **upgrades** | which research it favours: economy first (gathering, farming), military first (armour, attack, unit upgrades) or balanced, gated by army size and resources | `economy`, `military`, `balanced` | AiBuilder technologies.per upgrade groups gated by villager counts |
+| **trade** | when a resource it needs runs low: Market trades (buy and sell), and on water maps Trade Boats and Merchant Ships to an ally's or neutral's Dock | `market`, `boats: N`, `none` | today's `trade` (Market), AiBuilder economy 43-56 (trade carts and boats only if an ally or neutral has a Market or Dock) |
 | **farming** | keeps farming: another farm when every farm is worked | `farms` cap | `idle-farm-count` (default buildings 814-1000) |
 | **water** | fishing boats and warships, capped | `light` (≤3 boats, ≤2 warships), `normal`, `heavy`, numbers | per-line caps `-287`/`-285`, AiBuilder `fishing-cap` |
 | **build** | production buildings, towers, ages, techs | `age`, `techs: light/all` | today's build order and keep list |
@@ -113,6 +118,12 @@ difficulty, as sn0wsh00 does). Nothing is cheated unless a skill says so.
 
 **Difficulty.** Missions are written as Moderate. One table scales skills for Standard and Hard, as `levels: auto`
 does today, and that table replaces the engine's own scaling.
+
+**Population targets** (the user, 2026-11-12) are the default for every kind that builds: **Standard about 50,
+Moderate about 100, Hard 150 or more**. The army grows toward the target over the game, so early pressure stays
+light and later waves are bigger. A mission states its own numbers where the role calls for it (an outpost, a small
+raiding camp). When a resource runs out on the map, the **trade** skill keeps the army growing: Market trades on
+land, and on water maps Trade Boats to an ally's or neutral's Dock. Many water missions will need this.
 
 **The `standard` kind.** It keeps RoR's skirmish AI for towns that should simply play well. It adds per-mission
 overrides of its difficulty constants (`attack-percent`, `min-attack-time`, `max-vills`, `max-pop`,
@@ -131,9 +142,9 @@ Each skill is a function: `(settings, level) -> rules and setup`, in `aoe2ed/ai/
 
 ## Build order (proposed)
 
-1. **base + offense + defense + retreat.** These fix the worst cases: the one-rush army, the AI that never defends,
+1. **base + population + army + offense + defense + retreat.** These fix the worst cases: the one-rush army, the AI that never defends,
    and the AI that sends everything. Use them for the `town` and `army` kinds.
-2. **water + farming + goal.** These give Farming's "light fishing, wants its food" and the naval maps.
+2. **water + farming + goal + upgrades + trade.** These give Farming's "light fishing, wants its food" and the naval maps.
 3. **hold + reinforce + guard and raiders kinds.** These cover the army-only and outpost missions.
 4. **phases + ally.** For missions whose AI should change mid-game, such as Trade's Canaanites turning hostile.
 5. **standard overrides** (`attack-percent` and similar), for towns where the skirmish AI is fine but too strong.
