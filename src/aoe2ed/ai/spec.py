@@ -613,6 +613,11 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         return k, resolve(name, k, game), count
 
     demand = [item(*s) for s in steps + keep]
+    comp = spec.get("composition") or {}
+    for role in (comp.get("units") or {}).values():                    # skills.composition's army
+        demand += [item("train", n, max(1, int(comp.get("size", 20)) // 3)) for n in role or []]
+    if spec.get("farms"):                                               # skills.farms: wood for fields
+        demand.append(item("build", "FARM", 10))
     if spec.get("villagers"):
         demand.append(item("train", "VILLAGER", int(spec["villagers"])))
     spends = [r for r in RESOURCES if any(r in cost(k, oid, game) for k, oid, _ in demand)]

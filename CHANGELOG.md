@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.1
+
+- AI toolbox: Bowmen train by unit id (RoR's bowman line doesn't train); unit upgrades (Battle Axe...) never wait
+  for an economy-first AI's army; the automatic gatherer split counts the army mix and farms.
+
 ## 0.19.0
 
 - The AI toolbox's first skills (`aoe2ed/ai/skills.py`): `composition` (army mix by unit line, growing with grow's

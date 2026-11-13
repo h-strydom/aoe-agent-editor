@@ -391,6 +391,9 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert "(set-strategic-number sn-percent-attack-soldiers 70)" in script            # a 30% home guard
     assert "(up-retreat-now)" in script and "(town-under-attack)" in script
     assert "(soldier-count >= 10)" in script                                           # economy first
+    assert "(train my-o-bowman)" in script and "my-line299" not in script              # Bowmen by unit
+    axe = script.index("upgrades (unit): AXE")
+    assert "(soldier-count" not in script[axe - 120:axe + 200]                         # Battle Axe never waits
     assert script.count("water: fishing up to 3") == 3                                 # one per level
 
 

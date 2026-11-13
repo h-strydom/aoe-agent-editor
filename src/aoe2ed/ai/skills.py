@@ -20,9 +20,12 @@ import math
 # RoR unit lines (default/alternateConstants.per 234-269; airef for fishing boats): training a line trains its
 # current upgrade, so Clubmen become Axemen after the upgrade without a new rule. `(train catapult-trireme-line)`
 # in default/units.per proves line training in RoR; the fishing line (-287) is from airef, unverified.
+# Not the Bowman: RoR's bowman-line (-299) doesn't train ("replace with bowman-line when added", default/units.per
+# 727; Farming playtest 2026-11-13: no Bowmen at all), and the Bowman upgrades into nothing (the Improved Bowman is
+# its own unit), so it trains by unit id as RoR's scripts do (`bowman 4`).
 LINES = {"ror": {
     "CLUBMAN": -266, "AXEMAN": -266,
-    "BOWMAN": -299, "IMPROVED_BOWMAN": -298, "COMPOSITE_BOWMAN": -298,
+    "IMPROVED_BOWMAN": -298, "COMPOSITE_BOWMAN": -298,
     "SHORT_SWORDSMAN": -294, "BROAD_SWORDSMAN": -294, "LONG_SWORDSMAN": -294, "LEGION": -294,
     "CAVALRY": -295, "HEAVY_CAVALRY": -295, "CATAPHRACT": -295,
     "CHARIOT": -291, "SCYTHE_CHARIOT": -291,
@@ -230,7 +233,7 @@ MILITARY_TECHS = ("TOOLWORKING", "LEATHER_ARMOR_FOR_INFANTRY", "LEATHER_ARMOR_AR
                   "METALWORKING", "BRONZE_SHIELD", "SCALE_ARMOR_FOR_INFANTRY", "SCALE_ARMOR_ARCHERS",
                   "SCALE_ARMOR_CAVALRY", "METALLURGY", "IRON_SHIELD", "CHAIN_MAIL_FOR_INFANTRY",
                   "CHAIN_MAIL_ARCHERS", "CHAIN_MAIL_CAVALRY")
-LINE_UPGRADES = {-266: ("AXE",), -299: ("IMPROVED_BOW",), -298: ("COMPOSITE_BOW",),
+LINE_UPGRADES = {-266: ("AXE",), -298: ("COMPOSITE_BOW",),
                  -294: ("BROAD_SWORD", "LONG_SWORD", "LEGION"), -295: ("HEAVY_CAVALRY", "CATAPHRACT"),
                  -291: ("HEAVY_CHARIOTS",), -293: ("ADVANCED_HORSE_ARCHER",), -292: ("ARMORED_ELEPHANT",),
                  -290: ("PHALANGITE", "CENTURION"), -289: ("HELEPOLIS",), -288: ("CATAPULT", "HEAVY_CATAPULT"),
@@ -242,7 +245,8 @@ def upgrades(spec: dict, game: str, names) -> list[str]:
     """Rules for `upgrades: {first: economy, army_at: 10, villagers_at: 20}` (or just `economy`, `military`,
     `balanced`): research economy and military lines, the favoured kind first. Economy first: military research
     waits until the army has `army_at` soldiers. Military first: economy research waits for `villagers_at`
-    villagers. Balanced: both as soon as they can be afforded. Unit upgrades follow the composition's lines.
+    villagers. Balanced: both as soon as they can be afforded. Unit upgrades follow the composition's lines and
+    never wait: an economy-first AI still gets its Battle Axe (Farming playtest 2026-11-13: no Axemen by 25:00).
     AiBuilder's technologies.per gates its upgrade groups by villager counts the same way."""
     u = spec["upgrades"]
     u = {"first": u} if isinstance(u, str) else dict(u)
@@ -255,8 +259,8 @@ def upgrades(spec: dict, game: str, names) -> list[str]:
              for n in ((spec.get("composition") or {}).get("units") or {}).get(r) or []}
     unit_techs = [t for line in sorted(x for x in lines if x is not None) for t in LINE_UPGRADES.get(line, ())]
     rules = []
-    for techs, gate, kind in ((ECONOMY_TECHS, eco_gate, "economy"), (MILITARY_TECHS + tuple(unit_techs), mil_gate,
-                                                                     "military")):
+    for techs, gate, kind in ((tuple(unit_techs), [], "unit"), (ECONOMY_TECHS, eco_gate, "economy"),
+                              (MILITARY_TECHS, mil_gate, "military")):
         for t in techs:
             const = names.const(t, "tech")
             rules.append(_rule([*gate, f"(can-research {const})"], [f"(research {const})"], f"upgrades ({kind}): {t}"))
