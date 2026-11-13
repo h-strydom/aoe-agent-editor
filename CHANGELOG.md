@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.2
+
+- AI toolbox: a town's army stages follow its villagers, not the grow timer. Each stage trains once 80% of its
+  villagers are there, so a town that booms builds the army that goes with it.
+
 ## 0.21.1
 
 - AI spec: `houses` takes a number, the housing headroom it builds the next House at. Toolbox towns build at 8

@@ -400,6 +400,7 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert "(civilian-population >= 24)" in stages[0]                                  # Standard: 80% of 30 first
     assert "(civilian-population >= 48)" in stages[1]                                  # Moderate: 80% of 60
     assert "(civilian-population < 24)" in script                                      # boom from the start
+    assert "(goal 7 3)" not in stages[0] and "(goal 7" not in stages[1]                # follows villagers, not time
     axe = script.index("upgrades (unit): AXE")
     assert "(soldier-count" not in script[axe - 120:axe + 200]                         # Battle Axe never waits
     assert script.count("water: fishing up to 3") == 3                                 # one per level

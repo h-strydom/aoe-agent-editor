@@ -116,7 +116,9 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
     buildings that make them follow: one per UNITS_PER_MAKER of the units they make, up to MAX_MAKERS (a few
     Scouts need one Stable; Farming's Lower Egypt built three, playtest 2026-11-13). With grow, a stage's army waits
     until ECONOMY_FIRST % of that stage's villagers are there, so the economy grows a little before each bigger army
-    (soldiers came first in the rule order and starved its food, same playtest)."""
+    (soldiers came first in the rule order and starved its food, same playtest). The stages are cumulative and follow
+    the villagers, not the grow timer: a town that booms to most of its villagers at once builds the army that goes
+    with them (Religion's Libyans boomed to 42 villagers and kept 3 Axemen for 7.5 minutes, playtest 2026-11-13)."""
     from .. import tables
     comp = spec["composition"]
     if not isinstance(comp, dict) or set(comp) - COMPOSITION_KEYS or "units" not in comp:
@@ -154,12 +156,13 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
             makers[n] = made[0]
     for k in range(0, stages + 1) if stages else [None]:
         army = size if k is None else start + (size - start) * k / stages
-        stage = [] if k is None else [f"(goal {grow_goal} {k})"]
         label = "army" if k is None else f"army stage {k}/{stages}"
-        economy = []
+        economy, stage = [], []
         if k:                                       # stage 0 is the starting army: no wait
             villagers = math.floor((v0 + (vn - v0) * k / stages) * ECONOMY_FIRST / 100)
             economy = [f"(civilian-population >= {villagers})"] if villagers > 0 else []
+            if not economy:                         # nothing to follow: the grow timer paces it
+                stage = [f"(up-compare-goal {grow_goal} >= {k})"]
         made = counts(army)
         for n, c in made.items():
             const = line_or_unit(n, game, names)
