@@ -381,6 +381,7 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert spec["grow"]["to"] == 100 and spec["levels"]["easy"]["grow"]["to"] == 50     # population targets
     assert spec["levels"]["hard"]["grow"]["to"] == 150
     assert spec["composition"]["size"] == 40 and spec["attack"]["first"] == 900
+    assert spec["villagers"] == 24 and spec["levels"]["easy"]["villagers"] == 12        # boom: 40% of 60 and of 30
     assert spec["levels"]["hard"]["attack"]["first"] == 630                             # Hard attacks sooner
     with games.use("ror"):
         script = build_script({"profile": profile}, "ror")
@@ -397,6 +398,7 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     stages = [b for b in script.split("(defrule") if "army stage 8/8: AXEMAN" in b]
     assert "(civilian-population >= 24)" in stages[0]                                  # Standard: 80% of 30 first
     assert "(civilian-population >= 48)" in stages[1]                                  # Moderate: 80% of 60
+    assert "(civilian-population < 24)" in script                                      # boom from the start
     axe = script.index("upgrades (unit): AXE")
     assert "(soldier-count" not in script[axe - 120:axe + 200]                         # Battle Axe never waits
     assert script.count("water: fishing up to 3") == 3                                 # one per level

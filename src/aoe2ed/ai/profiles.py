@@ -23,6 +23,11 @@ POP = {"easy": 50, "normal": 100, "hard": 150}
 GROW_MINUTES = {"easy": 90, "normal": 60, "hard": 40}
 ARMY_SHARE = 40                       # % of the population that's army at full size
 START_ARMY = 6
+# A town booms at once to this share of its final villagers, then grows the rest stage by stage: starting at 3 left
+# Religion's Libyans on about 5 villagers with berries all around (the first grow stage comes after 7.5 minutes on
+# Moderate; playtest 2026-11-13).
+BOOM = 40                             # % of the final villagers
+MIN_BOOM = 10
 OFFENSE = {"none": None,
            "light": {"first": 900, "every": 360, "min_group": 4},
            "normal": {"first": 600, "every": 240, "min_group": 6},
@@ -90,8 +95,9 @@ def expand(profile: dict) -> dict:
         s: dict = {}
         if kind == "town":
             soldiers = round(pop[lvl] * share / 100)
-            s["villagers"] = 3
-            s["grow"] = {"to": pop[lvl], "minutes": minutes[lvl], "villagers": pop[lvl] - soldiers}
+            villagers = pop[lvl] - soldiers
+            s["villagers"] = max(MIN_BOOM, round(villagers * BOOM / 100))
+            s["grow"] = {"to": pop[lvl], "minutes": minutes[lvl], "villagers": villagers}
             if units:
                 s["composition"] = {"units": units, "size": soldiers, "start": min(START_ARMY, soldiers)}
                 if army.get("mix"):

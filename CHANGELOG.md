@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.2
+
+- AI toolbox: a town booms at once to 40% of its final villagers (at least 10), then grows the rest stage by stage.
+
 ## 0.20.1
 
 - AI toolbox: `rush: TOOL_AGE` (the army and extra villagers wait for the age); no villager explores; defense no
