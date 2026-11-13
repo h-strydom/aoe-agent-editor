@@ -172,7 +172,8 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
             const = names.const(b, "object")
             units_here = sum(c for n, c in made.items() if makers.get(n) == b)
             want = min(MAX_MAKERS, max(1, math.ceil(units_here / UNITS_PER_MAKER)))
-            rules.append(_rule([*stage, f"(building-type-count-total {const} < {want})", f"(can-build {const})"],
+            rules.append(_rule([*stage, *economy, f"(building-type-count-total {const} < {want})",
+                                f"(can-build {const})"],
                                [f"(build {const})"], f"{label}: {b} x{want}"))
     return rules
 
