@@ -47,7 +47,9 @@ WAVE_POP, WAVE_FLOOR, WAVE_OUT, POP_NOW = 35, 36, 37, 38        # goals: army at
 RECALL_TIMER, RECALL_EVERY = 7, 60
 DEFENSE_KEYS = {"home", "radius"}
 COMPOSITION_KEYS = {"units", "size", "start", "mix"}
-WATER_KEYS = {"fishing", "warships"}
+WATER_KEYS = {"fishing", "warships", "trade"}
+TRADE_BOAT_LINE = -283           # RoR's trade-boat-line: `(train trade-boat-line)` in default/trade.per 24
+NAVAL_UNITS = {"SCOUT_SHIP", "WAR_GALLEY", "TRIREME", "CATAPULT_TRIREME", "JUGGERNAUT", "FIRE_GALLEY"}
 
 
 class SkillError(ValueError):
@@ -223,8 +225,10 @@ def farms(spec: dict, names) -> list[str]:
 
 
 def water(spec: dict, game: str, names) -> list[str]:
-    """`water: {fishing: 3, warships: 2}`: train up to those many fishing boats and warships (by line), and no more
-    from these rules (AiBuilder's fishing-cap, default/units.per's per-line caps)."""
+    """`water: {fishing: 3, warships: 2, trade: 4}`: train up to those many fishing boats, warships and Trade Boats
+    (by line), and no more from these rules (AiBuilder's fishing-cap, default/units.per's per-line caps). Trade Boats
+    trade by themselves once trained, with allied and neutral Docks: RoR's own AI only trains them
+    (default/trade.per)."""
     w = spec["water"]
     if not isinstance(w, dict) or set(w) - WATER_KEYS:
         raise SkillError(f"water is {{fishing: 3, warships: 2}}, got {w!r}")
@@ -235,6 +239,12 @@ def water(spec: dict, game: str, names) -> list[str]:
             const = line_or_unit(unit, game, names)
             rules.append(_rule([f"(unit-type-count-total {const} < {n})", f"(can-train {const})"],
                                [f"(train {const})"], f"water: {key} up to {n}"))
+    n = int(w.get("trade", 0))
+    if n:
+        const = "my-trade-boat-line"
+        names.ids["trade-boat-line"] = (const, TRADE_BOAT_LINE)
+        rules.append(_rule([f"(unit-type-count-total {const} < {n})", f"(can-train {const})"],
+                           [f"(train {const})"], f"water: trade boats up to {n}"))
     return rules
 
 

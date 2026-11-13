@@ -15,7 +15,9 @@ from __future__ import annotations
 
 KINDS = ("town", "army")
 PROFILE_KEYS = {"kind", "name", "pop", "army", "upgrades", "water", "defense", "offense", "retreat", "goal",
-                "farms", "grow_minutes", "ages", "spec"}
+                "farms", "grow_minutes", "ages", "spec", "by_level"}
+# `by_level: {easy: {...}, hard: {...}}` overrides profile keys for one level (Standard plays easy, Hard hard); an
+# offense given there is used as is, without OFFENSE_LEVEL's scaling (Trade's Libyans wait 5 minutes on every level).
 LEVELS = ("easy", "normal", "hard")
 POP = {"easy": 50, "normal": 100, "hard": 150}
 GROW_MINUTES = {"easy": 90, "normal": 60, "hard": 40}
@@ -64,17 +66,27 @@ def expand(profile: dict) -> dict:
     kind = profile.get("kind", "town")
     if kind not in KINDS:
         raise ProfileError(f"kind is one of {KINDS}, got {kind!r}")
-    army = dict(profile.get("army") or {})
-    units = {r: army[r] for r in ("core", "support", "raiders") if army.get(r)}
-    share = int(army.get("share", ARMY_SHARE))
+    by_level = profile.get("by_level") or {}
+    if set(by_level) - {"easy", "normal", "hard"}:
+        raise ProfileError(f"by_level takes easy, normal and hard, got {sorted(by_level)}")
     pop = _per_level(profile.get("pop"), POP)
     minutes = _per_level(profile.get("grow_minutes"), GROW_MINUTES)
-    offense = _pick(OFFENSE, profile.get("offense", "light"), "offense")
-    defense = _pick(DEFENSE, profile.get("defense", "home"), "defense")
-    retreat = _pick(RETREAT, profile.get("retreat", "outnumbered"), "retreat")
-    water = _pick(WATER, profile.get("water", "none"), "water")
 
     def level(lvl: str) -> dict:
+        over = by_level.get(lvl) or {}
+        if set(over) - PROFILE_KEYS or {"kind", "by_level", "spec"} & set(over):
+            raise ProfileError(f"by_level.{lvl} overrides profile skills, got {sorted(over)}")
+        prof = {**profile, **over}
+        army = dict(prof.get("army") or {})
+        units = {r: army[r] for r in ("core", "support", "raiders") if army.get(r)}
+        share = int(army.get("share", ARMY_SHARE))
+        offense = _pick(OFFENSE, prof.get("offense", "light"), "offense")
+        defense = _pick(DEFENSE, prof.get("defense", "home"), "defense")
+        retreat = _pick(RETREAT, prof.get("retreat", "outnumbered"), "retreat")
+        water = _pick(WATER, prof.get("water", "none"), "water")
+        from .skills import NAVAL_UNITS
+        naval = bool(water and water.get("warships", 0) > 1) or any(
+            n in NAVAL_UNITS for r in units.values() for n in r)
         s: dict = {}
         if kind == "town":
             soldiers = round(pop[lvl] * share / 100)
@@ -82,30 +94,34 @@ def expand(profile: dict) -> dict:
             s["grow"] = {"to": pop[lvl], "minutes": minutes[lvl], "villagers": pop[lvl] - soldiers}
             if units:
                 s["composition"] = {"units": units, "size": soldiers, "start": min(START_ARMY, soldiers)}
-            s["farms"] = profile.get("farms", "auto")
+                if army.get("mix"):
+                    s["composition"]["mix"] = dict(army["mix"])
+            s["farms"] = prof.get("farms", "auto")
             s["keep"] = [{"build": "MARKET"}] if s["farms"] else []
-            s["keep"] += [{"research": a} for a in profile.get("ages") or []]
+            s["keep"] += [{"research": a} for a in prof.get("ages") or []]
         else:                                     # army: what it has, kept up where it can train
             size = int(army.get("size", 12))
             if units:
                 s["composition"] = {"units": units, "size": size, "start": size}
+                if army.get("mix"):
+                    s["composition"]["mix"] = dict(army["mix"])
             s["houses"] = False
             s["rebalance"] = False
         if offense:
-            f = OFFENSE_LEVEL[lvl]
+            f = {"first": 1, "every": 1} if "offense" in over else OFFENSE_LEVEL[lvl]
             s["attack"] = {"first": round(offense["first"] * f["first"]),
                            "every": round(offense["every"] * f["every"]),
-                           "min_group": offense["min_group"], "naval": bool(water and water.get("warships", 0) > 1)}
+                           "min_group": offense["min_group"], "naval": naval}
         if defense:
             s["defense"] = dict(defense)
         if retreat:
             s["retreat"] = dict(retreat)
         if water:
             s["water"] = dict(water)
-        if profile.get("upgrades"):
-            s["upgrades"] = profile["upgrades"]
-        if profile.get("goal"):
-            s["goal"] = profile["goal"]
+        if prof.get("upgrades"):
+            s["upgrades"] = prof["upgrades"]
+        if prof.get("goal"):
+            s["goal"] = prof["goal"]
         return s
 
     normal = level("normal")

@@ -402,6 +402,28 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert script.count("water: fishing up to 3") == 3                                 # one per level
 
 
+def test_toolbox_by_level_trade_boats_and_naval_waves():
+    from aoe2ed.ai.profiles import expand
+    raiders = {"kind": "army", "army": {"core": ["SCOUT_SHIP"], "size": 5}, "water": {"trade": 3},
+               "offense": {"first": 300, "every": 180, "min_group": 2}, "defense": "none", "retreat": "none",
+               "by_level": {"easy": {"army": {"core": ["SCOUT_SHIP"], "size": 3}},
+                            "hard": {"offense": {"first": 300, "every": 150, "min_group": 2}}}}
+    spec = expand(raiders)
+    assert spec["attack"]["naval"] is True                                          # a ship army raids by sea
+    assert spec["levels"]["easy"]["composition"]["size"] == 3
+    assert spec["levels"]["hard"]["attack"]["first"] == 300                         # given per level: not scaled
+    assert spec["levels"]["easy"]["attack"]["first"] == 420                         # scaled as usual
+    with games.use("ror"):
+        script = build_script(spec, "ror")
+    assert [d for d in per.check(script) if d.severity == "error"] == []
+    assert "(defconst my-trade-boat-line -283)" in script and "(train my-trade-boat-line)" in script
+    green = expand({"kind": "town", "ages": ["TOOL_AGE"], "army": {"core": ["AXEMAN"], "support": ["BOWMAN"],
+                                                                    "mix": {"core": 80, "support": 20}},
+                    "water": {"fishing": 4, "trade": 4}, "by_level": {"easy": {"water": {"fishing": 4}}}})
+    assert green["composition"]["mix"] == {"core": 80, "support": 20} and green["attack"]["naval"] is False
+    assert "trade" not in green["levels"]["easy"]["water"]                          # no trade on Standard
+
+
 def test_toolbox_army_profile_keeps_its_size_and_attacks_in_waves():
     from aoe2ed.ai.profiles import ProfileError, expand
     spec = expand({"kind": "army", "army": {"core": ["SHORT_SWORDSMAN"], "support": ["IMPROVED_BOWMAN"], "size": 9},

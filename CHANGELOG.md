@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.20.0
+
+- AI toolbox: `water.trade` (Trade Boats by line, trading on their own), profiles' `by_level` overrides (an offense
+  given per level isn't scaled), an army `mix` in profiles, and naval waves for ship armies.
+
 ## 0.19.2
 
 - AI toolbox: production buildings scale with the units they make (one per 6, up to 3); with grow, each stage's army
