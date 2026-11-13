@@ -30,7 +30,7 @@ wheels = [
 
 [[package]]
 name = "aoe-agent-editor"
-version = "0.20.2"
+version = "0.21.0"
 source = { editable = "." }
 dependencies = [
     { name = "aoe2scenarioparser" },

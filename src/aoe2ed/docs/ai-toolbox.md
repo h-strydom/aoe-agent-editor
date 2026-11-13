@@ -122,6 +122,15 @@ difficulty, as sn0wsh00 does). Nothing is cheated unless a skill says so.
 | **phases** | changes skills when the scenario says so: a trigger's AI signal moves to the next phase | `phases: [...]` | AiBuilder phaseUpdate (`event-detected trigger N`) |
 | **provoked** | neutral until attacked | already built (v0.18.2) | `set-stance`, `set-signal` |
 
+**Styles** (`style:`, the user, 2026-11-13): presets for how a player plays. A profile's own keys win.
+
+| Style | Boom (villagers at once) | Army share | Research first | Home guard | Attacks |
+|---|---|---|---|---|---|
+| balanced (default) | 40% | 40% | balanced | 30% | light |
+| economic | 60% | 30% | economy | 30% | light, 1.2× later and rarer |
+| defensive | 40% | 40% | military | 50% | light, 1.5× later and rarer |
+| aggressive | 30% | 50% | military | 20% | normal, 0.8× sooner and more often |
+
 **Difficulty.** Missions are written as Moderate. One table scales skills for Standard and Hard, as `levels: auto`
 does today, and that table replaces the engine's own scaling.
 

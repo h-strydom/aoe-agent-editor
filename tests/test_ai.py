@@ -434,6 +434,24 @@ def test_toolbox_by_level_trade_boats_and_naval_waves():
     assert [d for d in per.check(script) if d.severity == "error"] == []
 
 
+def test_toolbox_styles_set_boom_army_research_and_pace():
+    from aoe2ed.ai.profiles import ProfileError, expand
+    army = {"core": ["AXEMAN"]}
+    eco = expand({"kind": "town", "army": army, "style": "economic"})
+    agg = expand({"kind": "town", "army": army, "style": "aggressive"})
+    dfn = expand({"kind": "town", "army": army, "style": "defensive"})
+    assert eco["villagers"] == 42 and eco["composition"]["size"] == 30                 # booms: 60% of 70 villagers
+    assert eco["upgrades"] == "economy" and eco["attack"]["first"] == 1080             # light, 1.2x later
+    assert agg["composition"]["size"] == 50 and agg["attack"]["first"] == 480          # normal, 0.8x sooner
+    assert agg["upgrades"] == "military" and agg["defense"]["home"] == 20
+    assert dfn["defense"]["home"] == 50 and dfn["attack"]["first"] == 1350
+    mine = expand({"kind": "town", "army": army, "style": "economic", "offense": {"first": 700, "every": 300,
+                                                                                    "min_group": 4}})
+    assert mine["attack"]["first"] == 700                                              # numbers as written
+    with pytest.raises(ProfileError, match="style"):
+        expand({"kind": "town", "style": "turtle"})
+
+
 def test_toolbox_army_profile_keeps_its_size_and_attacks_in_waves():
     from aoe2ed.ai.profiles import ProfileError, expand
     spec = expand({"kind": "army", "army": {"core": ["SHORT_SWORDSMAN"], "support": ["IMPROVED_BOWMAN"], "size": 9},

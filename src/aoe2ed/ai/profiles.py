@@ -15,7 +15,7 @@ from __future__ import annotations
 
 KINDS = ("town", "army")
 PROFILE_KEYS = {"kind", "name", "pop", "army", "upgrades", "water", "defense", "offense", "retreat", "goal",
-                "farms", "grow_minutes", "ages", "spec", "by_level", "rush"}
+                "farms", "grow_minutes", "ages", "spec", "by_level", "rush", "style"}
 # `by_level: {easy: {...}, hard: {...}}` overrides profile keys for one level (Standard plays easy, Hard hard); an
 # offense given there is used as is, without OFFENSE_LEVEL's scaling (Trade's Libyans wait 5 minutes on every level).
 LEVELS = ("easy", "normal", "hard")
@@ -39,6 +39,19 @@ DEFENSE = {"none": None, "home": {"home": 30, "radius": 14}, "heavy": {"home": 5
 RETREAT = {"none": None, "outnumbered": {"lost": 50}}
 WATER = {"none": None, "light": {"fishing": 3, "warships": 1}, "normal": {"fishing": 6, "warships": 4},
          "heavy": {"fishing": 10, "warships": 12}}
+# Styles (the user, 2026-11-13): presets for how a player plays: how hard it booms, how much of it is army, what it
+# researches first, how much stays home, and how soon and how often it attacks (a factor on a named offense; an
+# offense given as numbers is used as written). Keys a profile sets itself win over its style.
+STYLES = {
+    "balanced": {"boom": BOOM, "share": ARMY_SHARE, "upgrades": "balanced", "defense": "home", "offense": "light",
+                 "pace": 1.0},
+    "economic": {"boom": 60, "share": 30, "upgrades": "economy", "defense": "home", "offense": "light",
+                 "pace": 1.2},
+    "defensive": {"boom": 40, "share": 40, "upgrades": "military", "defense": "heavy", "offense": "light",
+                  "pace": 1.5},
+    "aggressive": {"boom": 30, "share": 50, "upgrades": "military", "defense": {"home": 20, "radius": 14},
+                   "offense": "normal", "pace": 0.8},
+}
 
 
 class ProfileError(ValueError):
@@ -82,11 +95,17 @@ def expand(profile: dict) -> dict:
         if set(over) - PROFILE_KEYS or {"kind", "by_level", "spec"} & set(over):
             raise ProfileError(f"by_level.{lvl} overrides profile skills, got {sorted(over)}")
         prof = {**profile, **over}
+        style = STYLES.get(prof.get("style", "balanced"))
+        if style is None:
+            raise ProfileError(f"style is one of {sorted(STYLES)}, got {prof.get('style')!r}")
         army = dict(prof.get("army") or {})
         units = {r: army[r] for r in ("core", "support", "raiders") if army.get(r)}
-        share = int(army.get("share", ARMY_SHARE))
-        offense = _pick(OFFENSE, prof.get("offense", "light"), "offense")
-        defense = _pick(DEFENSE, prof.get("defense", "home"), "defense")
+        share = int(army.get("share", style["share"]))
+        named = not isinstance(prof.get("offense", style["offense"]), dict)
+        offense = _pick(OFFENSE, prof.get("offense", style["offense"]), "offense")
+        if offense and named:                  # the style's pace on a named offense
+            offense = {**offense, "first": offense["first"] * style["pace"], "every": offense["every"] * style["pace"]}
+        defense = _pick(DEFENSE, prof.get("defense", style["defense"]), "defense")
         retreat = _pick(RETREAT, prof.get("retreat", "outnumbered"), "retreat")
         water = _pick(WATER, prof.get("water", "none"), "water")
         from .skills import NAVAL_UNITS
@@ -96,7 +115,7 @@ def expand(profile: dict) -> dict:
         if kind == "town":
             soldiers = round(pop[lvl] * share / 100)
             villagers = pop[lvl] - soldiers
-            s["villagers"] = max(MIN_BOOM, round(villagers * BOOM / 100))
+            s["villagers"] = max(MIN_BOOM, round(villagers * style["boom"] / 100))
             s["grow"] = {"to": pop[lvl], "minutes": minutes[lvl], "villagers": villagers}
             if units:
                 s["composition"] = {"units": units, "size": soldiers, "start": min(START_ARMY, soldiers)}
@@ -124,8 +143,8 @@ def expand(profile: dict) -> dict:
             s["retreat"] = dict(retreat)
         if water:
             s["water"] = dict(water)
-        if prof.get("upgrades"):
-            s["upgrades"] = prof["upgrades"]
+        if prof.get("upgrades", style["upgrades"]):
+            s["upgrades"] = prof.get("upgrades", style["upgrades"])
         if prof.get("goal"):
             s["goal"] = prof["goal"]
         if prof.get("rush"):                       # an age first: the army and extra villagers wait for it

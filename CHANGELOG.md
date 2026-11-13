@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.0
+
+- AI toolbox profiles: `style: economic | defensive | aggressive | balanced`, presets for boom, army share, research
+  first, home guard and attack pace (a factor on a named offense). A profile's own keys win.
+
 ## 0.20.2
 
 - AI toolbox: a town booms at once to 40% of its final villagers (at least 10), then grows the rest stage by stage.
