@@ -422,6 +422,14 @@ def test_toolbox_by_level_trade_boats_and_naval_waves():
                     "water": {"fishing": 4, "trade": 4}, "by_level": {"easy": {"water": {"fishing": 4}}}})
     assert green["composition"]["mix"] == {"core": 80, "support": 20} and green["attack"]["naval"] is False
     assert "trade" not in green["levels"]["easy"]["water"]                          # no trade on Standard
+    rush = expand({"kind": "town", "army": {"core": ["AXEMAN"]}, "rush": "TOOL_AGE"})
+    with games.use("ror"):
+        script = build_script(rush, "ror")
+    assert "(or (research-completed my-t-tool-age) (food-amount < 400))" in script     # villagers save for it
+    army = [b for b in script.split("(defrule") if "army stage 3/8: AXEMAN" in b][0]
+    assert "(research-completed my-t-tool-age)" in army                                # the army waits for it
+    assert "sn-cap-civilian-explorers 0" in script and "sn-allow-civilian-defense" not in script
+    assert [d for d in per.check(script) if d.severity == "error"] == []
 
 
 def test_toolbox_army_profile_keeps_its_size_and_attacks_in_waves():

@@ -73,10 +73,26 @@ def line_or_unit(name: str, game: str, names) -> str:
 
 
 def base_setup() -> list[str]:
-    """First setup action: the engine stops scaling this script's strategic numbers by difficulty (airef: scenario
-    AIs get attack groups and enemy response scaled to 0.2-0.8 below Hardest unless this is set first). The
-    toolbox's levels do the scaling instead."""
-    return ["(set-strategic-number sn-do-not-scale-for-difficulty-level 1)"]
+    """Setup every toolbox AI starts with. First: the engine stops scaling this script's strategic numbers by
+    difficulty (airef: scenario AIs get attack groups and enemy response scaled to 0.2-0.8 below Hardest unless this
+    is set first); the toolbox's levels do the scaling instead. Then no villager explores: an explorer walks into
+    enemies (Trade's Canaanites lost villagers that way, playtest 2026-11-13)."""
+    return ["(set-strategic-number sn-do-not-scale-for-difficulty-level 1)",
+            "(set-strategic-number sn-percent-civilian-explorers 0)",
+            "(set-strategic-number sn-cap-civilian-explorers 0)",
+            "(set-strategic-number sn-minimum-civilian-explorers 0)"]
+
+
+def rush_gates(spec: dict, names) -> tuple[list[str], list[str]]:
+    """(villager facts, army facts) for `rush: TOOL_AGE`: until that age is researched the army waits, and villagers
+    wait once food reaches 400, so the food piles up for the age (Trade's Canaanites never reached the Tool Age:
+    villagers and soldiers spent its food first, playtest 2026-11-13)."""
+    age = spec.get("rush")
+    if not age:
+        return [], []
+    const = names.const(age, "tech")
+    done = f"(research-completed {const})"
+    return [f"(or {done} (food-amount < 400))"], [done]
 
 
 def spend_gate(spec: dict) -> list[str]:
@@ -114,7 +130,7 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
     share = {r: mix[r] for r in ROLES if used[r]}
     total = sum(share.values()) or 1
     size, start = int(comp.get("size", 20)), int(comp.get("start", min(6, int(comp.get("size", 20)))))
-    gate = spend_gate(spec)
+    gate = spend_gate(spec) + rush_gates(spec, names)[1]
     stages = grow_stages or 0
     grow = spec.get("grow") or {}
     v0 = int(spec.get("villagers") or 0)
@@ -167,8 +183,9 @@ def defense(spec: dict) -> tuple[list[str], list[str]]:
     if not isinstance(d, dict) or set(d) - DEFENSE_KEYS:
         raise SkillError(f"defense is {{home: 30, radius: 14}}, got {d!r}")
     radius = int(d.get("radius", 14))
+    # Not sn-allow-civilian-defense: RoR's default AI sets 3 within its own micro, but on its own it sent Trade's
+    # Canaanite villagers to fight (playtest 2026-11-13).
     setup = ["(set-strategic-number sn-gather-idle-soldiers-at-center 1)",
-             "(set-strategic-number sn-allow-civilian-defense 3)",
              f"(set-strategic-number sn-enemy-sighted-response-distance {radius})",
              f"(set-goal {WAVE_OUT} 0)", f"(enable-timer {RECALL_TIMER} {RECALL_EVERY})"]
     rules = [_rule(["(town-under-attack)", f"(goal {WAVE_OUT} 1)", f"(timer-triggered {RECALL_TIMER})"],

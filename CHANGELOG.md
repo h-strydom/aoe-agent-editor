@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.20.1
+
+- AI toolbox: `rush: TOOL_AGE` (the army and extra villagers wait for the age); no villager explores; defense no
+  longer sends villagers to fight (`sn-allow-civilian-defense` left alone).
+
 ## 0.20.0
 
 - AI toolbox: `water.trade` (Trade Boats by line, trading on their own), profiles' `by_level` overrides (an offense

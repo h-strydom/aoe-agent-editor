@@ -93,7 +93,7 @@ TOP_KEYS = {"name", "gatherers", "villagers", "houses", "build_order", "step_tim
             "strategic_numbers", "rules", "transports", "transport_unit", "debug", "report", "window", "keep_from",
             "rebalance", "scout", "levels", "start", "army", "grow", "raids", "trade", "provoked",
             "composition", "defense", "retreat", "farms", "water", "goal", "upgrades",   # skills.py
-            "profile"}                                                                      # profiles.py
+            "rush", "profile"}                                                              # profiles.py
 # Difficulty levels: the script holds one copy of the rules per level, gated on goal LEVEL_GOAL, which the first
 # rules set from the game's difficulty: (difficulty == x) as the game's own scripts test it. DE's Easiest and
 # Standard are easiest/easy, Moderate is moderate; Hard, Hardest and Extreme play hard.
@@ -317,7 +317,8 @@ def _grow(spec: dict, game: str, names: Names) -> tuple[list[str], list[str]]:
     for k in range(1, stages + 1):
         frac, stage = k / stages, [f"(goal {GROW_GOAL} {k})"]
         label = f"grow stage {k}/{stages}"
-        rules.append(_rule([*stage, *skills.spend_gate(spec), f"(civilian-population < {round(v0 + (vn - v0) * frac)})",
+        rules.append(_rule([*stage, *skills.spend_gate(spec), *skills.rush_gates(spec, names)[0],
+                            f"(civilian-population < {round(v0 + (vn - v0) * frac)})",
                             f"(can-train {v})"], [f"(train {v})"], f"{label}: villagers"))
         army = a0 + (an - a0) * frac
         for n, c in soldiers:
@@ -731,7 +732,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
 
     if spec.get("villagers"):
         v = names.const("VILLAGER", "object")
-        body.append(_rule([*skills.spend_gate(spec), f"(civilian-population < {int(spec['villagers'])})",
+        body.append(_rule([*skills.spend_gate(spec), *skills.rush_gates(spec, names)[0],
+                           f"(civilian-population < {int(spec['villagers'])})",
                            f"(can-train {v})"], [f"(train {v})"], "villagers"))
     if spec.get("transports"):
         tr = names.const(spec.get("transport_unit") or TRANSPORT_UNITS.get(game, "TRANSPORT_SHIP"), "object")

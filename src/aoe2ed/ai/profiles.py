@@ -15,7 +15,7 @@ from __future__ import annotations
 
 KINDS = ("town", "army")
 PROFILE_KEYS = {"kind", "name", "pop", "army", "upgrades", "water", "defense", "offense", "retreat", "goal",
-                "farms", "grow_minutes", "ages", "spec", "by_level"}
+                "farms", "grow_minutes", "ages", "spec", "by_level", "rush"}
 # `by_level: {easy: {...}, hard: {...}}` overrides profile keys for one level (Standard plays easy, Hard hard); an
 # offense given there is used as is, without OFFENSE_LEVEL's scaling (Trade's Libyans wait 5 minutes on every level).
 LEVELS = ("easy", "normal", "hard")
@@ -122,6 +122,9 @@ def expand(profile: dict) -> dict:
             s["upgrades"] = prof["upgrades"]
         if prof.get("goal"):
             s["goal"] = prof["goal"]
+        if prof.get("rush"):                       # an age first: the army and extra villagers wait for it
+            s["rush"] = prof["rush"]
+            s["keep"] = [*(s.get("keep") or []), {"research": prof["rush"]}]
         return s
 
     normal = level("normal")
