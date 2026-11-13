@@ -40,7 +40,9 @@ LINES = {"ror": {
 }}
 ROLES = ("core", "support", "raiders")
 DEFAULT_MIX = {"core": 55, "support": 35, "raiders": 10}       # % of the army per role
-MAX_MAKERS = 3                                                  # production buildings per unit, at full size
+MAX_MAKERS = 3                                                  # production buildings of a kind, at most
+UNITS_PER_MAKER = 6                                             # one production building per this many of its units
+ECONOMY_FIRST = 80   # % of a grow stage's villagers before that stage's army trains (Farming playtest 2026-11-13)
 WAVE_POP, WAVE_FLOOR, WAVE_OUT, POP_NOW = 35, 36, 37, 38        # goals: army at launch, retreat floor, out, now
 RECALL_TIMER, RECALL_EVERY = 7, 60
 DEFENSE_KEYS = {"home", "radius"}
@@ -93,7 +95,10 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
     """Rules for `composition: {units: {core: [AXEMAN], support: [BOWMAN], raiders: [SCOUT]}, size: 30, start: 6,
     mix: {core: 55, support: 35, raiders: 10}}`: the army grows from `start` to `size` soldiers over the grow stages
     (or is `size` from the start without grow), split by role and evenly within a role, trained by line. The
-    buildings that make them follow: one each to start, up to MAX_MAKERS at full size."""
+    buildings that make them follow: one per UNITS_PER_MAKER of the units they make, up to MAX_MAKERS (a few
+    Scouts need one Stable; Farming's Lower Egypt built three, playtest 2026-11-13). With grow, a stage's army waits
+    until ECONOMY_FIRST % of that stage's villagers are there, so the economy grows a little before each bigger army
+    (soldiers came first in the rule order and starved its food, same playtest)."""
     from .. import tables
     comp = spec["composition"]
     if not isinstance(comp, dict) or set(comp) - COMPOSITION_KEYS or "units" not in comp:
@@ -109,6 +114,9 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
     size, start = int(comp.get("size", 20)), int(comp.get("start", min(6, int(comp.get("size", 20)))))
     gate = spend_gate(spec)
     stages = grow_stages or 0
+    grow = spec.get("grow") or {}
+    v0 = int(spec.get("villagers") or 0)
+    vn = max(v0, int(grow.get("villagers") or round(int(grow.get("to", 200)) * 0.4))) if grow else v0
 
     def counts(army: float) -> dict[str, int]:
         out = {}
@@ -130,14 +138,19 @@ def composition(spec: dict, game: str, names, grow_stages: int | None, grow_goal
         army = size if k is None else start + (size - start) * k / stages
         stage = [] if k is None else [f"(goal {grow_goal} {k})"]
         label = "army" if k is None else f"army stage {k}/{stages}"
-        for n, c in counts(army).items():
+        economy = []
+        if k:                                       # stage 0 is the starting army: no wait
+            villagers = math.floor((v0 + (vn - v0) * k / stages) * ECONOMY_FIRST / 100)
+            economy = [f"(civilian-population >= {villagers})"] if villagers > 0 else []
+        made = counts(army)
+        for n, c in made.items():
             const = line_or_unit(n, game, names)
-            rules.append(_rule([*stage, *gate, f"(unit-type-count-total {const} < {c})", f"(can-train {const})"],
-                               [f"(train {const})"], f"{label}: {n} x{c}"))
-        frac = 1 if k is None else (army - start) / max(1, size - start)
+            rules.append(_rule([*stage, *gate, *economy, f"(unit-type-count-total {const} < {c})",
+                                f"(can-train {const})"], [f"(train {const})"], f"{label}: {n} x{c}"))
         for b in sorted(set(makers.values())):
             const = names.const(b, "object")
-            want = 1 + math.floor((MAX_MAKERS - 1) * frac)
+            units_here = sum(c for n, c in made.items() if makers.get(n) == b)
+            want = min(MAX_MAKERS, max(1, math.ceil(units_here / UNITS_PER_MAKER)))
             rules.append(_rule([*stage, f"(building-type-count-total {const} < {want})", f"(can-build {const})"],
                                [f"(build {const})"], f"{label}: {b} x{want}"))
     return rules

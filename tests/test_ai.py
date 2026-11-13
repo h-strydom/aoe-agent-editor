@@ -392,6 +392,11 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert "(up-retreat-now)" in script and "(town-under-attack)" in script
     assert "(soldier-count >= 10)" in script                                           # economy first
     assert "(train my-o-bowman)" in script and "my-line299" not in script              # Bowmen by unit
+    assert "STABLE x2" not in script and "STABLE x3" not in script                     # 4 Scouts: one Stable
+    assert "BARRACKS x3" in script                                                     # 22 Axemen: three
+    stages = [b for b in script.split("(defrule") if "army stage 8/8: AXEMAN" in b]
+    assert "(civilian-population >= 24)" in stages[0]                                  # Standard: 80% of 30 first
+    assert "(civilian-population >= 48)" in stages[1]                                  # Moderate: 80% of 60
     axe = script.index("upgrades (unit): AXE")
     assert "(soldier-count" not in script[axe - 120:axe + 200]                         # Battle Axe never waits
     assert script.count("water: fishing up to 3") == 3                                 # one per level

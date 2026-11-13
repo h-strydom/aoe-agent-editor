@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.2
+
+- AI toolbox: production buildings scale with the units they make (one per 6, up to 3); with grow, each stage's army
+  waits for 80% of that stage's villagers, so the economy grows before the army.
+
 ## 0.19.1
 
 - AI toolbox: Bowmen train by unit id (RoR's bowman line doesn't train); unit upgrades (Battle Axe...) never wait
