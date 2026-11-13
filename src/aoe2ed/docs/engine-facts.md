@@ -188,6 +188,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Gaia gold mine didn't.
 - Several decision popups at once stack on screen (the first can hide under the menu buttons) and stay open; picking one
   doesn't close the others.
+- **Elevation counts from 1 in the editor**: a tile's `elevation` 4 in the file shows as 5 in the editor, 0 as 1
+  (seen 2026-11-13).
 
 ## Techs at runtime (Return of Rome)
 *Crucible shop tests, 2026-11-10.*
