@@ -20,7 +20,8 @@ gatherers: auto                     # villager split: auto (default) follows wha
                                     # cost (data/costs.json, from the game data), blended with AIBuilder's
                                     # 45/30/15/10; or {food: 45, wood: 35, gold: 15, stone: 5} in percent
 villagers: 25                       # keep training villagers up to this many (default: off)
-houses: true                        # build a house when housing is nearly full (default: true)
+houses: true                        # build a house when housing is nearly full (default: true); a number is
+                                    # the headroom it builds at (true = 4, toolbox towns 8)
 profile: {kind: town, pop: default, army: {core: [AXEMAN], support: [BOWMAN]}, offense: light}
                                     # the toolbox (docs/ai-toolbox.md): expanded into the keys below first
 composition: {units: {core: [AXEMAN], support: [BOWMAN], raiders: [SCOUT]}, size: 40, start: 6}

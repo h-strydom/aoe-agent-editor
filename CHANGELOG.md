@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.1
+
+- AI spec: `houses` takes a number, the housing headroom it builds the next House at. Toolbox towns build at 8
+  (was 4), so a booming town doesn't stall on housing.
+
 ## 0.21.0
 
 - AI toolbox profiles: `style: economic | defensive | aggressive | balanced`, presets for boom, army share, research

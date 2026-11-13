@@ -23,6 +23,9 @@ POP = {"easy": 50, "normal": 100, "hard": 150}
 GROW_MINUTES = {"easy": 90, "normal": 60, "hard": 40}
 ARMY_SHARE = 40                       # % of the population that's army at full size
 START_ARMY = 6
+# A town builds its next House with this much room left, not 4: a booming town trains from its Town Center and
+# Barracks at once and stalled on housing (Religion's Libyans, playtest 2026-11-13).
+TOWN_HOUSE_HEADROOM = 8
 # A town booms at once to this share of its final villagers, then grows the rest stage by stage: starting at 3 left
 # Religion's Libyans on about 5 villagers with berries all around (the first grow stage comes after 7.5 minutes on
 # Moderate; playtest 2026-11-13).
@@ -121,6 +124,7 @@ def expand(profile: dict) -> dict:
                 s["composition"] = {"units": units, "size": soldiers, "start": min(START_ARMY, soldiers)}
                 if army.get("mix"):
                     s["composition"]["mix"] = dict(army["mix"])
+            s["houses"] = TOWN_HOUSE_HEADROOM
             s["farms"] = prof.get("farms", "auto")
             s["keep"] = [{"build": "MARKET"}] if s["farms"] else []
             s["keep"] += [{"research": a} for a in prof.get("ages") or []]

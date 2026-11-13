@@ -382,6 +382,7 @@ def test_toolbox_town_profile_compiles_with_its_skills():
     assert spec["levels"]["hard"]["grow"]["to"] == 150
     assert spec["composition"]["size"] == 40 and spec["attack"]["first"] == 900
     assert spec["villagers"] == 24 and spec["levels"]["easy"]["villagers"] == 12        # boom: 40% of 60 and of 30
+    assert spec["houses"] == 8                                                         # houses a bit earlier
     assert spec["levels"]["hard"]["attack"]["first"] == 630                             # Hard attacks sooner
     with games.use("ror"):
         script = build_script({"profile": profile}, "ror")

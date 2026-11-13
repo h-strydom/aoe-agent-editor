@@ -6,7 +6,8 @@ Spec (YAML/JSON; every key optional):
   gatherers: auto                    # villager split: auto (default) follows what the build order and keep list
                                      #   cost, blended with AIBuilder's 45/30/15/10; or {food, wood, gold, stone} %
   villagers: 25                      # keep training villagers up to this many (default: off)
-  houses: true                       # build a house whenever housing is nearly full (default true)
+  houses: true                       # build a house whenever housing is nearly full (default true); a number
+                                     #   is the headroom it builds at (true = 4)
   build_order:                       # worked through in order; a step is done when its count is reached
     - {build: BARRACKS}              #   count = how many in total (built or being built), default 1
     - {train: CLUBMAN, count: 5}     #   count = how many alive in total
@@ -747,7 +748,8 @@ def _body(spec: dict, game: str, names: Names) -> list[str]:
         body.append(provoked(pv["players"], pv.get("signal")))
     if spec.get("houses", True):
         h = names.const("HOUSE", "object")
-        body.append(_rule([f"(housing-headroom < {HOUSE_HEADROOM})", "(population-headroom > 0)", f"(can-build {h})"],
+        room = HOUSE_HEADROOM if spec.get("houses", True) is True else int(spec["houses"])
+        body.append(_rule([f"(housing-headroom < {room})", "(population-headroom > 0)", f"(can-build {h})"],
                           [f"(build {h})"], "houses"))
     if scout:
         sc = names.const(scout, "object")
