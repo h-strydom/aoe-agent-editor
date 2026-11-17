@@ -278,6 +278,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   `xsEffectAmount(cDisableTech, tech, cAttributeDisable, 0, p)` removes the button, but `cAttributeEnable` doesn't
   bring it back, nor does `cModifyTech, cAttrSetState, cTechStateReady`; the trigger Enable/Disable Technology does.
   `cAttrSetLocation -1` doesn't take a placed tech off its building.
+- One unit's HP from XS (RoR, crucible_run, 2026-11-17): `xsSetUnitProperty(id, cUnitHitpoints, hp)` sets its current
+  HP, and 0 destroys it (a wall fell to rubble, no crash); `xsEffectAmount(cSetUnitAttribute, id, cHitpoints, 1, p)`
+  sets its maximum, so a 1/1 HP building can't be repaired up. Both on the first tick of an `active` rule.
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*
 - Script Call messages compile in trigger order and XS requires definition before use, so the
@@ -307,6 +310,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   applied; with `store_key` the pick was saved (bank `faction = 2`) and loaded in mission 2.
   *Factions playtest, 2026-10-31.* To re-roll a saved pick, delete the key: `bank_set(campaign, {}, delete=["faction"])`
   with the game closed.
+- Allied shared vision without Writing: the effect Set Player Visibility (41), source and target players, state 0
+  (visible), both ways. *crucible_run, RoR, 2026-11-17.*
+- `cUnitAttackable` 0 (XS, per unit) stops targeted attacks on buildings but not splash. Splash should spare a unit whose
+  Blast Defense Level (45) is below the attack's Blast Attack Level (catapults 2; RoR's buildings are 2-3, units 3,
+  trees 0); crucible_run sets 0 on the invulnerable player's types (unverified).
 - Setting player 1's `REVEAL_MAP` resource (203) to 2 at start reveals the whole map with no fog; 1 = explored.
   *Frontier/probe playtest, 2026-10-31.*
 
