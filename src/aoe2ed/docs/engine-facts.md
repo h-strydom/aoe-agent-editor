@@ -45,8 +45,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   campaign screen, 2026-11-09.*
 - **A local data mod isn't recorded in the scenario.** Two blank RoR scenarios saved from the editor, one made with
   a local data mod picked and one without, differ only in the file name, save time and editor camera (every section
-  compared, 2026-11-17). So "Scenario Default" can't pick a local data mod; whether a published one (with a mod id)
-  is recorded is untested. A data mod picked on the campaign screen does stay loaded from one mission to the next.
+  compared, 2026-11-17). **Nor is a published one**: made with the subscribed copy (mod id 593722), the scenario held
+  neither the id (as text or int32) nor the mod's name anywhere in its decompressed bytes. So in Return of Rome a
+  scenario doesn't name its data mod and "Scenario Default" can't pick one: the player picks it on the campaign
+  screen. Once picked, it stays loaded from one mission to the next.
 - Picking a data mod other than the scenario's own in that dropdown shows a warning first.
 - **Restart the game after reinstalling a data mod.** Replacing a local data mod's files while the game runs gave
   "Error: problem loading data mod" when it was picked; after a restart the same files loaded. *crucible_run,
