@@ -44,6 +44,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   scenario records the data mod it was made with, and a campaign can depend on one. Still open: which scenario
   field records it. *User's screenshot of the RoR campaign screen, 2026-11-09.*
 - Picking a data mod other than the scenario's own in that dropdown shows a warning first.
+- **Restart the game after reinstalling a data mod.** Replacing a local data mod's files while the game runs gave
+  "Error: problem loading data mod" when it was picked; after a restart the same files loaded. *crucible_run,
+  2026-11-17.* A scenario tested from the editor runs without the data mod: its techs don't exist there
+  (`xsGetTechState` gives -2).
 - **A chosen data mod applies in a campaign:** RoR's data file edited with genieutils-py (Hoplites 999 HP,
   Axemen 400 HP, the Greek bonuses removed) took effect in both missions. Mods > Installed Mods marks data mods
   with a gear icon. *Crucible data mod test, 2026-11-09.*
