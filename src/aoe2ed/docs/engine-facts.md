@@ -312,9 +312,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   with the game closed.
 - Allied shared vision without Writing: the effect Set Player Visibility (41), source and target players, state 0
   (visible), both ways. *crucible_run, RoR, 2026-11-17.*
-- `cUnitAttackable` 0 (XS, per unit) stops targeted attacks on buildings but not splash. Splash should spare a unit whose
+- `cUnitAttackable` 0 (XS, per unit) stops targeted attacks on buildings but not splash. Splash spares a unit whose
   Blast Defense Level (45) is below the attack's Blast Attack Level (catapults 2; RoR's buildings are 2-3, units 3,
-  trees 0); crucible_run sets 0 on the invulnerable player's types (unverified).
+  trees 0): at 0, set on the invulnerable player's types (`xsEffectAmount(cSetAttribute, type, cBlastDefenseLevel, 0,
+  p)`), catapult splash spared them (verified 2026-11-17).
 - Setting player 1's `REVEAL_MAP` resource (203) to 2 at start reveals the whole map with no fog; 1 = explored.
   *Frontier/probe playtest, 2026-10-31.*
 
