@@ -323,6 +323,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Timer conditions on triggers enabled at start fire at that game time (waves at 20 s and 50 s
   logged at exactly t=20/t=50). *Smoke telemetry.*
 - Display Timer with message `"Survive: %d"` shows the remaining seconds. *Smoke test.*
+- Objective text shows a player's attribute as `<Attribute Name, player>`, with the attribute named as the game's lists
+  name it: `<Relics Captured, 4>` showed player 4's resource 7 (set by `xsSetPlayerAttribute`); `<Gold Storage, 4>`,
+  `<Gold, 4>`, `<Relics, 4>`, `<Relics Collected, 4>` and `<Gold Amount, 4>` stayed as typed. A trigger variable
+  can't be shown, so keep a count in a spare player resource. *crucible_run, RoR, 2026-11-17.*
 - `create_object` + `attack_move` over the spawn area sends spawned units to the target. *Smoke
   test: all 7 wave units engaged and died.*
 - Create Decision shows a two-option popup; Decision Triggered fires for the chosen option. *Smoke test.*
