@@ -41,8 +41,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
 ## Data mods
 - Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
   Difficulty. Its tooltip: "Scenario Default will load the Data Mod with which it was created, if available." So a
-  scenario records the data mod it was made with, and a campaign can depend on one. Still open: which scenario
-  field records it. *User's screenshot of the RoR campaign screen, 2026-11-09.*
+  scenario records the data mod it was made with, and a campaign can depend on one. *User's screenshot of the RoR
+  campaign screen, 2026-11-09.*
+- **A local data mod isn't recorded in the scenario.** Two blank RoR scenarios saved from the editor, one made with
+  a local data mod picked and one without, differ only in the file name, save time and editor camera (every section
+  compared, 2026-11-17). So "Scenario Default" can't pick a local data mod; whether a published one (with a mod id)
+  is recorded is untested. A data mod picked on the campaign screen does stay loaded from one mission to the next.
 - Picking a data mod other than the scenario's own in that dropdown shows a warning first.
 - **Restart the game after reinstalling a data mod.** Replacing a local data mod's files while the game runs gave
   "Error: problem loading data mod" when it was picked; after a restart the same files loaded. *crucible_run,
