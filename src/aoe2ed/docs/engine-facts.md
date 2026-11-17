@@ -305,6 +305,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - A computer player with the game's default AI **resigns** once it judges the game lost (frontier
   M3: it resigned after one camp building fell), which ends trigger-driven missions early. The
   compiler now gives players 2+ "None AI" unless the spec sets `players.<n>.ai`. *Frontier playtest, 2026-10-30.*
+- **"None AI" still explores**: it's a script with one empty rule, so the default strategic numbers stand and the
+  player's idle villagers wander off exploring (RoR campaign, crucible hub, 2026-11-17). The parser's "Immobile AI"
+  (`ai: immobile`) sets the explorer, gatherer and attack numbers to 0; crucible uses it (unverified that it stops it).
+- **An active player with no units gets a starting town** (a Town Center and villagers, placed by the game) and plays
+  it: set `active_players` to the highest player who owns something. *RoR campaign, crucible hub, 2026-11-17.*
 - Civilization `RANDOM` (stored as `RANDOM-CIV`, the same value the editor writes and the parser's blank-scenario
   default) is only resolved by the **scenario lobby** (Single Player → Scenario), which rolls a civ at launch;
   Restart keeps it. **Inside a campaign, `RANDOM` and `FULL_RANDOM` always become Britons (civ 1)**, in every
