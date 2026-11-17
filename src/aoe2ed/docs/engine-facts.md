@@ -306,6 +306,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - `xsChatData("... %d", value)` substitutes the value. *Smoke test results message.*
 
 ## Players and victory
+- **Losing a mission on purpose**: there's no "declare defeat" effect, and declaring another player the winner also
+  wins it for that player's allies. Killing everything of the player's (Kill Object over the whole map) loses the
+  mission. *Crucible campaign without its data mod, RoR, 2026-11-17.*
 - A player who owns only Houses is defeated immediately; if that is the only enemy, the other
   side wins at t=0 even with victory condition Custom. Use the `anchor` block. *Smoke test.*
 - A computer player with the game's default AI **resigns** once it judges the game lost (frontier
