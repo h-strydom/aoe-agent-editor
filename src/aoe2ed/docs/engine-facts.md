@@ -215,6 +215,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Giving a building a trainable unit adds a gather-point button at row 3, column 1 of its panel (button 11). A free
   dummy unit still needs population room.
 - Two percentage HP effects stack multiplicatively (Nobility x1.15 then a x1.15 boon: 125 -> 144 -> 166).
+- **An upgrade (effect command 3) doesn't make new units**: the old ones take the new unit's stats under their old id
+  (Clubmen researching Axe stay 281 with the Axeman's stats; a building stays 12 with the Age2 Barracks' look, so units
+  still train "at 12"). So an effect aimed at the upgraded unit alone (Axeman 531) misses them: aim at the whole line
+  (531 and 281), as RoR's own bonuses do (Macedonians: 93, 358, 359). A villager bonus by class worked, a +HP boon on
+  the Axeman alone didn't. *Crucible run, 2026-11-18.*
 - **A free tech with research time 0 is researched by the game itself** as soon as it's available: that's how RoR's
   hidden enablers work (Chariot at the Stable, Small War Ship at the Dock: all time 0). A crucible hub button at 0
   researched over and over at once (every upgrade past its maximum, and "Begin" won the mission). 1 s is the floor.
