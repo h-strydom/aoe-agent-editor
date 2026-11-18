@@ -220,8 +220,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   researched over and over at once (every upgrade past its maximum, and "Begin" won the mission). 1 s is the floor.
   *Crucible hub, 2026-11-18.*
 - **A building given to a player (Change Ownership) keeps the age look it had**: the player's age techs don't upgrade
-  it (AoE's long-standing rule, the user's observation). Crucible replaces each such building, on its own tile, with
-  the next age's unit (Replace Object) when the player reaches the age. A building whose maximum HP was set per unit
+  it (AoE's long-standing rule, the user's observation). Replacing it with the next age's unit (Replace Object) fixes
+  the look but **loses its buttons**: RoR's units train at the Age1 building (the Barracks, 12), and the age upgrade
+  keeps that link while a replaced Age2 Barracks (498) trains nothing. So crucible replaces only houses; a working
+  building is removed and created anew for the player on its tile (unverified that it then ages). A building whose maximum HP was set per unit
   (`cSetUnitAttribute`) also seemed to miss its owner's age upgrade; setting it per type for that player (`cSetAttribute`)
   let it upgrade. *Crucible run, 2026-11-18.*
 
