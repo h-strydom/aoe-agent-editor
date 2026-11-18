@@ -215,6 +215,15 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Giving a building a trainable unit adds a gather-point button at row 3, column 1 of its panel (button 11). A free
   dummy unit still needs population room.
 - Two percentage HP effects stack multiplicatively (Nobility x1.15 then a x1.15 boon: 125 -> 144 -> 166).
+- **A free tech with research time 0 is researched by the game itself** as soon as it's available: that's how RoR's
+  hidden enablers work (Chariot at the Stable, Small War Ship at the Dock: all time 0). A crucible hub button at 0
+  researched over and over at once (every upgrade past its maximum, and "Begin" won the mission). 1 s is the floor.
+  *Crucible hub, 2026-11-18.*
+- **A building given to a player (Change Ownership) keeps the age look it had**: the player's age techs don't upgrade
+  it (AoE's long-standing rule, the user's observation). Crucible replaces each such building, on its own tile, with
+  the next age's unit (Replace Object) when the player reaches the age. A building whose maximum HP was set per unit
+  (`cSetUnitAttribute`) also seemed to miss its owner's age upgrade; setting it per type for that player (`cSetAttribute`)
+  let it upgrade. *Crucible run, 2026-11-18.*
 
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
