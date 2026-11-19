@@ -386,6 +386,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Create Decision followed by a stored answer carries into the next mission. *Frontier playtest.*
 - Several `create_object` effects at the same tile place only **one** unit ("+4 Men-at-Arms" gave 1).
   Give each unit its own tile with the `spawn` helper. *Crucible playtest, 2026-10-30.*
+- `create_object` doesn't create a **building** over anything standing on its footprint: a Gaia berry bush under a
+  Granary's spot meant no Granary at all. Clear the spot in the map. Removing a building and creating one on the same
+  tile works a second later. *Crucible playtest, 2026-11-19.*
+- A Create Decision with an empty `message_option2` shows a single button. The popup stays up until it's clicked, so
+  "claim victory whenever you like" is one decision asked once. *Crucible playtest, 2026-11-19.*
 
 ## Known parser issue (AoE2ScenarioParser 0.9.8)
 - Modify (Object) Attribute on Population (110): the parser lists 110 as an integer attribute, so -0.5 is cut to -1 and
