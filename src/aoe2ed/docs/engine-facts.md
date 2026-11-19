@@ -389,9 +389,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - `create_object` doesn't create a **building** over anything standing on its footprint: a Gaia berry bush under a
   Granary's spot meant no Granary at all. Clear the spot in the map. Removing a building and creating one on the same
   tile works a second later. *Crucible playtest, 2026-11-19.*
-- **Change Object Caption** (by area + unit type, on a player's building) shows its text over the building and can be
-  changed again mid-game; on Gaia Flags (by object id) it showed nothing. The text is fixed per effect: XS has no
-  caption function. *Crucible hub, RoR, 2026-11-19.*
+- **Change Object Caption** shows its text over a building (by area + unit type, or by object id) and can be changed
+  again mid-game. A real line break makes more lines, in a trigger's caption and in one written in the map; a
+  written `
+` shows as is. Tags like the objective's (`<Relics Captured, 1>`) are **not** filled in, set once or
+  set again. Flags (Gaia's or the player's, in the map or by trigger) show no caption. The text is fixed per effect:
+  XS has no caption function, so a live count takes one effect per value. *Crucible caption probe, RoR,
+  2026-11-19.*
 - A looping trigger with the condition **Research Technology** fires every second for as long as the tech stays
   researched: count a purchase once by resetting the tech in the same trigger (Enable/Disable Technology on, then off).
   *Crucible hub, 2026-11-19: levels were counted twice when the reset came a second later.*
