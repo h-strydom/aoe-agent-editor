@@ -389,6 +389,15 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - `create_object` doesn't create a **building** over anything standing on its footprint: a Gaia berry bush under a
   Granary's spot meant no Granary at all. Clear the spot in the map. Removing a building and creating one on the same
   tile works a second later. *Crucible playtest, 2026-11-19.*
+- **Change Object Caption** (by area + unit type, on a player's building) shows its text over the building and can be
+  changed again mid-game; on Gaia Flags (by object id) it showed nothing. The text is fixed per effect: XS has no
+  caption function. *Crucible hub, RoR, 2026-11-19.*
+- A looping trigger with the condition **Research Technology** fires every second for as long as the tech stays
+  researched: count a purchase once by resetting the tech in the same trigger (Enable/Disable Technology on, then off).
+  *Crucible hub, 2026-11-19: levels were counted twice when the reset came a second later.*
+- **Enable/Disable Technology (on) skips the tech's prerequisites**: techs disabled at the start and switched back on
+  could be researched before their age. Switch one on only once its prerequisites are researched.
+  *Crucible run, 2026-11-19.*
 - A Create Decision with an empty `message_option2` shows a single button. The popup stays up until it's clicked, so
   "claim victory whenever you like" is one decision asked once. *Crucible playtest, 2026-11-19.*
 
