@@ -135,6 +135,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
   at other sprites: copy the unit's graphics, sounds and linked units (dead unit, projectiles, the alternate form in
   genieutils' `nothing` field) and renumber those whose RoR entry differs. Ported units then animate, attack, shoot
   and die correctly.
+- **A data mod can bring tech icons of its own** (RoR): ship copies of `modes/Pompeii/widgetui/icons.json` (icon
+  number -> material, under "Techs") and `morematerials.json` with new entries: a number past RoR's last, a
+  "GlobalTextures" TextureDef pointing at a PNG under the mod's `modes/Pompeii/widgetui/textures/`, and a "Texture"
+  MaterialDef. The trigger effect **Change Technology Icon** (quantity = the number) shows the picture, and swaps it
+  mid-game as often as wanted; the same number set as the tech's `icon_id` in the data showed RoR's default scroll
+  instead. A DDS (DXT5 from Pillow) was only tried as a data icon. *Crucible icon probe, 2026-11-20.*
 - `icon_id` indexes RoR's own icon set (no fallback to AoE2's icon files): an AoE2 id shows the wrong portrait, a
   Chronicles one (past RoR's set) shows black.
 - Mutually exclusive techs: each tech's effect disables every tech in the set (command 102), as Chronicles does. But
