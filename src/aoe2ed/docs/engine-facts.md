@@ -238,6 +238,15 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (`cSetUnitAttribute`) also seemed to miss its owner's age upgrade; setting it per type for that player (`cSetAttribute`)
   let it upgrade. *Crucible run, 2026-11-18.*
 
+- **A tech's cost stops at 0**: Add Technology Cost taking it below 0 leaves it at 0 (a -90 on a 60-gold cost read 0).
+  Two percentage cuts each added from the base cost (as RoR's own bonuses do) make the tech free once they pass
+  100% together. *Crucible boon check, 2026-11-21.*
+- XS reads data values live, per player, after a tech: `xsGetObjectAttribute(player, unit, attribute, class)` (armour
+  and attack by class; costs per slot with Amount First/Second/Third Cost, 174-176), `xsGetTechAttribute(player, tech,
+  cTechCost, resource)` and `xsPlayerAttribute`; all 1,200 values a boon run changed read as expected the tick after
+  `xsResearchTechnology`. `xsGetTechAttribute(..., cTechResearchTime, -1)` reads -1: give the research location
+  index (0). *Crucible boon check, 2026-11-21.*
+
 ## Adding buildings in a data mod
 - **A data mod can add a new building** that villagers build: a copy of an existing unit appended to every civ's
   unit list (genieutils-py), with its own id, `enabled` 1 and a train location at the builder (118). A Catapult Tower
