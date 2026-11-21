@@ -63,7 +63,7 @@ def random_faction(ctx: Ctx, *, factions: list[dict], player: int = 1, var: str 
                   "conditions": [{"type": "timer", "timer": 1},
                                  {"type": "variable_value", "variable": var, "comparison": "EQUAL", "quantity": 0}],
                   "effects": [{"type": "script_call", "message":
-                               f"void {fn}() {{ xsSetTriggerVariable({vid}, xsGetRandomNumberLH(1, {n + 1})); }}"}]})
+                               f"void {fn}() {{ xsSetTriggerVariable({vid}, 1 + xsGetRandomNumberLH(0, {n})); }}"}]})
     for i, f in enumerate(factions, 1):
         eff = faction_effects(f, player)
         if store_key:  # stored once the pick is known (not next to the XS roll, in case it isn't synchronous)

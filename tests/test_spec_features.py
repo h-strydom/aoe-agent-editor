@@ -199,7 +199,7 @@ def test_random_faction_block(tmp_path):
     s = o.scenario
     assert r["triggers"] == ["Faction Load", "Faction Roll", "Faction 1", "Faction 2"]
     roll = T.trigger_to_dict(T.find_trigger(s, "Faction Roll"))
-    assert "xsGetRandomNumberLH(1, 3)" in roll["effects"][0]["message"]
+    assert "1 + xsGetRandomNumberLH(0, 2)" in roll["effects"][0]["message"]
     assert [c["type"] for c in roll["conditions"]] == ["timer", "variable_value"]
     f1 = [e["type"] for e in _effects(s, "Faction 1")]
     assert f1[:3] == ["store_key_value", "change_civilization_name", "enable_disable_object"]

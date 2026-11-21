@@ -342,6 +342,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
   An XS wall-breaker was tried and dropped: the fix is maps without closed walls.
 - `vector(...)` takes float literals only; build one from variables with `xsVectorSet(x, y, z)`. *xs-check.*
 - XS has no unary `!`: write `(x == false)`. *xs-check.*
+- `xsGetRandomNumberLH(low, high)` with a `low` above 0 doesn't start at `low` (RoR, crucible_run, 2026-11-21): towers
+  set to `xsGetRandomNumberLH(40, 76)` percent of 125 HP came out at 5-43 HP (4-34%), as if it returned 0 to
+  `high - low`. Always roll from 0 and add the low end yourself: `low + xsGetRandomNumberLH(0, high - low + 1)` for low
+  to high inclusive. `xsGetRandomNumberLH(0, n)` gives 0 to n-1.
+- A player left with only walls and towers is defeated ("Allies defeated." in chat), even with conquest victory off.
+  Keep such a player in the game with some other building (crucible gives it an unattackable house out of the way).
 - DE's XS has `int xsCreateUnit(objectId, playerId, vector location, bool foundation, bool playCreatedSound, bool
   checkCollision)` and `int xsGetDifficulty()` (`cDifficultyEasiest` 4, `Easy` (the menu's Standard) 3, `Moderate` 2,
   `Hard` 1, `Hardest` 0, `Extreme` -1). Both compile; not yet confirmed in a RoR game. *xs-check's function table.*
