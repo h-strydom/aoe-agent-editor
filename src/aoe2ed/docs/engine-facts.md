@@ -341,6 +341,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   beside the gap rather than walking through. `xsGetUnitMoveTarget` reports no point for a unit on an attack-move.
   An XS wall-breaker was tried and dropped: the fix is maps without closed walls.
 - `vector(...)` takes float literals only; build one from variables with `xsVectorSet(x, y, z)`. *xs-check.*
+- XS has no unary `!`: write `(x == false)`. *xs-check.*
+- DE's XS has `int xsCreateUnit(objectId, playerId, vector location, bool foundation, bool playCreatedSound, bool
+  checkCollision)` and `int xsGetDifficulty()` (`cDifficultyEasiest` 4, `Easy` (the menu's Standard) 3, `Moderate` 2,
+  `Hard` 1, `Hardest` 0, `Extreme` -1). Both compile; not yet confirmed in a RoR game. *xs-check's function table.*
 
 ## Players and victory
 - **Losing a mission on purpose**: there's no "declare defeat" effect, and declaring another player the winner also
