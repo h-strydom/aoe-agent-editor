@@ -335,6 +335,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
   one file. `xsWriteInt` writes raw little-endian int32. *Smoke test + civ probe campaigns, 2026-10-31.*
 - XS chat/print output does not appear in `logs/<session>/MainLog.txt`.
 - `xsChatData("... %d", value)` substitutes the value. *Smoke test results message.*
+- Melee units against walls (RoR, crucible walls check, 2026-11-21): an attack-move never picks a wall, so melee units
+  facing a closed wall, or a target walled in all round, stand at it until killed. `xsTaskUnits(ids,
+  cActionTypeDefault, position, wallId)` makes them attack a piece, but once it falls they go on to the next piece
+  beside the gap rather than walking through. `xsGetUnitMoveTarget` reports no point for a unit on an attack-move.
+  An XS wall-breaker was tried and dropped: the fix is maps without closed walls.
+- `vector(...)` takes float literals only; build one from variables with `xsVectorSet(x, y, z)`. *xs-check.*
 
 ## Players and victory
 - **Losing a mission on purpose**: there's no "declare defeat" effect, and declaring another player the winner also
