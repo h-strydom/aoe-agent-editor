@@ -354,7 +354,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Barracks. *Crucible check, 2026-11-23.*
 - Transports by trigger don't land (RoR, crucible check, 2026-11-23): a Light Transport made by Create Object, filled
   by Create Garrisoned Object (transport type in an area, units type 2), then sent by the Unload effect, or by Task
-  Object, to a beach tile put nobody ashore. (Whether the fill itself worked wasn't seen.) The xs-check docs list
+  Object, to a beach tile put nobody ashore; nor did XS `xsTaskUnits` with Unload (9), Ungarrison (13) or Default from
+  out at sea (the Legion stand-in had the immobile AI). Loading works both ways: Create Garrisoned Object, and
+  XS `xsSetUnitProperty(unit, cUnitGarrisonedInId, transport)` on a unit made on land (it carried 3).
+  The xs-check docs list
   `cctionTypeUnload` for the Unload task, but the game has no such constant (XS Error 0172): use 9, the trigger
   ActionType numbering (UNLOAD 9, UNGARRISON 13).
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
