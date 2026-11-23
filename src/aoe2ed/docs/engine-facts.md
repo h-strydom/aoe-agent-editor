@@ -257,10 +257,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Names: the build button shows the copied unit's text (it read "Guard Tower"). The built tower showed the name of
   string 7079, which RoR uses for "Ballista Tower" even though its tech is called "Catapult Tower". A new unit
   needs strings of its own (unverified how a mod adds them).
-- RoR's Town Center (109, and 71, 141, 142 by age) has no build button: its train location is empty (unit -1), so
-  villagers can never build one. Setting it to the builder (118) on a free economic slot (5) at its own cost (200
-  wood) and time (60 s) gives it one; `enabled` stays 0 for a trigger to switch on. *Data reading, crucible
-  2026-11-23; in game unverified.*
+- Villagers don't build RoR's Town Center (109) itself (it has no train location) but RTWC1X (621; 617, 484, 597 by
+  age), named "Town Center", on the economic page's slot 11, whose stack unit is 109: it finishes as the Town
+  Center. Tech 115 ("shadow gb->tc", needing 33, the Government Center) switches it on. A lockdown that disables
+  every trained unit catches it. *Data reading, crucible 2026-11-23.*
 - **Population room on buildings already standing** (data reading, 2026-11-23): room is a building's first resource
   storage (type 4, mode 4: given when finished, taken back when it dies), so raising it (attribute 21) only reaches
   buildings finished afterwards: a Town Center room boon did nothing for the starting Town Center. RoR's
@@ -363,7 +363,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
   Keep such a player in the game with some other building (crucible gives it an unattackable house out of the way).
 - With every other player defeated the game ends in victory, whatever the victory settings: in crucible's hub
   (everyone allied, Custom victory) buying every upgrade handed over all of the tier players' buildings and units,
-  and the hub was won at once (playtest 2026-11-23). Keep each such player a building of its own.
+  and the hub was won at once (playtest 2026-11-23). Keep each such player a building that produces (a Barracks):
+  houses alone don't keep a player in the game.
 - DE's XS has `int xsCreateUnit(objectId, playerId, vector location, bool foundation, bool playCreatedSound, bool
   checkCollision)` and `int xsGetDifficulty()` (`cDifficultyEasiest` 4, `Easy` (the menu's Standard) 3, `Moderate` 2,
   `Hard` 1, `Hardest` 0, `Extreme` -1). Both compile; not yet confirmed in a RoR game. *xs-check's function table.*
