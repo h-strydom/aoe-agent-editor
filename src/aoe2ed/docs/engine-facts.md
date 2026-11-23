@@ -136,8 +136,8 @@ Add to this file whenever a playtest teaches something; never record guesses her
   (placed as Gaia with capture flag 2, it is captured on contact). Garrisoned, it is still listed by
   `xsGetPlayerUnitIds(p, type, arr)`, and `xsGetGarrisonedInUnitId` on it returns a container (>= 0, in a Town Center
   and in a Barracks). But `xsGetUnitType` of that container never mapped to the building's type (109, 12...), so the
-  type-keyed boost didn't start; matching the container against `xsGetPlayerUnitIds` of each building type instead
-  is the next test.
+  type-keyed boost didn't start. Matching the container's id against `xsGetPlayerUnitIds` of each building type
+  works: the boost turned on for a Town Center and a Barracks, and the discount applied to villagers and clubmen.
 - A building's work rate (13) speeds up both its training and its research. Set it on every age look of the
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
