@@ -360,6 +360,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
   The xs-check docs list
   `cctionTypeUnload` for the Unload task, but the game has no such constant (XS Error 0172): use 9, the trigger
   ActionType numbering (UNLOAD 9, UNGARRISON 13).
+- Transports from XS (RoR, crucible check, 2026-11-23): Light Transports made by `xsCreateUnit` and loaded by XS sail
+  where `xsTaskUnits(ids, cActionTypeMove, pos)` sends them, under the immobile AI or none. At the shore none landed:
+  task 9 (Unload), 13 (Ungarrison), or setting each passenger's `cUnitGarrisonedInId` to -1, nor the trigger Unload
+  effect. What works: fake the landing (RoR-Reimagined Egypt 5): create the party on the beach (a known unit type)
+  and remove the passengers (`xsSetUnitProperty(id, cUnitHitpoints, 0)` kills one inside: it shows dying in the water).
+- `xsGetUnitType(id)` didn't give the unit's type, twice: a Barracks or Town Center (the type never matched 12 or
+  109), and a garrisoned Clubman (`xsCreateUnit` of the result made nothing). Keep types known instead.
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*
 - Script Call messages compile in trigger order and XS requires definition before use, so the
