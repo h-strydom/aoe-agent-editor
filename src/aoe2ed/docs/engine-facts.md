@@ -257,6 +257,19 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Names: the build button shows the copied unit's text (it read "Guard Tower"). The built tower showed the name of
   string 7079, which RoR uses for "Ballista Tower" even though its tech is called "Catapult Tower". A new unit
   needs strings of its own (unverified how a mod adds them).
+- RoR's Town Center (109, and 71, 141, 142 by age) has no build button: its train location is empty (unit -1), so
+  villagers can never build one. Setting it to the builder (118) on a free economic slot (5) at its own cost (200
+  wood) and time (60 s) gives it one; `enabled` stays 0 for a trigger to switch on. *Data reading, crucible
+  2026-11-23; in game unverified.*
+- **Population room on buildings already standing** (data reading, 2026-11-23): room is a building's first resource
+  storage (type 4, mode 4: given when finished, taken back when it dies), so raising it (attribute 21) only reaches
+  buildings finished afterwards: a Town Center room boon did nothing for the starting Town Center. RoR's
+  Urbanization does both: +4 on every House's storage, and resource command `(1, 4, -1, 51, 4)`, room + 4 times
+  resource 51, which each finished House adds 1 to (its second storage). Crucible gives Town Centers and towers a
+  counting storage in spare resources 104 and 105 (unused by any RoR unit or effect) the same way; whether the
+  counted command works on them in game is unverified.
+- The Tool Age's Dock techs, Light Transport (1) and Small War Ship (3), have no research time: they're enablers the
+  game researches by itself (they enable units 545 and 539). The Dock's buttons start at the Bronze Age.
 
 ## Combat settings (Return of Rome, per unit with Modify Object Attribute)
 - Mechanics test (2026-11-09): Regeneration (109, HP per minute) works on units and buildings, in and out of combat.
@@ -348,6 +361,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   to high inclusive. `xsGetRandomNumberLH(0, n)` gives 0 to n-1.
 - A player left with only walls and towers is defeated ("Allies defeated." in chat), even with conquest victory off.
   Keep such a player in the game with some other building (crucible gives it an unattackable house out of the way).
+- With every other player defeated the game ends in victory, whatever the victory settings: in crucible's hub
+  (everyone allied, Custom victory) buying every upgrade handed over all of the tier players' buildings and units,
+  and the hub was won at once (playtest 2026-11-23). Keep each such player a building of its own.
 - DE's XS has `int xsCreateUnit(objectId, playerId, vector location, bool foundation, bool playCreatedSound, bool
   checkCollision)` and `int xsGetDifficulty()` (`cDifficultyEasiest` 4, `Easy` (the menu's Standard) 3, `Moderate` 2,
   `Hard` 1, `Hardest` 0, `Extreme` -1). Both compile; not yet confirmed in a RoR game. *xs-check's function table.*
