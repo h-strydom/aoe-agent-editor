@@ -350,6 +350,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - One unit's HP from XS (RoR, crucible_run, 2026-11-17): `xsSetUnitProperty(id, cUnitHitpoints, hp)` sets its current
   HP, and 0 destroys it (a wall fell to rubble, no crash); `xsEffectAmount(cSetUnitAttribute, id, cHitpoints, 1, p)`
   sets its maximum, so a 1/1 HP building can't be repaired up. Both on the first tick of an `active` rule.
+- `xsGetUnitProperty(id, cUnitHitpoints)` reads a building's current HP: it counted down to 0 as Clubmen attacked a
+  Barracks. *Crucible check, 2026-11-23.*
+- Transports by trigger don't land (RoR, crucible check, 2026-11-23): a Light Transport made by Create Object, filled
+  by Create Garrisoned Object (transport type in an area, units type 2), then sent by the Unload effect, or by Task
+  Object, to a beach tile put nobody ashore. (Whether the fill itself worked wasn't seen.) The XS constant for the
+  Unload task is spelled `cctionTypeUnload` (the game's typo).
 - XS embedded in a Script Call effect (the parser's XS trigger) compiles and runs, including
   `rule` blocks. *Smoke test: chat line at t=0.*
 - Script Call messages compile in trigger order and XS requires definition before use, so the
