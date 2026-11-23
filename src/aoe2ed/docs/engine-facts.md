@@ -76,6 +76,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - What a gather task takes is decided by the target, not the task's `resource_in`: fishing boats edited to take wood
   still took fish and paid food.
 - `xsGetUnitProperty(id, cUnitAttributeHeld)` reads a resource pile's remaining amount (a stone mine: 350).
+- Setting a gaia pile's amount from XS at the start (`xsSetUnitProperty(id, cUnitAttributeHeld, ...)` on every
+  `xsGetPlayerUnitIds(0, type, -1)`) didn't show in two crucible runs (2026-11-23): resources were unchanged. RoR's own
+  "Resources last +15%" bonuses instead multiply the player's gather bonuses (type 6 on 47, 79, 189, 190, 219), as
+  crucible now does from XS (`xsSetPlayerAttribute`).
+- XS can set a tech's price: `xsEffectAmount(cModifyTech, tech, cAttrSetFoodCost, amount, p)`, and
+  cAttrSetWoodCost, cAttrSetStoneCost, cAttrSetGoldCost (also Add/Mul forms and cAttrMulAllCosts); names from
+  xs-check's table, compile-checked, in game unverified.
 - Changing what a pile holds (Type First Storage, 168) takes effect, per object and per type (a type-wide Modify
   Attribute reaches objects already on the map), but **doesn't change what gatherers receive**: lumberjacks on "gold"
   trees got wood, foragers on "stone" bushes got food, a boat on a "gold" fish got food. The gatherer's task decides
