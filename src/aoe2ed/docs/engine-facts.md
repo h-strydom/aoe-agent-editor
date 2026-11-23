@@ -130,6 +130,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   all three were captured, so a garrisonable copy placed with flag 2 acts like a real artifact. With 0 the copies
   stayed Gaia (the real artifact was captured anyway). With 3 the infantry copy turned hostile and attacked, and
   the priest copy, attacked to 0 HP, never died.
+- **Verified in play (crucible run, 2026-11-23):** Gaia Artifact Ruins (52) are captured on contact, and an XS rule paying
+  per `xsGetObjectCount(p, 52)` each second works. A copy of the walking artifact (944) switched to the priest class
+  (18), with each building's garrison type given the priest bit (8) and capacity at least 1, garrisons in buildings
+  (placed as Gaia with capture flag 2, it is captured on contact). Whether XS sees it inside
+  (`xsGetGarrisonedInUnitId` on the player's artifacts) wasn't confirmed: the boost it should start didn't show.
 - A building's work rate (13) speeds up both its training and its research. Set it on every age look of the
   building (`xsEffectAmount(0, id, 13, rate, p)`) and it applies to all of that player's copies: 1.5 and 2.0
   gave 150% and 200% (verified on RoR's Barracks).
