@@ -243,9 +243,17 @@ Add to this file whenever a playtest teaches something; never record guesses her
   the Axeman alone didn't. *Crucible run, 2026-11-18.*
 - **A unit switched off by trigger stays hidden when an upgrade brings it**: with Composite Bowman (492) disabled by
   *Enable/Disable Object* at the start, researching Composite Bow (upgrade 24 -> 492) left no Composite Bowman button
-  at the Archery Range, while Improved Bowman (enabled by its tech, effect command 2) came back fine. Lock only the
-  units a tech enables, not those only an upgrade brings (crucible `run_rules.upgraded`; the fix awaits a playtest).
-  *Crucible run, 2026-11-24.*
+  at the Archery Range. Don't lock units only an upgrade brings (crucible `run_rules.upgraded`; the fix awaits a
+  playtest). *Crucible run, 2026-11-24.*
+- **Nor does a tech's enable (effect command 2) undo it**: with Catapult Trireme (420) disabled by trigger, researching
+  Trireme with Catapult (which enables 420) left no button at the Dock (nor Juggernaught, its upgrade); Improved Bowmen
+  went missing the same way. Switch such a unit on by trigger once its tech is researched (crucible
+  `run_rules.tech_enabled`; awaits a playtest). *Crucible run, 2026-11-24.*
+- **Tech 408 is Spies whatever the data says**: a crucible boon appended at id 408 showed in game with Spies' name and
+  help text and a price per enemy villager, not its own. Skip 408 when appending techs (crucible
+  `DataMod.RESERVED_TECHS`). *Crucible run, 2026-11-24.*
+- RoR's Shallows (4) and Beach (2) are passable to both land units and ships (terrain restrictions 7 and 13); docks
+  stand on shallows. Tell land from water by the restrictions, not the terrain's name. *RoR data, 2026-11-24.*
 - **A free tech with research time 0 is researched by the game itself** as soon as it's available: that's how RoR's
   hidden enablers work (Chariot at the Stable, Small War Ship at the Dock: all time 0). A crucible hub button at 0
   researched over and over at once (every upgrade past its maximum, and "Begin" won the mission). 1 s is the floor.
