@@ -241,6 +241,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   still train "at 12"). So an effect aimed at the upgraded unit alone (Axeman 531) misses them: aim at the whole line
   (531 and 281), as RoR's own bonuses do (Macedonians: 93, 358, 359). A villager bonus by class worked, a +HP boon on
   the Axeman alone didn't. *Crucible run, 2026-11-18.*
+- **A unit switched off by trigger stays hidden when an upgrade brings it**: with Composite Bowman (492) disabled by
+  *Enable/Disable Object* at the start, researching Composite Bow (upgrade 24 -> 492) left no Composite Bowman button
+  at the Archery Range, while Improved Bowman (enabled by its tech, effect command 2) came back fine. Lock only the
+  units a tech enables, not those only an upgrade brings (crucible `run_rules.upgraded`; the fix awaits a playtest).
+  *Crucible run, 2026-11-24.*
 - **A free tech with research time 0 is researched by the game itself** as soon as it's available: that's how RoR's
   hidden enablers work (Chariot at the Stable, Small War Ship at the Dock: all time 0). A crucible hub button at 0
   researched over and over at once (every upgrade past its maximum, and "Begin" won the mission). 1 s is the floor.
