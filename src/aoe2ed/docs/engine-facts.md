@@ -292,6 +292,12 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - Names: the build button shows the copied unit's text (it read "Guard Tower"). The built tower showed the name of
   string 7079, which RoR uses for "Ballista Tower" even though its tech is called "Catapult Tower". A new unit
   needs strings of its own (unverified how a mod adds them).
+- **A data mod's strings work for a new unit's name** (`language_dll_name`, ids from 7,100,000 in
+  `key-value-modded-strings-utf8.txt`): the built tower showed it. *Crucible siege towers, 2026-11-25.* **Its build
+  button's tooltip is the build text's id + 20000**, as in RoR's own table (306335 "Build Ballista Tower", 326335
+  its tooltip with <cost> and stats): with only a new build text (`language_dll_creation`) the button showed no name
+  or description at all (playtest 2026-11-26); with the copied unit's build text it showed that unit's tooltip.
+  The mod now ships the +20000 string too (unverified in game).
 - Villagers don't build RoR's Town Center (109) itself (it has no train location) but RTWC1X (621; 617, 484, 597 by
   age), named "Town Center", on the economic page's slot 11, whose stack unit is 109: it finishes as the Town
   Center. Tech 115 ("shadow gb->tc", needing 33, the Government Center) switches it on. A lockdown that disables
