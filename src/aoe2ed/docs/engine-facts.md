@@ -90,6 +90,13 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - XS can convert resources at any ratio: reading wood gathered (167) each second and paying 10% as gold
   (`xsSetPlayerAttribute`) gave exactly 21 gold for 212 wood. *Same test.*
 
+- **A negative attack or armour change is the whole value negated:** -(class * 256 + amount). AoE2's own Masonry
+  adds -1025 (class 4, -1) and -2819 (class 11, -3) to armour. *Read from AoE2 DE's data file, 2026-11-25; Crucible
+  undoes the towers' Alchemy attack on its siege towers this way, not yet seen in game.*
+- **Combat abilities (type 50 `break_off_combat`) are bit flags:** Return of Rome's Stone Thrower line and AoE2's
+  Mangonel line have 26, Ballistas and towers 2. Copying 26 onto a tower is meant to give it the catapults'
+  friendly-fire avoidance (which bit does that is unconfirmed). *Data file, 2026-11-25.*
+
 ## Attack classes
 - **Correction (2026-11-09): a trigger can add an attack class** via Modify Object Attribute *Add Attack Type* (161):
   set 161 to the class first, then set Attack for that class. An Axeman given 161 = 11 (buildings) then +50 vs
