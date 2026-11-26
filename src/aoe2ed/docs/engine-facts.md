@@ -37,6 +37,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   plays, both Wwise's PCM layout (format 0xFFFE) and an ordinary WAV renamed (`aoe2ed.audio.pcm_wem`).
   *RoR campaign intro test, 2026-11-07: both played, mono 48 kHz, files in both sounds folders; which folder
   RoR reads isn't pinned down yet.*
+- **A scenario's instructions don't show before a campaign mission.** Text set only in the instructions showed
+  nothing before the map started. The pregame screen is the campaign's intro slideshow (`<name>.json`). A slide's
+  "String" can be literal text instead of a string id. *Crucible playtest, 2026-11-26.*
 
 ## Data mods
 - Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
