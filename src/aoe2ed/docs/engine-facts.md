@@ -54,6 +54,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
   "Error: problem loading data mod" when it was picked; after a restart the same files loaded. *crucible_run,
   2026-11-17.* A scenario tested from the editor runs without the data mod: its techs don't exist there
   (`xsGetTechState` gives -2).
+- **Restart and Next level drop the data mod.** Restarting a campaign mission, or going on with Next level after a
+  win, starts the map without the data mod picked on the campaign screen. Each mission has to be launched from the
+  campaign screen with the data mod chosen. *Crucible playtest, 2026-11-26: its data mod check defeated the player
+  at once.*
 - **A chosen data mod applies in a campaign:** RoR's data file edited with genieutils-py (Hoplites 999 HP,
   Axemen 400 HP, the Greek bonuses removed) took effect in both missions. Mods > Installed Mods marks data mods
   with a gear icon. *Crucible data mod test, 2026-11-09.*
