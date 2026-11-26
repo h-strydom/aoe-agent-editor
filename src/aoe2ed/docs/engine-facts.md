@@ -44,6 +44,9 @@ Add to this file whenever a playtest teaches something; never record guesses her
   disabled in Mods > Installed Mods (`mod-status.json` "Enabled": false), being picked on the campaign screen
   instead. Ship the campaign and its screens as an ordinary mod, the `.aoe2campaign` in the same campaign folder,
   as the workshop campaign mods do. *Crucible playtest, 2026-11-26.*
+- A slide's text fades in over "TextFadeDuration" seconds, a little at a time (set to nearly the slide's
+  duration, it took 20 s to show). "TextRect" is in 3840 x 2160 units, scaled to the screen.
+  *Crucible playtest, 2026-11-26.*
 
 ## Data mods
 - Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
