@@ -40,6 +40,10 @@ Add to this file whenever a playtest teaches something; never record guesses her
 - **A scenario's instructions don't show before a campaign mission.** Text set only in the instructions showed
   nothing before the map started. The pregame screen is the campaign's intro slideshow (`<name>.json`). A slide's
   "String" can be literal text instead of a string id. *Crucible playtest, 2026-11-26.*
+- **The mod has to be enabled.** A campaign's `<name>.json` in a data mod's folder didn't play: a data mod stays
+  disabled in Mods > Installed Mods (`mod-status.json` "Enabled": false), being picked on the campaign screen
+  instead. Ship the campaign and its screens as an ordinary mod, the `.aoe2campaign` in the same campaign folder,
+  as the workshop campaign mods do. *Crucible playtest, 2026-11-26.*
 
 ## Data mods
 - Campaigns can use a data mod: the campaign screen (Return of Rome too) has a **Data Mod** dropdown next to AI
