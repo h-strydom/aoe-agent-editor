@@ -323,6 +323,11 @@ Add to this file whenever a playtest teaches something; never record guesses her
   resource 51, which each finished House adds 1 to (its second storage). Crucible gives Town Centers and towers a
   counting storage in spare resources 104 and 105 (unused by any RoR unit or effect) the same way; whether the
   counted command works on them in game is unverified.
+- **A building's buttons can fill a second page: buttons 21 to 35.** With techs on buttons 1, 5, 15, 16, 20, 21,
+  25, 30, 35, 36 and 40, page 1 showed 1, 5 and 15 plus a "more" arrow in slot 10; clicking it showed 21, 25, 30 and
+  35. Buttons 16 to 20 and 36 up never showed. So a paged building gives up slot 10 on page 1 to the arrow (14 there,
+  15 on page 2). Unverified: what a tech on button 10 does then, and how page 2 goes back. *Crucible check "pages",
+  2026-11-26.*
 - The Tool Age's Dock techs, Light Transport (1) and Small War Ship (3), have no research time: they're enablers the
   game researches by itself (they enable units 545 and 539). The Dock's buttons start at the Bronze Age.
 
